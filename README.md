@@ -1,5 +1,5 @@
 # Operon (Clean Migration Foundation)
-
+trigger deploy
 This repository is now the clean Operon foundation for a new UI build.
 
 ## Architecture

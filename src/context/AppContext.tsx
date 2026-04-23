@@ -10,7 +10,7 @@ import {
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { getMe, type MeResponse } from "@/api/me";
-import { setUnauthorizedHandler } from "@/api/client";
+import { ApiError, setUnauthorizedHandler } from "@/api/client";
 
 export type AuthStatus = "booting" | "unauthenticated" | "authenticated" | "refreshing";
 
@@ -19,6 +19,7 @@ interface AuthState {
   session: Session | null;
   me: MeResponse["user"] | null;
   error: string | null;
+  profileError: string | null;
 }
 
 interface AppContextValue {
@@ -26,6 +27,7 @@ interface AppContextValue {
   session: Session | null;
   me: MeResponse["user"] | null;
   error: string | null;
+  profileError: string | null;
   isDemoMode: boolean;
   enterDemoMode: () => void;
   exitDemoMode: () => void;
@@ -44,12 +46,17 @@ async function resolveProfile(): Promise<MeResponse["user"] | null> {
   return user;
 }
 
+function isAuthFailure(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 401;
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>({
     status: "booting",
     session: null,
     me: null,
     error: null,
+    profileError: null,
   });
   const [isDemoMode, setIsDemoMode] = useState<boolean>(
     () => sessionStorage.getItem(DEMO_MODE_KEY) === "1"
@@ -67,7 +74,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const handleUnauthorized = useCallback(async () => {
     await supabase.auth.signOut();
-    setAuthState({ status: "unauthenticated", session: null, me: null, error: null });
+    setAuthState({
+      status: "unauthenticated",
+      session: null,
+      me: null,
+      error: "Session expired. Please sign in again.",
+      profileError: null,
+    });
   }, []);
 
   useEffect(() => {
@@ -77,22 +90,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const hydrateSession = useCallback(async (session: Session | null) => {
     if (!session) {
-      setAuthState({ status: "unauthenticated", session: null, me: null, error: null });
-      return;
-    }
-
-    setAuthState((prev) => ({ ...prev, status: "refreshing", session, error: null }));
-
-    try {
-      const me = await resolveProfile();
-      setAuthState({ status: "authenticated", session, me, error: null });
-    } catch (error) {
       setAuthState({
         status: "unauthenticated",
         session: null,
         me: null,
-        error: error instanceof Error ? error.message : "Session refresh failed",
+        error: null,
+        profileError: null,
       });
+      return;
+    }
+
+    setAuthState((prev) => ({ ...prev, status: "refreshing", session, error: null, profileError: null }));
+
+    try {
+      const me = await resolveProfile();
+      setAuthState({ status: "authenticated", session, me, error: null, profileError: null });
+    } catch (error) {
+      if (isAuthFailure(error)) {
+        await supabase.auth.signOut();
+        setAuthState({
+          status: "unauthenticated",
+          session: null,
+          me: null,
+          error: "Session expired. Please sign in again.",
+          profileError: null,
+        });
+        return;
+      }
+
+      setAuthState((prev) => ({
+        ...prev,
+        status: "authenticated",
+        session,
+        profileError:
+          error instanceof Error
+            ? `Profile temporarily unavailable: ${error.message}`
+            : "Profile temporarily unavailable",
+      }));
     }
   }, []);
 
@@ -141,8 +175,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const refreshProfile = useCallback(async () => {
     if (!authState.session) return;
-    const me = await resolveProfile();
-    setAuthState((prev) => ({ ...prev, me }));
+    try {
+      const me = await resolveProfile();
+      setAuthState((prev) => ({ ...prev, me, error: null, profileError: null }));
+    } catch (error) {
+      if (isAuthFailure(error)) {
+        await supabase.auth.signOut();
+        setAuthState({
+          status: "unauthenticated",
+          session: null,
+          me: null,
+          error: "Session expired. Please sign in again.",
+          profileError: null,
+        });
+        return;
+      }
+
+      setAuthState((prev) => ({
+        ...prev,
+        profileError:
+          error instanceof Error
+            ? `Profile temporarily unavailable: ${error.message}`
+            : "Profile temporarily unavailable",
+      }));
+    }
   }, [authState.session]);
 
   const value = useMemo<AppContextValue>(
@@ -151,6 +207,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       session: authState.session,
       me: authState.me,
       error: authState.error,
+      profileError: authState.profileError,
       isDemoMode,
       enterDemoMode,
       exitDemoMode,

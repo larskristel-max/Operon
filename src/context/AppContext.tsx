@@ -58,17 +58,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     error: null,
     profileError: null,
   });
-  const [isDemoMode, setIsDemoMode] = useState<boolean>(
-    () => sessionStorage.getItem(DEMO_MODE_KEY) === "1"
-  );
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(() => localStorage.getItem(DEMO_MODE_KEY) === "1");
 
   const enterDemoMode = useCallback(() => {
-    sessionStorage.setItem(DEMO_MODE_KEY, "1");
+    localStorage.setItem(DEMO_MODE_KEY, "1");
     setIsDemoMode(true);
   }, []);
 
   const exitDemoMode = useCallback(() => {
-    sessionStorage.removeItem(DEMO_MODE_KEY);
+    localStorage.removeItem(DEMO_MODE_KEY);
     setIsDemoMode(false);
   }, []);
 
@@ -89,6 +87,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [handleUnauthorized]);
 
   const hydrateSession = useCallback(async (session: Session | null) => {
+    if (isDemoMode) {
+      setAuthState((prev) => ({
+        ...prev,
+        status: session ? "authenticated" : "unauthenticated",
+        session,
+        me: session ? prev.me : null,
+        error: null,
+        profileError: null,
+      }));
+      return;
+    }
+
     if (!session) {
       setAuthState({
         status: "unauthenticated",
@@ -128,7 +138,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             : "Profile temporarily unavailable",
       }));
     }
-  }, []);
+  }, [isDemoMode]);
 
   useEffect(() => {
     let mounted = true;
@@ -174,7 +184,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshProfile = useCallback(async () => {
-    if (!authState.session) return;
+    if (!authState.session || isDemoMode) return;
     try {
       const me = await resolveProfile();
       setAuthState((prev) => ({ ...prev, me, error: null, profileError: null }));
@@ -199,7 +209,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             : "Profile temporarily unavailable",
       }));
     }
-  }, [authState.session]);
+  }, [authState.session, isDemoMode]);
 
   const value = useMemo<AppContextValue>(
     () => ({

@@ -89,23 +89,6 @@ function BootScreen() {
   );
 }
 
-function DemoShell() {
-  const { exitDemoMode } = useApp();
-
-  return (
-    <main className="operon-screen operon-demo">
-      <section className="glass-panel demo-panel">
-        <img src={operonLogo} alt="Operon brand mark" className="operon-mark" />
-        <h1>Demo mode</h1>
-        <p className="screen-subtitle">Explore Operon with sample data and workflows.</p>
-        <button type="button" className="gold-btn" onClick={exitDemoMode}>
-          Exit demo mode
-        </button>
-      </section>
-    </main>
-  );
-}
-
 export default function App() {
   const { authStatus, isDemoMode } = useApp();
   const [splashVisible, setSplashVisible] = useState(true);
@@ -126,10 +109,10 @@ export default function App() {
     []
   );
 
-  if (authStatus === "booting") return <BootScreen />;
+  if (authStatus === "booting" && !isDemoMode) return <BootScreen />;
   if (splashVisible) return <SplashScreen />;
   if (!languageComplete) return <LanguageSelectionScreen onContinue={finishLanguage} />;
-  if (isDemoMode && authStatus !== "authenticated") return <DemoShell />;
+  if (isDemoMode) return <ProtectedShell />;
   if (authStatus === "unauthenticated") return <AuthGate />;
   return <ProtectedShell />;
 }

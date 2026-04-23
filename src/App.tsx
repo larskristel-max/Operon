@@ -109,10 +109,16 @@ export default function App() {
     []
   );
 
-  if (authStatus === "booting" && !isDemoMode) return <BootScreen />;
-  if (splashVisible) return <SplashScreen />;
-  if (isDemoMode) return <ProtectedShell />;
+  if (authStatus === "booting") return <BootScreen />;
+  if (isDemoMode) {
+    if (splashVisible) return <SplashScreen />;
+    return <ProtectedShell />;
+  }
   if (authStatus === "unauthenticated") return <AuthGate />;
-  if (!languageComplete) return <LanguageSelectionScreen onContinue={finishLanguage} />;
-  return <ProtectedShell />;
+  if (authStatus === "authenticated" || authStatus === "refreshing") {
+    if (splashVisible) return <SplashScreen />;
+    if (!languageComplete) return <LanguageSelectionScreen onContinue={finishLanguage} />;
+    return <ProtectedShell />;
+  }
+  return <AuthGate />;
 }

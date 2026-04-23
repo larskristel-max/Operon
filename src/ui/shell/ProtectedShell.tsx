@@ -1,5 +1,6 @@
 import operonLogo from "../../../assets/Operonv1.png";
 import tankImage from "../../../assets/Tankimageasset.png";
+import { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { demoDashboardData, type DashboardData } from "@/data/demoData";
 
@@ -7,26 +8,27 @@ const defaultDashboardData: DashboardData = {
   breweryName: "OPERON",
   hero: {
     greetingName: "Brewer",
-    subtitle: "Here's what's brewing today.",
+    subtitle: "Connect live brewery data to populate this dashboard.",
   },
   brewCard: {
-    batchName: "West Coast IPA",
-    batchId: "Batch #2417",
-    batchStageLabel: "In Fermentation",
-    stageCount: "2",
-    progressPercent: 68,
+    batchName: "No active batch",
+    batchId: "Live operations data pending",
+    batchStageLabel: "Waiting for data",
+    stageCount: "—",
+    progressPercent: 0,
   },
   glanceCards: [
-    { title: "TANKS", subtitle: "Active", accent: "green", value: "12" },
-    { title: "WATER USAGE", subtitle: "Today", accent: "blue", value: "1,245 gal" },
-    { title: "ORDERS", subtitle: "To Fulfill", accent: "purple", value: "5" },
-    { title: "INVENTORY", subtitle: "Low Stock", accent: "amber", value: "8" },
+    { title: "TANKS", subtitle: "Active", accent: "green", value: "—" },
+    { title: "WATER USAGE", subtitle: "Today", accent: "blue", value: "—" },
+    { title: "ORDERS", subtitle: "To Fulfill", accent: "purple", value: "—" },
+    { title: "INVENTORY", subtitle: "Low Stock", accent: "amber", value: "—" },
   ],
   quickActions: ["Start Brew", "Log Fermentation", "Add Inventory", "View Reports"],
 };
 
 export function ProtectedShell() {
-  const { me, profileError, refreshProfile, session, isDemoMode } = useApp();
+  const { me, profileError, refreshProfile, session, isDemoMode, exitDemoMode, signOut } = useApp();
+  const [moreOpen, setMoreOpen] = useState(false);
   const firstName =
     me?.displayName?.split(" ")[0] ??
     me?.email?.split("@")[0] ??
@@ -42,6 +44,7 @@ export function ProtectedShell() {
           greetingName: firstName,
         },
       };
+  const progressLabel = isDemoMode ? `${dashboardData.brewCard.progressPercent}%` : "—";
 
   return (
     <main className="operon-screen dashboard-screen">
@@ -82,7 +85,7 @@ export function ProtectedShell() {
         <div className="brew-divider" />
         <div className="fermentation-row">
           <p>FERMENTATION PROGRESS</p>
-          <span>{dashboardData.brewCard.progressPercent}%</span>
+          <span>{progressLabel}</span>
         </div>
         <div className="progress-track" aria-hidden="true">
           <span style={{ width: `${dashboardData.brewCard.progressPercent}%` }} />
@@ -142,11 +145,39 @@ export function ProtectedShell() {
           <span className="nav-icon">☑</span>
           <span>Tasks</span>
         </button>
-        <button type="button">
+        <button type="button" onClick={() => setMoreOpen((prev) => !prev)} aria-expanded={moreOpen}>
           <span className="nav-icon">•••</span>
           <span>More</span>
         </button>
       </nav>
+
+      {moreOpen && (
+        <section className="glass-panel more-menu" aria-label="More options">
+          {isDemoMode ? (
+            <button
+              type="button"
+              className="dark-btn more-action"
+              onClick={() => {
+                exitDemoMode();
+                setMoreOpen(false);
+              }}
+            >
+              Exit Demo Mode
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="dark-btn more-action"
+              onClick={() => {
+                void signOut();
+                setMoreOpen(false);
+              }}
+            >
+              Sign Out
+            </button>
+          )}
+        </section>
+      )}
     </main>
   );
 }

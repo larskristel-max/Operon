@@ -450,6 +450,19 @@ button, input { font: inherit; }
 
 .status-inline { margin-top: 14px; padding: 16px; display: grid; gap: 10px; }
 
+.more-menu {
+  position: fixed;
+  left: clamp(10px, 3vw, 14px);
+  right: clamp(10px, 3vw, 14px);
+  bottom: calc(86px + env(safe-area-inset-bottom));
+  z-index: 5;
+  padding: 10px;
+}
+
+.more-action {
+  width: 100%;
+}
+
 .bottom-nav {
   position: fixed;
   left: clamp(10px, 3vw, 14px);
@@ -497,5 +510,9 @@ button, input { font: inherit; }
 
   .dashboard-section {
     margin-top: 12px;
+  }
+
+  .more-menu {
+    bottom: calc(80px + env(safe-area-inset-bottom));
   }
 }

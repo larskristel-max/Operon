@@ -68,6 +68,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const exitDemoMode = useCallback(() => {
     localStorage.removeItem(DEMO_MODE_KEY);
     setIsDemoMode(false);
+    setAuthState((prev) => ({
+      ...prev,
+      status: "unauthenticated",
+      session: null,
+      me: null,
+      error: null,
+      profileError: null,
+    }));
   }, []);
 
   const handleUnauthorized = useCallback(async () => {
@@ -179,8 +187,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    localStorage.removeItem(DEMO_MODE_KEY);
+    setIsDemoMode(false);
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    setAuthState({
+      status: "unauthenticated",
+      session: null,
+      me: null,
+      error: null,
+      profileError: null,
+    });
   }, []);
 
   const refreshProfile = useCallback(async () => {

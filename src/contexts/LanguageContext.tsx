@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 
-export type Language = "en" | "fr" | "de" | "nl";
+export type Language = "en" | "es" | "fr" | "de" | "pt" | "ja" | "nl";
 
 interface LanguageContextValue {
   language: Language;

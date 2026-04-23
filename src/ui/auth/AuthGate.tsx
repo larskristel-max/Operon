@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useApp } from "@/context/AppContext";
+import operonLogo from "../../../assets/Operonv1.png";
 
 type AuthView = "login" | "signup" | "forgot";
 
@@ -11,6 +12,19 @@ export function AuthGate() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const isForgot = view === "forgot";
+  const isSignup = view === "signup";
+  const title = isForgot ? "Reset password" : isSignup ? "Create account" : "Welcome back";
+  const subtitle = isForgot
+    ? "We’ll email you a secure reset link."
+    : "Sign in to your Operon account.";
+  const cta = isForgot ? "Send reset link" : isSignup ? "Create account" : "Sign In";
+
+  const canSubmit = useMemo(
+    () => Boolean(email && (isForgot || password)),
+    [email, password, isForgot]
+  );
 
   const submit = async () => {
     setBusy(true);
@@ -33,63 +47,99 @@ export function AuthGate() {
     }
   };
 
-  const title = view === "login" ? "Welcome back" : view === "signup" ? "Create account" : "Reset password";
-  const cta = view === "login" ? "Sign in" : view === "signup" ? "Create account" : "Send reset link";
-
   return (
-    <section className="auth-shell">
-      <article className="auth-card">
-        <p className="eyebrow">Operon</p>
+    <main className="operon-screen auth-screen">
+      <section className="glass-panel auth-panel">
+        <img src={operonLogo} alt="Operon brand mark" className="operon-mark" />
         <h1>{title}</h1>
-        <p className="subtle">Secure access for your brewery workspace.</p>
+        <p className="screen-subtitle">{subtitle}</p>
 
-        <label>
+        <label className="field-label">
           Email
-          <input
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="you@brewery.com"
-          />
+          <span className="input-wrap">
+            <span aria-hidden="true" className="input-icon">
+              ✉
+            </span>
+            <input
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="you@brewery.com"
+            />
+          </span>
         </label>
 
-        {view !== "forgot" && (
-          <label>
+        {!isForgot && (
+          <label className="field-label">
             Password
-            <input
-              type="password"
-              autoComplete={view === "login" ? "current-password" : "new-password"}
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="••••••••"
-            />
+            <span className="input-wrap">
+              <span aria-hidden="true" className="input-icon">
+                🔒
+              </span>
+              <input
+                type="password"
+                autoComplete={view === "login" ? "current-password" : "new-password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="••••••••"
+              />
+              <span aria-hidden="true" className="input-icon right">
+                ◉
+              </span>
+            </span>
           </label>
         )}
 
-        <button className="primary" onClick={submit} disabled={busy || !email || (view !== "forgot" && !password)}>
+        {view === "login" && (
+          <button type="button" className="inline-link" onClick={() => setView("forgot")}>
+            Forgot password?
+          </button>
+        )}
+
+        <button type="button" className="gold-btn" onClick={submit} disabled={busy || !canSubmit}>
           {busy ? "Please wait…" : cta}
         </button>
 
-        {formError && <p className="error">{formError}</p>}
-        {error && <p className="error">{error}</p>}
-        {notice && <p className="notice">{notice}</p>}
+        {view === "login" && (
+          <>
+            <div className="line-divider">or</div>
+            <button type="button" className="dark-btn" disabled>
+              <span>G</span> Continue with Google
+            </button>
+            <button type="button" className="dark-btn" disabled>
+              <span></span> Continue with Apple
+            </button>
+            <button type="button" className="demo-card" onClick={enterDemoMode}>
+              <div>
+                <strong>Try Demo Mode</strong>
+                <p>Explore Operon with sample data.</p>
+              </div>
+              <span aria-hidden="true">›</span>
+            </button>
+          </>
+        )}
 
-        <div className="auth-links">
-          {view !== "login" && <button onClick={() => setView("login")}>Back to login</button>}
-          {view === "login" && (
-            <>
-              <button onClick={() => setView("signup")}>Create account</button>
-              <button onClick={() => setView("forgot")}>Forgot password?</button>
-            </>
+        {(formError || error || notice) && (
+          <div className="auth-feedback">
+            {formError && <p className="error">{formError}</p>}
+            {error && <p className="error">{error}</p>}
+            {notice && <p className="notice">{notice}</p>}
+          </div>
+        )}
+
+        <div className="auth-footer-links">
+          {view !== "login" ? (
+            <button type="button" onClick={() => setView("login")}>
+              Back to Sign In
+            </button>
+          ) : (
+            <p>
+              No account? <button type="button" onClick={() => setView("signup")}>Sign up</button>
+            </p>
           )}
         </div>
-      </article>
-
-      <aside className="demo-island">
-        <p>Demo environment</p>
-        <button onClick={enterDemoMode}>Continue in demo mode</button>
-      </aside>
-    </section>
+      </section>
+    </main>
   );
 }

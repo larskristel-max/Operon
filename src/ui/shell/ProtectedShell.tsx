@@ -10,32 +10,23 @@ const defaultDashboardData: DashboardData = {
     subtitle: "Here's what's brewing today.",
   },
   brewCard: {
-    batchName: "No active batch selected",
+    batchName: "West Coast IPA",
+    batchId: "Batch #2417",
     batchStageLabel: "In Fermentation",
-    stageCount: "—",
-    progressLabel: "Awaiting brew execution",
-    progressPercent: 0,
+    stageCount: "2",
+    progressPercent: 68,
   },
   glanceCards: [
-    { title: "Tanks", subtitle: "Active", accent: "green", value: "—" },
-    { title: "Water Usage", subtitle: "Today", accent: "blue", value: "—" },
-    { title: "Orders", subtitle: "To Fulfill", accent: "purple", value: "—" },
-    { title: "Inventory", subtitle: "Low Stock", accent: "amber", value: "—" },
+    { title: "TANKS", subtitle: "Active", accent: "green", value: "12" },
+    { title: "WATER USAGE", subtitle: "Today", accent: "blue", value: "1,245 gal" },
+    { title: "ORDERS", subtitle: "To Fulfill", accent: "purple", value: "5" },
+    { title: "INVENTORY", subtitle: "Low Stock", accent: "amber", value: "8" },
   ],
   quickActions: ["Start Brew", "Log Fermentation", "Add Inventory", "View Reports"],
-  tasks: [
-    { id: "task-empty-1", title: "No pending tasks", detail: "Task updates appear here during operations." },
-  ],
-  agenda: [
-    { id: "agenda-empty-1", time: "—", title: "No upcoming events" },
-  ],
-  lowStock: [
-    { id: "stock-empty-1", name: "No low stock alerts", level: "Inventory alerts will appear here." },
-  ],
 };
 
 export function ProtectedShell() {
-  const { me, signOut, authStatus, profileError, refreshProfile, session, isDemoMode, exitDemoMode } = useApp();
+  const { me, profileError, refreshProfile, session, isDemoMode } = useApp();
   const firstName =
     me?.displayName?.split(" ")[0] ??
     me?.email?.split("@")[0] ??
@@ -61,10 +52,9 @@ export function ProtectedShell() {
           <div className="logo-lockup">
             <img src={operonLogo} alt="Operon logo" className="operon-mark small" />
             <span>{dashboardData.breweryName}</span>
-            {isDemoMode && <span className="demo-pill">Demo</span>}
           </div>
-          <button type="button" className="icon-pill" aria-label="Notifications">
-            🔔
+          <button type="button" className="icon-pill bell-btn" aria-label="Notifications">
+            <span aria-hidden="true">◠</span>
           </button>
         </header>
         <div className="hero-copy">
@@ -74,18 +64,22 @@ export function ProtectedShell() {
       </section>
 
       <section className="glass-panel brewing-card">
-        <div className="brew-main">
-          <div className="brew-icon">⟐</div>
-          <div>
-            <p className="eyebrow gold">CURRENTLY BREWING</p>
-            <h2>{dashboardData.brewCard.batchName}</h2>
-            <p className="subtle">{dashboardData.brewCard.progressLabel}</p>
+        <div className="brewing-top">
+          <div className="brew-main">
+            <div className="brew-icon">⛃</div>
+            <div>
+              <p className="eyebrow gold">CURRENTLY BREWING</p>
+              <h2>{dashboardData.brewCard.batchName}</h2>
+              <p className="subtle">{dashboardData.brewCard.batchId}</p>
+            </div>
+          </div>
+          <div className="brew-side">
+            <strong>{dashboardData.brewCard.stageCount}</strong>
+            <small>DAYS</small>
+            <span>{dashboardData.brewCard.batchStageLabel}</span>
           </div>
         </div>
-        <div className="brew-side">
-          <strong>{dashboardData.brewCard.stageCount}</strong>
-          <span>{dashboardData.brewCard.batchStageLabel}</span>
-        </div>
+        <div className="brew-divider" />
         <div className="fermentation-row">
           <p>FERMENTATION PROGRESS</p>
           <span>{dashboardData.brewCard.progressPercent}%</span>
@@ -103,9 +97,12 @@ export function ProtectedShell() {
         <div className="glance-grid">
           {dashboardData.glanceCards.map((card) => (
             <article key={card.title} className={`glance-card ${card.accent}`}>
-              <p className="eyebrow">{card.title}</p>
-              <strong>{card.value}</strong>
-              <span>{card.subtitle}</span>
+              <div className="glance-icon" />
+              <div className="glance-copy">
+                <p className="eyebrow">{card.title}</p>
+                <strong>{card.value}</strong>
+                <span>{card.subtitle}</span>
+              </div>
             </article>
           ))}
         </div>
@@ -123,53 +120,6 @@ export function ProtectedShell() {
         </div>
       </section>
 
-      <section className="dashboard-section mini-grid">
-        <article className="glass-panel mini-card">
-          <div className="section-head compact">
-            <h3>Tasks</h3>
-            <button type="button">See more</button>
-          </div>
-          <ul className="mini-list">
-            {dashboardData.tasks.map((task) => (
-              <li key={task.id}>
-                <strong>{task.title}</strong>
-                <span>{task.detail}</span>
-              </li>
-            ))}
-          </ul>
-        </article>
-
-        <article className="glass-panel mini-card">
-          <div className="section-head compact">
-            <h3>Agenda</h3>
-            <button type="button">See more</button>
-          </div>
-          <ul className="mini-list">
-            {dashboardData.agenda.map((item) => (
-              <li key={item.id}>
-                <strong>{item.time}</strong>
-                <span>{item.title}</span>
-              </li>
-            ))}
-          </ul>
-        </article>
-
-        <article className="glass-panel mini-card">
-          <div className="section-head compact">
-            <h3>Inventory</h3>
-            <button type="button">See more</button>
-          </div>
-          <ul className="mini-list">
-            {dashboardData.lowStock.map((item) => (
-              <li key={item.id}>
-                <strong>{item.name}</strong>
-                <span>{item.level}</span>
-              </li>
-            ))}
-          </ul>
-        </article>
-      </section>
-
       {!isDemoMode && profileError && (
         <section className="glass-panel status-inline">
           <p className="error">{profileError}</p>
@@ -180,16 +130,22 @@ export function ProtectedShell() {
       )}
 
       <nav className="bottom-nav" aria-label="Primary">
-        <button type="button" className="active">Home</button>
-        <button type="button">Brewery</button>
-        <button type="button">Tasks</button>
-        {isDemoMode ? (
-          <button type="button" onClick={exitDemoMode}>Exit Demo</button>
-        ) : (
-          <button type="button" onClick={() => void signOut()}>
-            {authStatus === "refreshing" ? "Refreshing" : "More"}
-          </button>
-        )}
+        <button type="button" className="active">
+          <span className="nav-icon">⌂</span>
+          <span>Home</span>
+        </button>
+        <button type="button">
+          <span className="nav-icon">⛃</span>
+          <span>Brewery</span>
+        </button>
+        <button type="button">
+          <span className="nav-icon">☑</span>
+          <span>Tasks</span>
+        </button>
+        <button type="button">
+          <span className="nav-icon">•••</span>
+          <span>More</span>
+        </button>
       </nav>
     </main>
   );

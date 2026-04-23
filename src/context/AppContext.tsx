@@ -1,91 +1,66 @@
 import {
   createContext,
-  useContext,
-  useState,
-  useEffect,
   useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
   type ReactNode,
 } from "react";
-import { supabase } from "@/lib/supabase";
 import type { Session } from "@supabase/supabase-js";
-import type { User, BreweryProfile } from "@/types/domain";
-import type { Role, Permissions } from "@/types/permissions";
-import { resolvePermissions } from "@/types/permissions";
+import { supabase } from "@/lib/supabase";
+import { getMe, type MeResponse } from "@/api/me";
+import { ApiError, setUnauthorizedHandler } from "@/api/client";
 
-export interface BreweryContext {
-  breweryId: string;
-  name: string;
-  language: string;
-  timezone: string;
-  country: string;
-  exciseEnabled: boolean;
-  notionSourceId: string | null;
-  role: Role;
+export type AuthStatus = "booting" | "unauthenticated" | "authenticated" | "refreshing";
+
+interface AuthState {
+  status: AuthStatus;
+  session: Session | null;
+  me: MeResponse["user"] | null;
+  error: string | null;
+  profileError: string | null;
 }
 
 interface AppContextValue {
+  authStatus: AuthStatus;
   session: Session | null;
-  user: User | null;
-  brewery: BreweryProfile | null;
-  breweryContext: BreweryContext | null;
-  role: Role;
-  permissions: Permissions;
-  isLoading: boolean;
-  isResolvingBrewery: boolean;
-  hasNoBrewery: boolean;
+  me: MeResponse["user"] | null;
+  error: string | null;
+  profileError: string | null;
   isDemoMode: boolean;
   enterDemoMode: () => void;
   exitDemoMode: () => void;
-  setBrewery: (brewery: BreweryProfile | null) => void;
-  setBreweryContext: (ctx: BreweryContext | null) => void;
-  refreshBreweryContext: () => Promise<void>;
-}
-
-const AppContext = createContext<AppContextValue | null>(null);
-
-async function resolveBreweryContext(userId: string): Promise<BreweryContext | null> {
-  const { data: brewery, error: breweryError } = await supabase
-    .from("brewery_profiles")
-    .select("id, name, language, timezone, country, emcs_enabled, notion_source_id")
-    .single();
-
-  if (breweryError || !brewery) return null;
-
-  const { data: userRow } = await supabase
-    .from("users")
-    .select("role")
-    .eq("id", userId)
-    .single();
-
-  return {
-    breweryId: (brewery as { id: string }).id,
-    name: (brewery as { name: string }).name,
-    language: (brewery as { language: string }).language ?? "en",
-    timezone: (brewery as { timezone: string }).timezone ?? "UTC",
-    country: (brewery as { country: string }).country ?? "",
-    exciseEnabled: (brewery as { emcs_enabled: boolean }).emcs_enabled ?? false,
-    notionSourceId: (brewery as { notion_source_id: string | null }).notion_source_id ?? null,
-    role: ((userRow as { role: string } | null)?.role as Role) ?? "viewer",
-  };
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
+  sendReset: (email: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const DEMO_MODE_KEY = "operon_demo_mode";
+const AppContext = createContext<AppContextValue | null>(null);
+
+async function resolveProfile(): Promise<MeResponse["user"] | null> {
+  const { user } = await getMe();
+  return user;
+}
+
+function isAuthFailure(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 401;
+}
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isResolvingBrewery, setIsResolvingBrewery] = useState(false);
-  const [brewery, setBrewery] = useState<BreweryProfile | null>(null);
-  const [breweryContextState, setBreweryContextState] = useState<BreweryContext | null>(null);
-  const [hasNoBrewery, setHasNoBrewery] = useState(false);
+  const [authState, setAuthState] = useState<AuthState>({
+    status: "booting",
+    session: null,
+    me: null,
+    error: null,
+    profileError: null,
+  });
   const [isDemoMode, setIsDemoMode] = useState<boolean>(
     () => sessionStorage.getItem(DEMO_MODE_KEY) === "1"
   );
-
-  const setBreweryContext = useCallback((ctx: BreweryContext | null) => {
-    setBreweryContextState(ctx);
-    setHasNoBrewery(ctx === null);
-  }, []);
 
   const enterDemoMode = useCallback(() => {
     sessionStorage.setItem(DEMO_MODE_KEY, "1");
@@ -97,122 +72,159 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setIsDemoMode(false);
   }, []);
 
-  const refreshBreweryContext = useCallback(async () => {
-    const currentSession = (await supabase.auth.getSession()).data.session;
-    if (!currentSession?.user) {
-      setBreweryContext(null);
+  const handleUnauthorized = useCallback(async () => {
+    await supabase.auth.signOut();
+    setAuthState({
+      status: "unauthenticated",
+      session: null,
+      me: null,
+      error: "Session expired. Please sign in again.",
+      profileError: null,
+    });
+  }, []);
+
+  useEffect(() => {
+    setUnauthorizedHandler(handleUnauthorized);
+    return () => setUnauthorizedHandler(null);
+  }, [handleUnauthorized]);
+
+  const hydrateSession = useCallback(async (session: Session | null) => {
+    if (!session) {
+      setAuthState({
+        status: "unauthenticated",
+        session: null,
+        me: null,
+        error: null,
+        profileError: null,
+      });
       return;
     }
 
-    setIsResolvingBrewery(true);
+    setAuthState((prev) => ({ ...prev, status: "refreshing", session, error: null, profileError: null }));
+
     try {
-      const ctx = await resolveBreweryContext(currentSession.user.id);
-      setBreweryContext(ctx);
-    } catch {
-      setBreweryContext(null);
-    } finally {
-      setIsResolvingBrewery(false);
+      const me = await resolveProfile();
+      setAuthState({ status: "authenticated", session, me, error: null, profileError: null });
+    } catch (error) {
+      if (isAuthFailure(error)) {
+        await supabase.auth.signOut();
+        setAuthState({
+          status: "unauthenticated",
+          session: null,
+          me: null,
+          error: "Session expired. Please sign in again.",
+          profileError: null,
+        });
+        return;
+      }
+
+      setAuthState((prev) => ({
+        ...prev,
+        status: "authenticated",
+        session,
+        profileError:
+          error instanceof Error
+            ? `Profile temporarily unavailable: ${error.message}`
+            : "Profile temporarily unavailable",
+      }));
     }
-  }, [setBreweryContext]);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
 
     supabase.auth.getSession().then(async ({ data }) => {
       if (!mounted) return;
-
-      const s = data.session;
-      setSession(s);
-      if (s?.user) {
-        setIsResolvingBrewery(true);
-        try {
-          const ctx = await resolveBreweryContext(s.user.id);
-          if (mounted) setBreweryContext(ctx);
-        } catch {
-          if (mounted) setBreweryContext(null);
-        } finally {
-          if (mounted) setIsResolvingBrewery(false);
-        }
-      }
-      if (mounted) setIsLoading(false);
+      await hydrateSession(data.session);
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, s) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!mounted) return;
-
-      setSession(s);
-      if (s?.user) {
-        setIsResolvingBrewery(true);
-        try {
-          const ctx = await resolveBreweryContext(s.user.id);
-          if (mounted) setBreweryContext(ctx);
-        } catch {
-          if (mounted) setBreweryContext(null);
-        } finally {
-          if (mounted) setIsResolvingBrewery(false);
-        }
-      } else if (mounted) {
-        setBreweryContext(null);
-      }
+      await hydrateSession(session);
     });
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [setBreweryContext]);
+  }, [hydrateSession]);
 
-  const role: Role = isDemoMode ? "viewer" : (breweryContextState?.role ?? "viewer");
-  const permissions = resolvePermissions(role);
+  const signIn = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+  }, []);
 
-  const user: User | null = session?.user
-    ? {
-        id: session.user.id,
-        breweryId: breweryContextState?.breweryId ?? "",
-        email: session.user.email ?? "",
-        displayName: session.user.user_metadata?.display_name ?? null,
-        role,
-        isActive: true,
-        lastSeenAt: null,
-        createdAt: session.user.created_at,
-        updatedAt: session.user.updated_at ?? session.user.created_at,
+  const signUp = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) throw error;
+  }, []);
+
+  const sendReset = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/#auth=reset`,
+    });
+    if (error) throw error;
+  }, []);
+
+  const signOut = useCallback(async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+  }, []);
+
+  const refreshProfile = useCallback(async () => {
+    if (!authState.session) return;
+    try {
+      const me = await resolveProfile();
+      setAuthState((prev) => ({ ...prev, me, error: null, profileError: null }));
+    } catch (error) {
+      if (isAuthFailure(error)) {
+        await supabase.auth.signOut();
+        setAuthState({
+          status: "unauthenticated",
+          session: null,
+          me: null,
+          error: "Session expired. Please sign in again.",
+          profileError: null,
+        });
+        return;
       }
-    : null;
 
-  return (
-    <AppContext.Provider
-      value={{
-        session,
-        user,
-        brewery,
-        breweryContext: breweryContextState,
-        role,
-        permissions,
-        isLoading,
-        isResolvingBrewery,
-        hasNoBrewery,
-        isDemoMode,
-        enterDemoMode,
-        exitDemoMode,
-        setBrewery,
-        setBreweryContext,
-        refreshBreweryContext,
-      }}
-    >
-      {children}
-    </AppContext.Provider>
+      setAuthState((prev) => ({
+        ...prev,
+        profileError:
+          error instanceof Error
+            ? `Profile temporarily unavailable: ${error.message}`
+            : "Profile temporarily unavailable",
+      }));
+    }
+  }, [authState.session]);
+
+  const value = useMemo<AppContextValue>(
+    () => ({
+      authStatus: authState.status,
+      session: authState.session,
+      me: authState.me,
+      error: authState.error,
+      profileError: authState.profileError,
+      isDemoMode,
+      enterDemoMode,
+      exitDemoMode,
+      signIn,
+      signUp,
+      sendReset,
+      signOut,
+      refreshProfile,
+    }),
+    [authState, isDemoMode, enterDemoMode, exitDemoMode, signIn, signUp, sendReset, signOut, refreshProfile]
   );
+
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
 export function useApp(): AppContextValue {
   const ctx = useContext(AppContext);
   if (!ctx) throw new Error("useApp must be used within <AppProvider>");
   return ctx;
-}
-
-export function usePermissions(): Permissions {
-  const { permissions } = useApp();
-  return permissions;
 }

@@ -166,18 +166,30 @@ button, input { font: inherit; }
 }
 
 .operon-language,
-.auth-screen,
 .operon-demo {
   display: grid;
   align-content: center;
 }
 
 .language-panel,
-.auth-panel,
 .demo-panel {
   width: min(100%, 460px);
   margin-inline: auto;
   padding: clamp(18px, 4.5vw, 28px) clamp(14px, 4vw, 18px);
+  display: grid;
+  gap: clamp(10px, 2.5vw, 14px);
+}
+
+.auth-screen {
+  display: block;
+  padding-inline: clamp(14px, 4.5vw, 28px);
+}
+
+.auth-panel {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: clamp(14px, 3vw, 22px) 0;
   display: grid;
   gap: clamp(10px, 2.5vw, 14px);
 }

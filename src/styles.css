@@ -1,0 +1,136 @@
+:root {
+  color-scheme: dark;
+  --bg-0: #05080d;
+  --bg-1: #0a1018;
+  --surface: rgba(15, 22, 31, 0.88);
+  --surface-strong: rgba(20, 29, 40, 0.95);
+  --text-primary: #f5f7fa;
+  --text-secondary: #a3afbf;
+  --accent: #d8a84f;
+  --accent-strong: #e3b55b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background:
+    radial-gradient(120% 80% at 85% 0%, rgba(216, 168, 79, 0.14), transparent 45%),
+    radial-gradient(100% 80% at 10% -10%, rgba(37, 68, 110, 0.24), transparent 50%),
+    linear-gradient(180deg, var(--bg-1), var(--bg-0) 55%);
+  color: var(--text-primary);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  min-height: 100vh;
+  padding: clamp(24px, 6vw, 48px) 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-card {
+  width: min(100%, 520px);
+  border-radius: 30px;
+  padding: clamp(22px, 4vw, 36px);
+  background: linear-gradient(150deg, var(--surface-strong), var(--surface));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 16px 50px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 1px rgba(216, 168, 79, 0.12);
+}
+
+.brand-logo {
+  width: 180px;
+  max-width: 45%;
+  display: block;
+  margin: 0 auto 20px;
+  filter: drop-shadow(0 8px 20px rgba(216, 168, 79, 0.2));
+}
+
+.heading-wrap h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 3vw, 2rem);
+  letter-spacing: 0.01em;
+}
+
+.heading-wrap p {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.status-grid {
+  margin-top: 24px;
+  display: grid;
+  gap: 10px;
+}
+
+.status-grid p {
+  margin: 0;
+  color: var(--text-secondary);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.status-grid strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.action-row {
+  margin-top: 26px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+button {
+  appearance: none;
+  border: none;
+  border-radius: 14px;
+  padding: 11px 14px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgba(216, 168, 79, 0.28),
+    0 0 0 6px rgba(216, 168, 79, 0.12);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+.primary-btn {
+  background: linear-gradient(180deg, var(--accent-strong), var(--accent));
+  color: #161104;
+  box-shadow: 0 8px 20px rgba(216, 168, 79, 0.24);
+}
+
+.secondary-btn {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.loading-text {
+  margin: 18px 0 0;
+  color: var(--accent);
+}

@@ -6,20 +6,44 @@ export default function App() {
   const { language, setLanguage } = useLanguage();
 
   return (
-    <main style={{ fontFamily: "system-ui, sans-serif", padding: 24 }}>
-      <h1>Operon Core Foundation</h1>
-      <p>Auth and data layers are wired for Supabase + Cloudflare semantic endpoints.</p>
-      <p>Session: {session ? "authenticated" : "not authenticated"}</p>
-      <p>Brewery: {breweryContext?.name ?? "not resolved"}</p>
-      <p>Language: {language}</p>
-      <div style={{ display: "flex", gap: 8 }}>
-        <button onClick={() => setLanguage("en")}>EN</button>
-        <button onClick={() => setLanguage("fr")}>FR</button>
-        <button onClick={() => (isDemoMode ? exitDemoMode() : enterDemoMode())}>
-          {isDemoMode ? "Exit demo mode" : "Enter demo mode"}
-        </button>
-      </div>
-      {isLoading && <p>Loading session…</p>}
+    <main className="app-shell">
+      <section className="auth-card">
+        <img className="brand-logo" src="/assets/operon-logo-clean.png" alt="Operon logo" />
+        <div className="heading-wrap">
+          <h1>Operon Core Foundation</h1>
+          <p>Auth and data layers are wired for Supabase + Cloudflare semantic endpoints.</p>
+        </div>
+
+        <div className="status-grid">
+          <p>
+            Session: <strong>{session ? "authenticated" : "not authenticated"}</strong>
+          </p>
+          <p>
+            Brewery: <strong>{breweryContext?.name ?? "not resolved"}</strong>
+          </p>
+          <p>
+            Language: <strong>{language}</strong>
+          </p>
+        </div>
+
+        <div className="action-row">
+          <button type="button" className="secondary-btn" onClick={() => setLanguage("en")}>
+            EN
+          </button>
+          <button type="button" className="secondary-btn" onClick={() => setLanguage("fr")}>
+            FR
+          </button>
+          <button
+            type="button"
+            className="primary-btn"
+            onClick={() => (isDemoMode ? exitDemoMode() : enterDemoMode())}
+          >
+            {isDemoMode ? "Exit demo mode" : "Enter demo mode"}
+          </button>
+        </div>
+
+        {isLoading && <p className="loading-text">Loading session…</p>}
+      </section>
     </main>
   );
 }

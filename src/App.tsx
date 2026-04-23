@@ -1,5 +1,6 @@
 import { useApp } from "@/context/AppContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import operonLogo from "@/assets/operon-logo.svg";
 
 export default function App() {
   const { session, breweryContext, isLoading, isDemoMode, enterDemoMode, exitDemoMode } = useApp();
@@ -8,7 +9,7 @@ export default function App() {
   return (
     <main className="app-shell">
       <section className="auth-card">
-        <img className="brand-logo" src="/assets/operon-logo-clean.png" alt="Operon logo" />
+        <img className="brand-logo" src={operonLogo} alt="Operon logo" />
         <div className="heading-wrap">
           <h1>Operon Core Foundation</h1>
           <p>Auth and data layers are wired for Supabase + Cloudflare semantic endpoints.</p>

@@ -111,8 +111,8 @@ export default function App() {
 
   if (authStatus === "booting" && !isDemoMode) return <BootScreen />;
   if (splashVisible) return <SplashScreen />;
+  if (isDemoMode) return <ProtectedShell />;
   if (authStatus === "unauthenticated") return <AuthGate />;
   if (!languageComplete) return <LanguageSelectionScreen onContinue={finishLanguage} />;
-  if (isDemoMode) return <ProtectedShell />;
   return <ProtectedShell />;
 }

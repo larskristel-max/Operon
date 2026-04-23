@@ -49,7 +49,7 @@ export function AuthGate() {
 
   return (
     <main className="operon-screen auth-screen">
-      <section className="glass-panel auth-panel">
+      <section className="auth-panel">
         <img src={operonLogo} alt="Operon brand mark" className="operon-mark" />
         <h1>{title}</h1>
         <p className="screen-subtitle">{subtitle}</p>

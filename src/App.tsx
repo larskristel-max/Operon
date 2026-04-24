@@ -113,10 +113,8 @@ export default function App() {
   if (authStatus === "authenticated" || authStatus === "refreshing") {
     return <ProtectedShell />;
   }
-  if (authStatus === "unauthenticated") {
-    if (!languageComplete) return <LanguageSelectionScreen onContinue={finishLanguage} />;
-    if (isDemoMode) return <ProtectedShell />;
-    return <AuthGate />;
-  }
+  if (!languageComplete) return <LanguageSelectionScreen onContinue={finishLanguage} />;
+  if (isDemoMode) return <ProtectedShell />;
+  if (authStatus === "unauthenticated") return <AuthGate />;
   return <AuthGate />;
 }

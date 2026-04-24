@@ -24,62 +24,79 @@ function Icon({ name, className }: { name: IconName; className?: string }) {
     case "bell":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
-          <path d="M8 18h8M10.5 21h3M6 17.5h12l-1.8-2.2V10a4.2 4.2 0 1 0-8.4 0v5.3L6 17.5Z" />
+          <path d="M15 17h5l-1.4-1.4a2 2 0 0 1-.6-1.4V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5" />
+          <path d="M9 17a3 3 0 0 0 6 0" />
         </svg>
       );
     case "brew":
     case "tank":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
-          <path d="M8 4h8v2H8zM7.5 6h9v10.2l-1.9 2.8h-5.2l-1.9-2.8zM9.8 14h4.4M12 9.2v6.8" />
+          <path d="M9 4h6v2H9z" />
+          <path d="M8 6h8v9.5L13.5 19h-3L8 15.5Z" />
+          <circle cx="12" cy="12" r="2.1" />
+          <path d="M12 10.7v2.6M10.7 12h2.6" />
+          <path d="m10.4 19-1.4 2M13.6 19l1.4 2" />
         </svg>
       );
     case "water":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
-          <path d="M12 4s-4.5 5-4.5 8.3A4.5 4.5 0 0 0 12 16.8a4.5 4.5 0 0 0 4.5-4.5C16.5 9 12 4 12 4Z" />
+          <path d="M12 4.5s-5 5.4-5 8.9a5 5 0 0 0 10 0c0-3.5-5-8.9-5-8.9Z" />
+          <path d="M10 14.2a2.3 2.3 0 0 0 2.2 1.6" />
         </svg>
       );
     case "orders":
+    case "tasks":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
-          <path d="M8 5h8M7 7h10v12H7zM10 11h4M10 14h4M10 17h2" />
+          <rect x="6" y="5.5" width="12" height="15" rx="2" />
+          <path d="M9.5 3.5h5" />
+          <path d="M9.5 10.5h5" />
+          <path d="m9.5 14.5 1.1 1.1 2.1-2.1" />
+          <path d="M9.5 18h5" />
         </svg>
       );
     case "inventory":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
-          <path d="M7 9h10l-1 9H8zm1-3h8v3H8zM12 12v3" />
+          <path d="M8 6.8h8l1.5 2.6-1 8.2A2 2 0 0 1 14.5 19h-5a2 2 0 0 1-2-1.4l-1-8.2Z" />
+          <path d="M7.4 10h9.2" />
+          <path d="M9 6.8 10 5h4l1 1.8" />
+          <path d="M12 10v6" />
         </svg>
       );
     case "fermentation":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
-          <path d="M12 5v8m0 0a3 3 0 1 1-3 3 3 3 0 0 1 3-3Zm0 0a3 3 0 1 0 3 3 3 3 0 0 0-3-3ZM10 5h4" />
+          <path d="M10 4h4" />
+          <path d="M12 4v8" />
+          <path d="M12 12a4 4 0 1 0 4 4" />
+          <circle cx="12" cy="16" r="1.6" />
         </svg>
       );
     case "reports":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
-          <path d="M7 16v3M12 12v7M17 8v11" />
+          <path d="M5 19h14" />
+          <path d="M8 16v-4" />
+          <path d="M12 16V9" />
+          <path d="M16 16v-7" />
         </svg>
       );
     case "home":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
-          <path d="m4 11.5 8-6.5 8 6.5M7.2 10.2V19h9.6v-8.8" />
-        </svg>
-      );
-    case "tasks":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
-          <path d="M8 5h8M7 7h10v12H7zM10 11h4M10 14h4M10 17h2" />
+          <path d="m3.5 10 8.5-6.5 8.5 6.5" />
+          <path d="M6.5 9.4V20h11V9.4" />
         </svg>
       );
     case "more":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
-          <path d="M6.5 12h.01M12 12h.01M17.5 12h.01" />
+          <circle cx="6" cy="12" r="1" />
+          <circle cx="12" cy="12" r="1" />
+          <circle cx="18" cy="12" r="1" />
         </svg>
       );
     default:
@@ -261,7 +278,7 @@ export function ProtectedShell() {
         </div>
       </section>
 
-      <section className="dashboard-section">
+      <section className="dashboard-section quick-actions">
         <h3>{copy.quickActions}</h3>
         <div className="quick-actions-grid">
           {dashboardData.quickActions.map((label, index) => (

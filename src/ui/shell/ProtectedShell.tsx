@@ -32,51 +32,54 @@ function Icon({ name, className }: { name: IconName; className?: string }) {
     case "tank":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
-          <path d="M9 4h6v2H9z" />
-          <path d="M8 6h8v9.5L13.5 19h-3L8 15.5Z" />
-          <circle cx="12" cy="12" r="2.1" />
-          <path d="M12 10.7v2.6M10.7 12h2.6" />
-          <path d="m10.4 19-1.4 2M13.6 19l1.4 2" />
+          <path d="M9 4h6" />
+          <path d="M9 4v2" />
+          <path d="M15 4v2" />
+          <path d="M8 6h8v9l-2.4 3h-3.2L8 15Z" />
+          <circle cx="12" cy="11.8" r="2.1" />
+          <path d="M12 10.6v2.4" />
+          <path d="M10.8 11.8h2.4" />
+          <path d="m10.6 18-1.2 2" />
+          <path d="m13.4 18 1.2 2" />
         </svg>
       );
     case "water":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
-          <path d="M12 4.5s-5 5.4-5 8.9a5 5 0 0 0 10 0c0-3.5-5-8.9-5-8.9Z" />
-          <path d="M10 14.2a2.3 2.3 0 0 0 2.2 1.6" />
+          <path d="M12 4.5C9.5 7.4 7.3 10 7.3 13.1a4.7 4.7 0 0 0 9.4 0C16.7 10 14.5 7.4 12 4.5Z" />
+          <path d="M10.1 13.9a2.2 2.2 0 0 0 2.1 1.5" />
         </svg>
       );
     case "orders":
     case "tasks":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
-          <rect x="6" y="5.5" width="12" height="15" rx="2" />
-          <path d="M9.5 3.5h5" />
-          <path d="M9.5 10.5h5" />
-          <path d="m9.5 14.5 1.1 1.1 2.1-2.1" />
-          <path d="M9.5 18h5" />
+          <rect x="6.2" y="5.2" width="11.6" height="14.6" rx="2.2" />
+          <path d="M9.2 3.8h5.6" />
+          <path d="M9.4 10h5.2" />
+          <path d="m9.4 13.7 1.2 1.2 2.1-2.1" />
+          <path d="M9.4 17.2h5.2" />
         </svg>
       );
     case "inventory":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
-          <path d="M8.5 5.5h7" />
-          <path d="M7 9c0-1.9 2.2-3.5 5-3.5s5 1.6 5 3.5" />
-          <path d="M7 15c0 1.9 2.2 3.5 5 3.5s5-1.6 5-3.5" />
-          <path d="M7 9v6" />
-          <path d="M17 9v6" />
-          <path d="M9 11h6" />
-          <path d="M9 13h6" />
-          <path d="M12 11.2v1.6" />
+          <path d="M8 6.6h8" />
+          <path d="M6.8 9.4c0-2 2.3-3.6 5.2-3.6s5.2 1.6 5.2 3.6" />
+          <path d="M6.8 14.6c0 2 2.3 3.6 5.2 3.6s5.2-1.6 5.2-3.6" />
+          <path d="M6.8 9.4v5.2" />
+          <path d="M17.2 9.4v5.2" />
+          <path d="M8.8 11.3h6.4" />
+          <path d="M8.8 13h6.4" />
         </svg>
       );
     case "fermentation":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
-          <path d="M12 5v9" />
-          <path d="M10 5h4" />
-          <path d="M12 14a3.8 3.8 0 1 0 3.8 3.8A3.8 3.8 0 0 0 12 14Z" />
-          <circle cx="12" cy="17.8" r="1.5" />
+          <path d="M12 5.2v8.4" />
+          <path d="M10.2 5.2h3.6" />
+          <path d="M12 13.6a4.2 4.2 0 1 0 4.2 4.2A4.2 4.2 0 0 0 12 13.6Z" />
+          <circle cx="12" cy="17.8" r="1.4" />
         </svg>
       );
     case "reports":
@@ -287,7 +290,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
         <div className="quick-actions-grid">
           {dashboardData.quickActions.map((label, index) => (
             <button key={label} type="button" className="quick-action">
-              <span className="qa-icon">
+              <span className="quick-action-icon">
                 <Icon name={quickActionIcons[Math.min(quickActionIcons.length - 1, index)]} className="line-icon icon-md" />
               </span>
               <span>{label}</span>

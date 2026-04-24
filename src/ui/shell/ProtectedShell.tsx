@@ -60,19 +60,23 @@ function Icon({ name, className }: { name: IconName; className?: string }) {
     case "inventory":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
-          <path d="M8 6.8h8l1.5 2.6-1 8.2A2 2 0 0 1 14.5 19h-5a2 2 0 0 1-2-1.4l-1-8.2Z" />
-          <path d="M7.4 10h9.2" />
-          <path d="M9 6.8 10 5h4l1 1.8" />
-          <path d="M12 10v6" />
+          <path d="M8.5 5.5h7" />
+          <path d="M7 9c0-1.9 2.2-3.5 5-3.5s5 1.6 5 3.5" />
+          <path d="M7 15c0 1.9 2.2 3.5 5 3.5s5-1.6 5-3.5" />
+          <path d="M7 9v6" />
+          <path d="M17 9v6" />
+          <path d="M9 11h6" />
+          <path d="M9 13h6" />
+          <path d="M12 11.2v1.6" />
         </svg>
       );
     case "fermentation":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
-          <path d="M10 4h4" />
-          <path d="M12 4v8" />
-          <path d="M12 12a4 4 0 1 0 4 4" />
-          <circle cx="12" cy="16" r="1.6" />
+          <path d="M12 5v9" />
+          <path d="M10 5h4" />
+          <path d="M12 14a3.8 3.8 0 1 0 3.8 3.8A3.8 3.8 0 0 0 12 14Z" />
+          <circle cx="12" cy="17.8" r="1.5" />
         </svg>
       );
     case "reports":

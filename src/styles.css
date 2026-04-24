@@ -421,8 +421,9 @@ button, input { font: inherit; }
   padding: clamp(6px, 1.8vw, 9px);
   background: linear-gradient(145deg, rgba(20, 25, 30, 0.96), rgba(14, 18, 23, 0.95));
   display: grid;
-  grid-template-columns: clamp(36px, 10vw, 50px) 1fr;
-  gap: 8px;
+  grid-template-columns: auto 1fr;
+  column-gap: 14px;
+  align-items: center;
   position: relative;
   overflow: hidden;
 }

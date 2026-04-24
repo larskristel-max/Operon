@@ -93,6 +93,7 @@ export default function App() {
   const [languageComplete, setLanguageComplete] = useState(
     () => localStorage.getItem(ONBOARDING_KEY) === "1"
   );
+  const [languageSelectionOpen, setLanguageSelectionOpen] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setSplashVisible(false), SPLASH_MS);
@@ -103,18 +104,20 @@ export default function App() {
     () => () => {
       localStorage.setItem(ONBOARDING_KEY, "1");
       setLanguageComplete(true);
+      setLanguageSelectionOpen(false);
     },
     []
   );
 
   if (authStatus === "booting") return <BootScreen />;
   if (splashVisible) return <SplashScreen />;
+  if (languageSelectionOpen) return <LanguageSelectionScreen onContinue={finishLanguage} />;
 
   if (authStatus === "authenticated" || authStatus === "refreshing") {
-    return <ProtectedShell />;
+    return <ProtectedShell onChangeLanguage={() => setLanguageSelectionOpen(true)} />;
   }
   if (!languageComplete) return <LanguageSelectionScreen onContinue={finishLanguage} />;
-  if (isDemoMode) return <ProtectedShell />;
+  if (isDemoMode) return <ProtectedShell onChangeLanguage={() => setLanguageSelectionOpen(true)} />;
   if (authStatus === "unauthenticated") return <AuthGate />;
   return <AuthGate />;
 }

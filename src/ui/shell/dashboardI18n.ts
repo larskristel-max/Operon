@@ -14,6 +14,7 @@ type DashboardCopy = {
   quickActions: string;
   quickActionStartBrew: string;
   quickActionLogFermentation: string;
+  changeLanguage: string;
   quickActionAddInventory: string;
   quickActionViewReports: string;
   navHome: string;
@@ -49,7 +50,7 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     viewAll: "View All",
     quickActions: "Quick Actions",
     quickActionStartBrew: "Start Brew",
-    quickActionLogFermentation: "Log Fermentation",
+    quickActionLogFermentation: "Fermentation",
     quickActionAddInventory: "Add Inventory",
     quickActionViewReports: "View Reports",
     navHome: "Home",
@@ -58,6 +59,7 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     navMore: "More",
     exitDemoMode: "Exit Demo Mode",
     signOut: "Sign Out",
+    changeLanguage: "Change language",
     retryProfileLoad: "Retry profile load",
     tanks: "TANKS",
     active: "Active",
@@ -83,7 +85,7 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     viewAll: "Voir tout",
     quickActions: "Actions rapides",
     quickActionStartBrew: "Démarrer brassage",
-    quickActionLogFermentation: "Journal fermentation",
+    quickActionLogFermentation: "Fermentation",
     quickActionAddInventory: "Ajouter stock",
     quickActionViewReports: "Voir rapports",
     navHome: "Accueil",
@@ -92,6 +94,7 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     navMore: "Plus",
     exitDemoMode: "Quitter le mode démo",
     signOut: "Se déconnecter",
+    changeLanguage: "Changer la langue",
     retryProfileLoad: "Réessayer le profil",
     tanks: "CUVES",
     active: "Actives",
@@ -117,7 +120,7 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     viewAll: "Alle anzeigen",
     quickActions: "Schnellaktionen",
     quickActionStartBrew: "Sud starten",
-    quickActionLogFermentation: "Gärung protokollieren",
+    quickActionLogFermentation: "Gärung",
     quickActionAddInventory: "Bestand hinzufügen",
     quickActionViewReports: "Berichte ansehen",
     navHome: "Start",
@@ -126,6 +129,7 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     navMore: "Mehr",
     exitDemoMode: "Demo-Modus beenden",
     signOut: "Abmelden",
+    changeLanguage: "Sprache ändern",
     retryProfileLoad: "Profil neu laden",
     tanks: "TANKS",
     active: "Aktiv",
@@ -151,7 +155,7 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     viewAll: "Alles bekijken",
     quickActions: "Snelle acties",
     quickActionStartBrew: "Brouw starten",
-    quickActionLogFermentation: "Vergisting loggen",
+    quickActionLogFermentation: "Vergisting",
     quickActionAddInventory: "Voorraad toevoegen",
     quickActionViewReports: "Rapporten bekijken",
     navHome: "Home",
@@ -160,6 +164,7 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     navMore: "Meer",
     exitDemoMode: "Demomodus afsluiten",
     signOut: "Uitloggen",
+    changeLanguage: "Taal wijzigen",
     retryProfileLoad: "Profiel opnieuw laden",
     tanks: "TANKS",
     active: "Actief",

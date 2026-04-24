@@ -110,15 +110,15 @@ export default function App() {
   );
 
   if (authStatus === "booting") return <BootScreen />;
-  if (isDemoMode) {
-    if (splashVisible) return <SplashScreen />;
+  if (splashVisible) return <SplashScreen />;
+
+  if (authStatus === "authenticated" || authStatus === "refreshing") {
     return <ProtectedShell />;
   }
-  if (authStatus === "unauthenticated") return <AuthGate />;
-  if (authStatus === "authenticated" || authStatus === "refreshing") {
-    if (splashVisible) return <SplashScreen />;
+  if (authStatus === "unauthenticated") {
     if (!languageComplete) return <LanguageSelectionScreen onContinue={finishLanguage} />;
-    return <ProtectedShell />;
+    if (isDemoMode) return <ProtectedShell />;
+    return <AuthGate />;
   }
   return <AuthGate />;
 }

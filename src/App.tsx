@@ -17,12 +17,9 @@ const SPLASH_MS = 1650;
 
 const languageOptions: LanguageOption[] = [
   { code: "en", label: "English", flag: "🇺🇸" },
-  { code: "es", label: "Español", flag: "🇪🇸" },
   { code: "fr", label: "Français", flag: "🇫🇷" },
   { code: "de", label: "Deutsch", flag: "🇩🇪" },
   { code: "nl", label: "Nederlands", flag: "🇳🇱" },
-  { code: "pt", label: "Português", flag: "🇧🇷" },
-  { code: "ja", label: "日本語", flag: "🇯🇵" },
 ];
 
 function SplashScreen() {

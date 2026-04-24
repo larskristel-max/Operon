@@ -41,6 +41,21 @@ interface AppContextValue {
 const DEMO_MODE_KEY = "operon_demo_mode";
 const AppContext = createContext<AppContextValue | null>(null);
 
+function readDemoModeFlag(): boolean {
+  const raw = sessionStorage.getItem(DEMO_MODE_KEY);
+  return raw === "1";
+}
+
+function setDemoModeFlag(): void {
+  sessionStorage.setItem(DEMO_MODE_KEY, "1");
+}
+
+function clearDemoModeFlag(): void {
+  sessionStorage.removeItem(DEMO_MODE_KEY);
+  // Cleanup legacy persisted demo flag from previous builds.
+  localStorage.removeItem(DEMO_MODE_KEY);
+}
+
 async function resolveProfile(): Promise<MeResponse["user"] | null> {
   const { user } = await getMe();
   return user;
@@ -58,15 +73,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     error: null,
     profileError: null,
   });
-  const [isDemoMode, setIsDemoMode] = useState<boolean>(() => localStorage.getItem(DEMO_MODE_KEY) === "1");
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(() => readDemoModeFlag());
 
   const enterDemoMode = useCallback(() => {
-    localStorage.setItem(DEMO_MODE_KEY, "1");
+    setDemoModeFlag();
     setIsDemoMode(true);
   }, []);
 
   const exitDemoMode = useCallback(() => {
-    localStorage.removeItem(DEMO_MODE_KEY);
+    clearDemoModeFlag();
     setIsDemoMode(false);
     setAuthState((prev) => ({
       ...prev,
@@ -187,7 +202,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    localStorage.removeItem(DEMO_MODE_KEY);
+    clearDemoModeFlag();
     setIsDemoMode(false);
     const { error } = await supabase.auth.signOut();
     if (error) throw error;

@@ -30,21 +30,21 @@ export interface DashboardData {
 export const demoDashboardData: DashboardData = {
   breweryName: "OPERON",
   hero: {
-    greetingName: "Alex",
-    subtitle: "Here’s what’s brewing today.",
+    greetingName: "brewer",
+    subtitle: "",
   },
   brewCard: {
     batchName: "West Coast IPA",
-    batchId: "Batch #2417",
-    batchStageLabel: "In Fermentation",
+    batchId: "2417",
+    batchStageLabel: "",
     stageCount: "2",
     progressPercent: 68,
   },
   glanceCards: [
-    { title: "TANKS", subtitle: "Active", accent: "green", value: "12" },
-    { title: "WATER USAGE", subtitle: "Today", accent: "blue", value: "1,245 gal" },
-    { title: "ORDERS", subtitle: "To Fulfill", accent: "purple", value: "5" },
-    { title: "INVENTORY", subtitle: "Low Stock", accent: "amber", value: "8" },
+    { title: "", subtitle: "", accent: "green", value: "12" },
+    { title: "", subtitle: "", accent: "blue", value: "12.45 hL" },
+    { title: "", subtitle: "", accent: "purple", value: "5" },
+    { title: "", subtitle: "", accent: "amber", value: "8" },
   ],
-  quickActions: ["Start Brew", "Log Fermentation", "Add Inventory", "View Reports"],
+  quickActions: [],
 };

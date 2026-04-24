@@ -17,11 +17,9 @@ const SPLASH_MS = 1650;
 
 const languageOptions: LanguageOption[] = [
   { code: "en", label: "English", flag: "🇺🇸" },
-  { code: "es", label: "Español", flag: "🇪🇸" },
   { code: "fr", label: "Français", flag: "🇫🇷" },
   { code: "de", label: "Deutsch", flag: "🇩🇪" },
-  { code: "pt", label: "Português", flag: "🇧🇷" },
-  { code: "ja", label: "日本語", flag: "🇯🇵" },
+  { code: "nl", label: "Nederlands", flag: "🇳🇱" },
 ];
 
 function SplashScreen() {
@@ -110,15 +108,13 @@ export default function App() {
   );
 
   if (authStatus === "booting") return <BootScreen />;
-  if (isDemoMode) {
-    if (splashVisible) return <SplashScreen />;
-    return <ProtectedShell />;
-  }
-  if (authStatus === "unauthenticated") return <AuthGate />;
+  if (splashVisible) return <SplashScreen />;
+
   if (authStatus === "authenticated" || authStatus === "refreshing") {
-    if (splashVisible) return <SplashScreen />;
-    if (!languageComplete) return <LanguageSelectionScreen onContinue={finishLanguage} />;
     return <ProtectedShell />;
   }
+  if (!languageComplete) return <LanguageSelectionScreen onContinue={finishLanguage} />;
+  if (isDemoMode) return <ProtectedShell />;
+  if (authStatus === "unauthenticated") return <AuthGate />;
   return <AuthGate />;
 }

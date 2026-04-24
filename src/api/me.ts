@@ -4,6 +4,7 @@ export interface MeResponse {
   user: {
     id: string;
     email: string | null;
+    firstName?: string | null;
     displayName: string | null;
   };
 }

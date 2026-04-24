@@ -2,7 +2,9 @@ import operonLogo from "../../../assets/Operonv1.png";
 import tankImage from "../../../assets/Tankimageasset.png";
 import { useState } from "react";
 import { useApp } from "@/context/AppContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { demoDashboardData, type DashboardData } from "@/data/demoData";
+import { getDashboardCopy } from "@/ui/shell/dashboardI18n";
 
 const defaultDashboardData: DashboardData = {
   breweryName: "OPERON",
@@ -27,22 +29,83 @@ const defaultDashboardData: DashboardData = {
 };
 
 export function ProtectedShell() {
+  const { language } = useLanguage();
   const { me, profileError, refreshProfile, session, isDemoMode, exitDemoMode, signOut } = useApp();
   const [moreOpen, setMoreOpen] = useState(false);
+  const copy = getDashboardCopy(language);
   const firstName =
+    me?.firstName?.split(" ")[0] ??
     me?.displayName?.split(" ")[0] ??
     me?.email?.split("@")[0] ??
     session?.user.email?.split("@")[0] ??
-    defaultDashboardData.hero.greetingName;
+    copy.greetingBrewer;
+  const greetingName = isDemoMode ? copy.greetingBrewer : firstName;
+  const greeting = `${copy.greetingHello}, ${greetingName}!`;
 
   const dashboardData = isDemoMode
-    ? demoDashboardData
-    : {
+    ? {
+        ...demoDashboardData,
+        hero: {
+          ...demoDashboardData.hero,
+          greetingName: copy.greetingBrewer,
+          subtitle: copy.heroSubtitleDemo,
+        },
+        brewCard: {
+          ...demoDashboardData.brewCard,
+          batchId: `${copy.batchIdPrefix}${demoDashboardData.brewCard.batchId}`,
+          batchStageLabel: copy.inFermentation,
+        },
+        glanceCards: [
+          { title: copy.tanks, subtitle: copy.active, accent: "green", value: demoDashboardData.glanceCards[0]?.value ?? "—" },
+          {
+            title: copy.waterUsage,
+            subtitle: copy.today,
+            accent: "blue",
+            value: demoDashboardData.glanceCards[1]?.value ?? "—",
+          },
+          {
+            title: copy.orders,
+            subtitle: copy.toFulfill,
+            accent: "purple",
+            value: demoDashboardData.glanceCards[2]?.value ?? "—",
+          },
+          {
+            title: copy.inventory,
+            subtitle: copy.lowStock,
+            accent: "amber",
+            value: demoDashboardData.glanceCards[3]?.value ?? "—",
+          },
+        ],
+        quickActions: [
+          copy.quickActionStartBrew,
+          copy.quickActionLogFermentation,
+          copy.quickActionAddInventory,
+          copy.quickActionViewReports,
+        ],
+      }
+      : {
         ...defaultDashboardData,
         hero: {
           ...defaultDashboardData.hero,
+          subtitle: copy.heroSubtitleDefault,
           greetingName: firstName,
         },
+        brewCard: {
+          ...defaultDashboardData.brewCard,
+          batchStageLabel: copy.waitingForData,
+        },
+        glanceCards: [
+          { title: copy.tanks, subtitle: copy.active, accent: "green", value: "—" },
+          { title: copy.waterUsage, subtitle: copy.today, accent: "blue", value: "—" },
+          { title: copy.orders, subtitle: copy.toFulfill, accent: "purple", value: "—" },
+          { title: copy.inventory, subtitle: copy.lowStock, accent: "amber", value: "—" },
+        ],
+        quickActions: [
+          copy.quickActionStartBrew,
+          copy.quickActionLogFermentation,
+          copy.quickActionAddInventory,
+          copy.quickActionViewReports,
+        ],
       };
   const progressLabel = isDemoMode ? `${dashboardData.brewCard.progressPercent}%` : "—";
 
@@ -61,7 +124,7 @@ export function ProtectedShell() {
           </button>
         </header>
         <div className="hero-copy">
-          <h1>Good Morning, {dashboardData.hero.greetingName}</h1>
+          <h1>{greeting}</h1>
           <p>{dashboardData.hero.subtitle}</p>
         </div>
       </section>
@@ -71,20 +134,20 @@ export function ProtectedShell() {
           <div className="brew-main">
             <div className="brew-icon">⛃</div>
             <div>
-              <p className="eyebrow gold">CURRENTLY BREWING</p>
+              <p className="eyebrow gold">{copy.currentlyBrewing}</p>
               <h2>{dashboardData.brewCard.batchName}</h2>
               <p className="subtle">{dashboardData.brewCard.batchId}</p>
             </div>
           </div>
           <div className="brew-side">
             <strong>{dashboardData.brewCard.stageCount}</strong>
-            <small>DAYS</small>
+            <small>{copy.days}</small>
             <span>{dashboardData.brewCard.batchStageLabel}</span>
           </div>
         </div>
         <div className="brew-divider" />
         <div className="fermentation-row">
-          <p>FERMENTATION PROGRESS</p>
+          <p>{copy.fermentationProgress}</p>
           <span>{progressLabel}</span>
         </div>
         <div className="progress-track" aria-hidden="true">
@@ -94,8 +157,8 @@ export function ProtectedShell() {
 
       <section className="dashboard-section">
         <div className="section-head">
-          <h3>At a Glance</h3>
-          <button type="button">View All</button>
+          <h3>{copy.atAGlance}</h3>
+          <button type="button">{copy.viewAll}</button>
         </div>
         <div className="glance-grid">
           {dashboardData.glanceCards.map((card) => (
@@ -112,7 +175,7 @@ export function ProtectedShell() {
       </section>
 
       <section className="dashboard-section">
-        <h3>Quick Actions</h3>
+        <h3>{copy.quickActions}</h3>
         <div className="quick-actions-grid">
           {dashboardData.quickActions.map((label) => (
             <button key={label} type="button" className="quick-action">
@@ -127,7 +190,7 @@ export function ProtectedShell() {
         <section className="glass-panel status-inline">
           <p className="error">{profileError}</p>
           <button type="button" className="dark-btn" onClick={() => void refreshProfile()}>
-            Retry profile load
+            {copy.retryProfileLoad}
           </button>
         </section>
       )}
@@ -135,19 +198,19 @@ export function ProtectedShell() {
       <nav className="bottom-nav" aria-label="Primary">
         <button type="button" className="active">
           <span className="nav-icon">⌂</span>
-          <span>Home</span>
+          <span>{copy.navHome}</span>
         </button>
         <button type="button">
           <span className="nav-icon">⛃</span>
-          <span>Brewery</span>
+          <span>{copy.navBrewery}</span>
         </button>
         <button type="button">
           <span className="nav-icon">☑</span>
-          <span>Tasks</span>
+          <span>{copy.navTasks}</span>
         </button>
         <button type="button" onClick={() => setMoreOpen((prev) => !prev)} aria-expanded={moreOpen}>
           <span className="nav-icon">•••</span>
-          <span>More</span>
+          <span>{copy.navMore}</span>
         </button>
       </nav>
 
@@ -162,7 +225,7 @@ export function ProtectedShell() {
                 setMoreOpen(false);
               }}
             >
-              Exit Demo Mode
+              {copy.exitDemoMode}
             </button>
           ) : (
             <button
@@ -173,7 +236,7 @@ export function ProtectedShell() {
                 setMoreOpen(false);
               }}
             >
-              Sign Out
+              {copy.signOut}
             </button>
           )}
         </section>

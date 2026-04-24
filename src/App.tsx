@@ -111,11 +111,12 @@ export default function App() {
 
   if (authStatus === "booting") return <BootScreen />;
   if (splashVisible) return <SplashScreen />;
+  if (languageSelectionOpen) return <LanguageSelectionScreen onContinue={finishLanguage} />;
 
   if (authStatus === "authenticated" || authStatus === "refreshing") {
     return <ProtectedShell onChangeLanguage={() => setLanguageSelectionOpen(true)} />;
   }
-  if (!languageComplete || languageSelectionOpen) return <LanguageSelectionScreen onContinue={finishLanguage} />;
+  if (!languageComplete) return <LanguageSelectionScreen onContinue={finishLanguage} />;
   if (isDemoMode) return <ProtectedShell onChangeLanguage={() => setLanguageSelectionOpen(true)} />;
   if (authStatus === "unauthenticated") return <AuthGate />;
   return <AuthGate />;

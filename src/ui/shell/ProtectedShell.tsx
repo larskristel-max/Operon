@@ -127,10 +127,10 @@ const defaultDashboardData: DashboardData = {
     { title: "ORDERS", subtitle: "To Fulfill", accent: "purple", value: "—" },
     { title: "INVENTORY", subtitle: "Low Stock", accent: "amber", value: "—" },
   ],
-  quickActions: ["Start Brew", "Log Fermentation", "Add Inventory", "View Reports"],
+  quickActions: ["Start Brew", "Fermentation", "Add Inventory", "View Reports"],
 };
 
-export function ProtectedShell() {
+export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => void }) {
   const { language } = useLanguage();
   const { me, profileError, refreshProfile, session, isDemoMode, exitDemoMode, signOut } = useApp();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -334,6 +334,17 @@ export function ProtectedShell() {
 
       {moreOpen && (
         <section className="glass-panel more-menu" aria-label="More options">
+          <button
+            type="button"
+            className="dark-btn more-action"
+            onClick={() => {
+              onChangeLanguage();
+              setMoreOpen(false);
+            }}
+          >
+            {copy.changeLanguage}
+          </button>
+
           {isDemoMode ? (
             <button
               type="button"

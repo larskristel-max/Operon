@@ -93,6 +93,7 @@ export default function App() {
   const [languageComplete, setLanguageComplete] = useState(
     () => localStorage.getItem(ONBOARDING_KEY) === "1"
   );
+  const [languageSelectionOpen, setLanguageSelectionOpen] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setSplashVisible(false), SPLASH_MS);
@@ -103,6 +104,7 @@ export default function App() {
     () => () => {
       localStorage.setItem(ONBOARDING_KEY, "1");
       setLanguageComplete(true);
+      setLanguageSelectionOpen(false);
     },
     []
   );
@@ -111,10 +113,10 @@ export default function App() {
   if (splashVisible) return <SplashScreen />;
 
   if (authStatus === "authenticated" || authStatus === "refreshing") {
-    return <ProtectedShell />;
+    return <ProtectedShell onChangeLanguage={() => setLanguageSelectionOpen(true)} />;
   }
-  if (!languageComplete) return <LanguageSelectionScreen onContinue={finishLanguage} />;
-  if (isDemoMode) return <ProtectedShell />;
+  if (!languageComplete || languageSelectionOpen) return <LanguageSelectionScreen onContinue={finishLanguage} />;
+  if (isDemoMode) return <ProtectedShell onChangeLanguage={() => setLanguageSelectionOpen(true)} />;
   if (authStatus === "unauthenticated") return <AuthGate />;
   return <AuthGate />;
 }

@@ -2,6 +2,15 @@ import type { DemoDashboardMerged } from "@/api/demo";
 import type { DashboardData } from "@/data/demoData";
 import type { DashboardCopy } from "@/ui/shell/dashboardI18n";
 
+const normalizeStatus = (status?: string): string | undefined => status?.toLowerCase().trim();
+
+const ACTIVE_STATUSES = ["brewing", "fermenting", "conditioning", "in_progress", "active"];
+
+const isActiveStatus = (status?: string): boolean =>
+  ACTIVE_STATUSES.includes(normalizeStatus(status) ?? "");
+
+const litersToHL = (liters: number): number => liters / 100;
+
 function readString(record: Record<string, unknown> | null | undefined, keys: string[]): string | null {
   if (!record) return null;
 
@@ -41,17 +50,12 @@ function toTitleCase(value: string): string {
 }
 
 function pickActiveBatch(batches: Array<Record<string, unknown>>): Record<string, unknown> | null {
-  const statusPriority = ["active", "current", "in_progress", "fermenting", "fermentation"];
+  const activeBatch = batches.find((batch) => {
+    const status = readString(batch, ["status", "stage", "batch_status"]);
+    return isActiveStatus(status ?? undefined);
+  });
 
-  for (const wantedStatus of statusPriority) {
-    const candidate = batches.find((batch) => {
-      const status = readString(batch, ["status", "stage", "batch_status"]);
-      return Boolean(status && status.toLowerCase().includes(wantedStatus));
-    });
-    if (candidate) return candidate;
-  }
-
-  return batches[0] ?? null;
+  return activeBatch ?? batches[0] ?? null;
 }
 
 function calculateLowStock(ingredients: Array<Record<string, unknown>>): number | null {
@@ -78,7 +82,7 @@ function calculateWaterUsage(movements: Array<Record<string, unknown>>): string 
   }, 0);
 
   if (waterTotal <= 0) return "—";
-  return `${waterTotal.toFixed(2)} hL`;
+  return `${litersToHL(waterTotal).toFixed(2)} hL`;
 }
 
 export function mapDemoDashboardToViewModel(merged: DemoDashboardMerged, copy: DashboardCopy): DashboardData {

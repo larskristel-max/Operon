@@ -1,9 +1,11 @@
 import { jsonResponse } from "../../_shared/auth";
 import {
-  fetchDemoSession,
+  fetchActiveDemoSession,
   insertOverlayRecord,
+  mapDemoError,
   missingSessionResponse,
   type DemoEnv,
+  type OverlayOperation,
   type OverlayRecordRow,
 } from "../../_shared/demo";
 
@@ -11,13 +13,23 @@ interface Env extends DemoEnv {}
 
 interface OverlayBody {
   demo_session_id?: string;
-  target_table?: string;
-  target_id?: string;
-  action?: "upsert" | "delete";
+  table_name?: string;
+  record_id?: string;
+  operation?: OverlayOperation;
   payload?: Record<string, unknown> | null;
 }
 
-const ALLOWED_TABLES = new Set(["tanks"]);
+const ALLOWED_TABLES = new Set([
+  "tanks",
+  "batches",
+  "tasks",
+  "lots",
+  "ingredients",
+  "inventory_movements",
+  "recipes",
+  "packaging_formats",
+  "sales",
+]);
 
 export async function onRequestPost(context: { request: Request; env: Env }): Promise<Response> {
   const { request, env } = context;
@@ -30,33 +42,33 @@ export async function onRequestPost(context: { request: Request; env: Env }): Pr
   }
 
   if (!body.demo_session_id) return missingSessionResponse();
-  if (!body.target_table || !ALLOWED_TABLES.has(body.target_table)) {
-    return jsonResponse({ error: "target_table is required and must be supported" }, 400);
+  if (!body.table_name || !ALLOWED_TABLES.has(body.table_name)) {
+    return jsonResponse({ error: "table_name is required and must be in allowed demo tables" }, 400);
   }
-  if (!body.target_id) {
-    return jsonResponse({ error: "target_id is required" }, 400);
-  }
-
-  const action = body.action ?? "upsert";
-  if (action !== "upsert" && action !== "delete") {
-    return jsonResponse({ error: "action must be upsert or delete" }, 400);
+  if (!body.record_id) {
+    return jsonResponse({ error: "record_id is required" }, 400);
   }
 
-  const payload = action === "delete" ? null : body.payload ?? {};
+  const operation = body.operation ?? "update";
+  if (!["insert", "update", "delete"].includes(operation)) {
+    return jsonResponse({ error: "operation must be insert, update, or delete" }, 400);
+  }
+
+  const payload = operation === "delete" ? null : body.payload ?? {};
 
   try {
-    await fetchDemoSession(env, body.demo_session_id);
+    await fetchActiveDemoSession(env, body.demo_session_id);
 
     const record = await insertOverlayRecord(env, {
       demo_session_id: body.demo_session_id,
-      target_table: body.target_table,
-      target_id: body.target_id,
-      action,
+      table_name: body.table_name,
+      record_id: body.record_id,
+      operation,
       payload,
     } satisfies OverlayRecordRow);
 
     return jsonResponse({ ok: true, overlay_record_id: record.id, demo_session_id: body.demo_session_id }, 201);
   } catch (error) {
-    return jsonResponse({ error: error instanceof Error ? error.message : "Failed to persist demo overlay" }, 500);
+    return mapDemoError(error, "Failed to persist demo overlay");
   }
 }

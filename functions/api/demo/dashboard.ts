@@ -1,12 +1,4 @@
-import { jsonResponse } from "../../_shared/auth";
-import {
-  applyDashboardOverlay,
-  fetchDashboardBaseline,
-  fetchDemoSession,
-  fetchOverlayRecords,
-  missingSessionResponse,
-  type DemoEnv,
-} from "../../_shared/demo";
+import { buildDashboardPayload, mapDemoError, missingSessionResponse, type DemoEnv } from "../../_shared/demo";
 
 interface Env extends DemoEnv {}
 
@@ -18,18 +10,11 @@ export async function onRequestGet(context: { request: Request; env: Env }): Pro
   if (!demoSessionId) return missingSessionResponse();
 
   try {
-    const session = await fetchDemoSession(env, demoSessionId);
-    const baseline = await fetchDashboardBaseline(env, session.brewery_id);
-    const overlays = await fetchOverlayRecords(env, demoSessionId);
-    const merged = applyDashboardOverlay(baseline, overlays);
-
-    return jsonResponse({
-      demo_session_id: demoSessionId,
-      baseline,
-      merged,
-      overlay_count: overlays.length,
+    return new Response(JSON.stringify(await buildDashboardPayload(env, demoSessionId)), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    return jsonResponse({ error: error instanceof Error ? error.message : "Failed to load demo dashboard" }, 500);
+    return mapDemoError(error, "Failed to load demo dashboard");
   }
 }

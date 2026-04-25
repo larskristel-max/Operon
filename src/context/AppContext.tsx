@@ -9,6 +9,14 @@ import {
 } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import {
+  DEMO_MODE_KEY,
+  clearStoredDemoSessionId,
+  createDemoSession,
+  endDemoSession,
+  getStoredDemoSessionId,
+  setStoredDemoSessionId,
+} from "@/api/demo";
 import { getMe, type MeResponse } from "@/api/me";
 import { ApiError, setUnauthorizedHandler } from "@/api/client";
 
@@ -29,8 +37,8 @@ interface AppContextValue {
   error: string | null;
   profileError: string | null;
   isDemoMode: boolean;
-  enterDemoMode: () => void;
-  exitDemoMode: () => void;
+  enterDemoMode: () => Promise<void>;
+  exitDemoMode: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   sendReset: (email: string) => Promise<void>;
@@ -38,12 +46,12 @@ interface AppContextValue {
   refreshProfile: () => Promise<void>;
 }
 
-const DEMO_MODE_KEY = "operon_demo_mode";
 const AppContext = createContext<AppContextValue | null>(null);
 
 function readDemoModeFlag(): boolean {
   const raw = sessionStorage.getItem(DEMO_MODE_KEY);
-  return raw === "1";
+  if (raw !== "1") return false;
+  return Boolean(getStoredDemoSessionId());
 }
 
 function setDemoModeFlag(): void {
@@ -75,22 +83,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
   });
   const [isDemoMode, setIsDemoMode] = useState<boolean>(() => readDemoModeFlag());
 
-  const enterDemoMode = useCallback(() => {
+  const enterDemoMode = useCallback(async () => {
+    const demoSessionId = await createDemoSession();
+    setStoredDemoSessionId(demoSessionId);
     setDemoModeFlag();
     setIsDemoMode(true);
   }, []);
 
-  const exitDemoMode = useCallback(() => {
-    clearDemoModeFlag();
-    setIsDemoMode(false);
-    setAuthState((prev) => ({
-      ...prev,
-      status: "unauthenticated",
-      session: null,
-      me: null,
-      error: null,
-      profileError: null,
-    }));
+  const exitDemoMode = useCallback(async () => {
+    const demoSessionId = getStoredDemoSessionId();
+
+    try {
+      if (demoSessionId) {
+        await endDemoSession(demoSessionId);
+      }
+    } catch {
+      // Local cleanup still runs even if API exit fails.
+    } finally {
+      clearStoredDemoSessionId();
+      clearDemoModeFlag();
+      setIsDemoMode(false);
+      setAuthState((prev) => ({
+        ...prev,
+        status: "unauthenticated",
+        session: null,
+        me: null,
+        error: null,
+        profileError: null,
+      }));
+    }
   }, []);
 
   const handleUnauthorized = useCallback(async () => {
@@ -203,6 +224,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     clearDemoModeFlag();
+    clearStoredDemoSessionId();
     setIsDemoMode(false);
     const { error } = await supabase.auth.signOut();
     if (error) throw error;

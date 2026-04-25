@@ -19,6 +19,13 @@ interface OverlayBody {
   payload?: Record<string, unknown> | null;
 }
 
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+  return Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null;
+}
+
 const ALLOWED_TABLES = new Set([
   "tanks",
   "batches",
@@ -54,7 +61,15 @@ export async function onRequestPost(context: { request: Request; env: Env }): Pr
     return jsonResponse({ error: "operation must be insert, update, or delete" }, 400);
   }
 
-  const payload = operation === "delete" ? null : body.payload ?? {};
+  let payload: Record<string, unknown> | null;
+  if (operation === "delete") {
+    payload = null;
+  } else {
+    if (!isPlainRecord(body.payload)) {
+      return jsonResponse({ error: "payload must be a plain JSON object for insert/update operations" }, 400);
+    }
+    payload = body.payload;
+  }
 
   try {
     await fetchActiveDemoSession(env, body.demo_session_id);

@@ -1,10 +1,12 @@
 import operonLogo from "../../../assets/Operonv1.png";
 import tankImage from "../../../assets/Tankimageasset.png";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { demoDashboardData, type DashboardData } from "@/data/demoData";
+import { type DashboardData } from "@/data/demoData";
+import { mapDemoDashboardToViewModel } from "@/ui/shell/demoDashboardMapper";
 import { getDashboardCopy } from "@/ui/shell/dashboardI18n";
+import { useDemoDashboard } from "@/ui/shell/useDemoDashboard";
 
 type IconName =
   | "bell"
@@ -146,54 +148,20 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     copy.greetingBrewer;
   const greetingName = isDemoMode ? copy.greetingBrewer : firstName;
   const greeting = `${copy.greetingHello}, ${greetingName}!`;
+  const { data: demoMergedData, loading: demoLoading, error: demoError } = useDemoDashboard(isDemoMode);
 
-  const dashboardData = isDemoMode
-    ? {
-        ...demoDashboardData,
-        hero: {
-          ...demoDashboardData.hero,
-          greetingName: copy.greetingBrewer,
-          subtitle: copy.heroSubtitleDemo,
-        },
-        brewCard: {
-          ...demoDashboardData.brewCard,
-          batchId: `${copy.batchIdPrefix}${demoDashboardData.brewCard.batchId}`,
-          batchStageLabel: copy.inFermentation,
-        },
-        glanceCards: [
-          { title: copy.tanks, subtitle: copy.active, accent: "green", value: demoDashboardData.glanceCards[0]?.value ?? "—" },
-          {
-            title: copy.waterUsage,
-            subtitle: copy.today,
-            accent: "blue",
-            value: demoDashboardData.glanceCards[1]?.value ?? "—",
-          },
-          {
-            title: copy.orders,
-            subtitle: copy.toFulfill,
-            accent: "purple",
-            value: demoDashboardData.glanceCards[2]?.value ?? "—",
-          },
-          {
-            title: copy.inventory,
-            subtitle: copy.lowStock,
-            accent: "amber",
-            value: demoDashboardData.glanceCards[3]?.value ?? "—",
-          },
-        ],
-        quickActions: [
-          copy.quickActionStartBrew,
-          copy.quickActionLogFermentation,
-          copy.quickActionAddInventory,
-          copy.quickActionViewReports,
-        ],
+  const dashboardData = useMemo<DashboardData>(() => {
+    if (isDemoMode) {
+      if (demoMergedData) {
+        return mapDemoDashboardToViewModel(demoMergedData, copy);
       }
-      : {
+
+      return {
         ...defaultDashboardData,
         hero: {
           ...defaultDashboardData.hero,
-          subtitle: copy.heroSubtitleDefault,
-          greetingName: firstName,
+          subtitle: demoLoading ? copy.heroSubtitleDemo : copy.heroSubtitleDefault,
+          greetingName: copy.greetingBrewer,
         },
         brewCard: {
           ...defaultDashboardData.brewCard,
@@ -212,6 +180,34 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
           copy.quickActionViewReports,
         ],
       };
+    }
+
+    return {
+      ...defaultDashboardData,
+      hero: {
+        ...defaultDashboardData.hero,
+        subtitle: copy.heroSubtitleDefault,
+        greetingName: firstName,
+      },
+      brewCard: {
+        ...defaultDashboardData.brewCard,
+        batchStageLabel: copy.waitingForData,
+      },
+      glanceCards: [
+        { title: copy.tanks, subtitle: copy.active, accent: "green", value: "—" },
+        { title: copy.waterUsage, subtitle: copy.today, accent: "blue", value: "—" },
+        { title: copy.orders, subtitle: copy.toFulfill, accent: "purple", value: "—" },
+        { title: copy.inventory, subtitle: copy.lowStock, accent: "amber", value: "—" },
+      ],
+      quickActions: [
+        copy.quickActionStartBrew,
+        copy.quickActionLogFermentation,
+        copy.quickActionAddInventory,
+        copy.quickActionViewReports,
+      ],
+    };
+  }, [copy, demoLoading, demoMergedData, firstName, isDemoMode]);
+
   const progressLabel = isDemoMode ? `${dashboardData.brewCard.progressPercent}%` : "—";
   const glanceIcons: IconName[] = ["tank", "water", "orders", "inventory"];
   const quickActionIcons: IconName[] = ["brew", "fermentation", "inventory", "reports"];
@@ -308,6 +304,12 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
         </section>
       )}
 
+      {isDemoMode && demoError && !demoLoading && (
+        <section className="glass-panel status-inline">
+          <p className="error">{demoError}</p>
+        </section>
+      )}
+
       <nav className="bottom-nav" aria-label="Primary">
         <button type="button" className="active">
           <span className="nav-icon">
@@ -353,7 +355,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
               type="button"
               className="dark-btn more-action"
               onClick={() => {
-                exitDemoMode();
+                void exitDemoMode();
                 setMoreOpen(false);
               }}
             >

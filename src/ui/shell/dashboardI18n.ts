@@ -1,6 +1,6 @@
 import type { Language } from "@/contexts/LanguageContext";
 
-type DashboardCopy = {
+export type DashboardCopy = {
   greetingHello: string;
   greetingBrewer: string;
   heroSubtitleDefault: string;

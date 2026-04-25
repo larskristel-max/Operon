@@ -46,6 +46,19 @@ export function AuthGate() {
       setBusy(false);
     }
   };
+  const startDemo = async () => {
+    setBusy(true);
+    setFormError(null);
+    setNotice(null);
+    try {
+      await enterDemoMode();
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : "Failed to start demo mode");
+    } finally {
+      setBusy(false);
+    }
+  };
+
 
   return (
     <main className="operon-screen auth-screen">
@@ -110,7 +123,7 @@ export function AuthGate() {
             <button type="button" className="dark-btn" disabled>
               <span></span> Continue with Apple
             </button>
-            <button type="button" className="demo-card" onClick={enterDemoMode}>
+            <button type="button" className="demo-card" onClick={() => void startDemo()} disabled={busy}>
               <div>
                 <strong>Try Demo Mode</strong>
                 <p>Explore Operon with sample data.</p>

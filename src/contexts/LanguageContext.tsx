@@ -7,7 +7,11 @@ interface LanguageContextValue {
   setLanguage: (next: Language) => void;
 }
 
-const LANGUAGE_KEY = "operon_language";
+export const LANGUAGE_KEY = "operon_language";
+
+export function hasSelectedLanguage(): boolean {
+  return Boolean(localStorage.getItem(LANGUAGE_KEY));
+}
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {

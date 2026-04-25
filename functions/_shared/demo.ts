@@ -169,14 +169,31 @@ async function fetchTableRows(
   selectClause = "*",
   orderClause = "created_at.asc"
 ): Promise<Array<Record<string, unknown>>> {
-  const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/${tableName}?brewery_id=eq.${encodeURIComponent(
-      breweryId
-    )}&select=${encodeURIComponent(selectClause)}&order=${encodeURIComponent(orderClause)}`,
-    { headers: adminHeaders(env) }
-  );
+  try {
+    const res = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/${tableName}?brewery_id=eq.${encodeURIComponent(
+        breweryId
+      )}&select=${encodeURIComponent(selectClause)}&order=${encodeURIComponent(orderClause)}`,
+      { headers: adminHeaders(env) }
+    );
 
-  return parseSupabaseResponse<Array<Record<string, unknown>>>(res, `Failed to load ${tableName}`);
+    return await parseSupabaseResponse<Array<Record<string, unknown>>>(res, `Failed to load ${tableName}`);
+  } catch (error) {
+    if (!(error instanceof DemoHttpError)) throw error;
+
+    const normalizedMessage = error.message.toLowerCase();
+    const isSafeSkip =
+      error.status === 400 &&
+      (normalizedMessage.includes("brewery_id") ||
+        normalizedMessage.includes("could not find the") ||
+        normalizedMessage.includes("relation"));
+
+    if (isSafeSkip) {
+      return [];
+    }
+
+    throw error;
+  }
 }
 
 export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string): Promise<DemoDashboardData> {

@@ -1,10 +1,15 @@
 import { useMemo, useState } from "react";
 import { useApp } from "@/context/AppContext";
+import { hasSelectedLanguage } from "@/contexts/LanguageContext";
 import operonLogo from "../../../assets/Operonv1.png";
 
 type AuthView = "login" | "signup" | "forgot";
 
-export function AuthGate() {
+export function AuthGate({
+  onRequireLanguageSelection,
+}: {
+  onRequireLanguageSelection?: () => void;
+}) {
   const { signIn, signUp, sendReset, enterDemoMode, error } = useApp();
   const [view, setView] = useState<AuthView>("login");
   const [email, setEmail] = useState("");
@@ -47,6 +52,11 @@ export function AuthGate() {
     }
   };
   const startDemo = async () => {
+    if (!hasSelectedLanguage()) {
+      onRequireLanguageSelection?.();
+      return;
+    }
+
     setBusy(true);
     setFormError(null);
     setNotice(null);

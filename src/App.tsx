@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/context/AppContext";
-import { useLanguage, type Language } from "@/contexts/LanguageContext";
+import { hasSelectedLanguage, useLanguage, type Language } from "@/contexts/LanguageContext";
 import operonLogo from "../assets/Operonv1.png";
 import tankImage from "../assets/Tankimageasset.png";
 import { AuthGate } from "@/ui/auth/AuthGate";
@@ -12,7 +12,6 @@ type LanguageOption = {
   flag: string;
 };
 
-const ONBOARDING_KEY = "operon_onboarding_completed";
 const SPLASH_MS = 1650;
 
 const languageOptions: LanguageOption[] = [
@@ -42,6 +41,10 @@ function SplashScreen() {
 
 function LanguageSelectionScreen({ onContinue }: { onContinue: () => void }) {
   const { language, setLanguage } = useLanguage();
+  const continueWithLanguage = () => {
+    setLanguage(language);
+    onContinue();
+  };
 
   return (
     <main className="operon-screen operon-language">
@@ -70,7 +73,7 @@ function LanguageSelectionScreen({ onContinue }: { onContinue: () => void }) {
           })}
         </ul>
 
-        <button type="button" className="gold-btn" onClick={onContinue}>
+        <button type="button" className="gold-btn" onClick={continueWithLanguage}>
           Continue
         </button>
       </section>
@@ -90,10 +93,8 @@ function BootScreen() {
 export default function App() {
   const { authStatus, isDemoMode } = useApp();
   const [splashVisible, setSplashVisible] = useState(true);
-  const [languageComplete, setLanguageComplete] = useState(
-    () => localStorage.getItem(ONBOARDING_KEY) === "1"
-  );
   const [languageSelectionOpen, setLanguageSelectionOpen] = useState(false);
+  const [languageComplete, setLanguageComplete] = useState(hasSelectedLanguage);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setSplashVisible(false), SPLASH_MS);
@@ -102,7 +103,6 @@ export default function App() {
 
   const finishLanguage = useMemo(
     () => () => {
-      localStorage.setItem(ONBOARDING_KEY, "1");
       setLanguageComplete(true);
       setLanguageSelectionOpen(false);
     },
@@ -111,13 +111,16 @@ export default function App() {
 
   if (authStatus === "booting") return <BootScreen />;
   if (splashVisible) return <SplashScreen />;
-  if (languageSelectionOpen) return <LanguageSelectionScreen onContinue={finishLanguage} />;
+  if (!languageComplete || languageSelectionOpen) {
+    return <LanguageSelectionScreen onContinue={finishLanguage} />;
+  }
 
   if (authStatus === "authenticated" || authStatus === "refreshing") {
     return <ProtectedShell onChangeLanguage={() => setLanguageSelectionOpen(true)} />;
   }
-  if (!languageComplete) return <LanguageSelectionScreen onContinue={finishLanguage} />;
   if (isDemoMode) return <ProtectedShell onChangeLanguage={() => setLanguageSelectionOpen(true)} />;
-  if (authStatus === "unauthenticated") return <AuthGate />;
-  return <AuthGate />;
+  if (authStatus === "unauthenticated") {
+    return <AuthGate onRequireLanguageSelection={() => setLanguageSelectionOpen(true)} />;
+  }
+  return <AuthGate onRequireLanguageSelection={() => setLanguageSelectionOpen(true)} />;
 }

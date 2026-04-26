@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/context/AppContext";
-import { useLanguage, type Language } from "@/contexts/LanguageContext";
+import { hasSelectedLanguage, useLanguage, type Language } from "@/contexts/LanguageContext";
 import operonLogo from "../assets/Operonv1.png";
 import tankImage from "../assets/Tankimageasset.png";
 import { AuthGate } from "@/ui/auth/AuthGate";
@@ -125,6 +125,9 @@ export default function App() {
 
   if (authStatus === "booting") return <BootScreen />;
   if (splashVisible) return <SplashScreen />;
+  if (!hasSelectedLanguage() && !isDemoMode && !languageSelectionOpen) {
+    return <LanguageSelectionScreen onContinue={finishLanguage} />;
+  }
   if (languageSelectionOpen) {
     return <LanguageSelectionScreen onContinue={finishLanguage} />;
   }

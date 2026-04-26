@@ -213,7 +213,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const quickActionIcons: IconName[] = ["brew", "fermentation", "inventory", "reports"];
 
   return (
-    <main className="operon-screen dashboard-screen">
+    <main className="operon-screen dashboard-screen screen-content">
       <section className="dashboard-hero">
         <img src={tankImage} alt="Brewery tanks" className="hero-bg" />
         <div className="hero-overlay" />

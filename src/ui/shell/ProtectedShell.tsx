@@ -4,9 +4,11 @@ import { useMemo, useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { type DashboardData } from "@/data/demoData";
+import type { DemoDashboardMerged } from "@/api/demo";
 import { mapDemoDashboardToViewModel } from "@/ui/shell/demoDashboardMapper";
 import { getDashboardCopy } from "@/ui/shell/dashboardI18n";
 import { useDemoDashboard } from "@/ui/shell/useDemoDashboard";
+import { useRealDashboard } from "@/hooks/useRealDashboard";
 import { useBottomNavHeight } from "@/ui/shell/useBottomNavHeight";
 
 type IconName =
@@ -151,6 +153,28 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const greetingName = isDemoMode ? copy.greetingBrewer : firstName;
   const greeting = `${copy.greetingHello}, ${greetingName}!`;
   const { data: demoMergedData, loading: demoLoading, error: demoError } = useDemoDashboard(isDemoMode);
+  const { data: realDashboardData } = useRealDashboard(!isDemoMode);
+
+  const realMergedData = useMemo<DemoDashboardMerged | null>(() => {
+    if (!realDashboardData) return null;
+
+    const inventoryItems = Array.isArray(realDashboardData.inventory.items)
+      ? (realDashboardData.inventory.items as Array<Record<string, unknown>>)
+      : [];
+
+    return {
+      brewery_profile: null,
+      tanks: realDashboardData.tanks,
+      batches: realDashboardData.batches,
+      tasks: realDashboardData.tasks,
+      ingredients: inventoryItems,
+      recipes: [],
+      packaging_formats: [],
+      lots: [],
+      inventory_movements: realDashboardData.inventory_movements,
+      sales: realDashboardData.sales,
+    };
+  }, [realDashboardData]);
 
   const dashboardData = useMemo<DashboardData>(() => {
     if (isDemoMode) {
@@ -184,6 +208,10 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
       };
     }
 
+    if (realMergedData) {
+      return mapDemoDashboardToViewModel(realMergedData, copy);
+    }
+
     return {
       ...defaultDashboardData,
       hero: {
@@ -208,9 +236,9 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
         copy.quickActionViewReports,
       ],
     };
-  }, [copy, demoLoading, demoMergedData, firstName, isDemoMode]);
+  }, [copy, demoLoading, demoMergedData, firstName, isDemoMode, realMergedData]);
 
-  const progressLabel = isDemoMode ? `${dashboardData.brewCard.progressPercent}%` : "—";
+  const progressLabel = dashboardData.brewCard.progressPercent > 0 ? `${dashboardData.brewCard.progressPercent}%` : "—";
   const glanceIcons: IconName[] = ["tank", "water", "orders", "inventory"];
   const quickActionIcons: IconName[] = ["brew", "fermentation", "inventory", "reports"];
 

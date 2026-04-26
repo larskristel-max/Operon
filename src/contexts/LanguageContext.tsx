@@ -7,16 +7,20 @@ interface LanguageContextValue {
   setLanguage: (next: Language) => void;
 }
 
-export const LANGUAGE_KEY = "operon_language";
+export const LANGUAGE_KEY = "language";
+const LEGACY_LANGUAGE_KEY = "operon_language";
 
 export function hasSelectedLanguage(): boolean {
-  return Boolean(localStorage.getItem(LANGUAGE_KEY));
+  return Boolean(localStorage.getItem(LANGUAGE_KEY) ?? localStorage.getItem(LEGACY_LANGUAGE_KEY));
 }
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>(
-    () => (localStorage.getItem(LANGUAGE_KEY) as Language | null) ?? "en"
+    () =>
+      (localStorage.getItem(LANGUAGE_KEY) as Language | null) ??
+      (localStorage.getItem(LEGACY_LANGUAGE_KEY) as Language | null) ??
+      "en"
   );
 
   const value = useMemo(
@@ -24,6 +28,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       language,
       setLanguage: (next: Language) => {
         localStorage.setItem(LANGUAGE_KEY, next);
+        localStorage.setItem(LEGACY_LANGUAGE_KEY, next);
         setLanguage(next);
       },
     }),

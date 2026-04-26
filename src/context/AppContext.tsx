@@ -51,6 +51,15 @@ interface AppContextValue {
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
+const PENDING_ONBOARDING_KEY = "operon.pendingOnboarding";
+
+interface PendingOnboardingPayload {
+  firstName: string;
+  lastName?: string;
+  breweryName: string;
+  email: string;
+  createdAt: string;
+}
 
 function readDemoModeFlag(): boolean {
   const raw = sessionStorage.getItem(DEMO_MODE_KEY);
@@ -66,6 +75,43 @@ function clearDemoModeFlag(): void {
   sessionStorage.removeItem(DEMO_MODE_KEY);
   // Cleanup legacy persisted demo flag from previous builds.
   localStorage.removeItem(DEMO_MODE_KEY);
+}
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+function readPendingOnboarding(): Record<string, PendingOnboardingPayload> {
+  const raw = localStorage.getItem(PENDING_ONBOARDING_KEY);
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw) as Record<string, PendingOnboardingPayload>;
+  } catch {
+    return {};
+  }
+}
+
+function writePendingOnboarding(next: Record<string, PendingOnboardingPayload>): void {
+  localStorage.setItem(PENDING_ONBOARDING_KEY, JSON.stringify(next));
+}
+
+function setPendingOnboarding(payload: PendingOnboardingPayload): void {
+  const current = readPendingOnboarding();
+  current[normalizeEmail(payload.email)] = payload;
+  writePendingOnboarding(current);
+}
+
+function getPendingOnboarding(email: string): PendingOnboardingPayload | null {
+  const current = readPendingOnboarding();
+  return current[normalizeEmail(email)] ?? null;
+}
+
+function clearPendingOnboarding(email: string): void {
+  const key = normalizeEmail(email);
+  const current = readPendingOnboarding();
+  if (!(key in current)) return;
+  delete current[key];
+  writePendingOnboarding(current);
 }
 
 async function resolveProfile(): Promise<MeResponse["user"] | null> {
@@ -233,9 +279,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [hydrateSession]);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
-  }, []);
+
+    const session = data.session ?? (await supabase.auth.getSession()).data.session;
+    if (!session?.access_token) return;
+
+    const pending = getPendingOnboarding(email);
+    if (!pending) return;
+
+    try {
+      await provisionOnboarding(session.access_token, pending);
+      clearPendingOnboarding(email);
+      await hydrateSession(session);
+    } catch (provisionError) {
+      throw new Error(
+        provisionError instanceof Error
+          ? `Signed in, but we could not finish workspace setup yet: ${provisionError.message}`
+          : "Signed in, but we could not finish workspace setup yet. Please try again."
+      );
+    }
+  }, [hydrateSession]);
 
   const signUp = useCallback(async (
     email: string,
@@ -247,6 +311,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const session = data.session;
     if (!session?.access_token) {
+      setPendingOnboarding({
+        firstName: onboarding.firstName,
+        lastName: onboarding.lastName ?? "",
+        breweryName: onboarding.breweryName,
+        email: normalizeEmail(email),
+        createdAt: new Date().toISOString(),
+      });
       return { requiresEmailConfirmation: true };
     }
 

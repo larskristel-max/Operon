@@ -114,11 +114,12 @@ async function mergeUserMetadata(
   });
   const readUser = readRes.ok
     ? ((await parseResponse<Record<string, unknown>>(readRes, "Failed to load auth user")) as {
+        user_metadata?: Record<string, unknown>;
         user?: { user_metadata?: Record<string, unknown> };
       })
     : {};
 
-  const existing = readUser.user?.user_metadata ?? {};
+  const existing = readUser.user_metadata ?? readUser.user?.user_metadata ?? {};
   const merged = { ...existing, ...metadata };
 
   const updateRes = await fetch(`${env.SUPABASE_URL}/auth/v1/admin/users/${userId}`, {

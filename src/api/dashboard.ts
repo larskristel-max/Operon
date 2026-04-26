@@ -5,6 +5,8 @@ export interface RealDashboardData {
   batches: Array<Record<string, unknown>>;
   tasks: Array<Record<string, unknown>>;
   inventory: Record<string, unknown>;
+  inventory_movements: Array<Record<string, unknown>>;
+  sales: Array<Record<string, unknown>>;
 }
 
 export async function loadRealDashboard(): Promise<RealDashboardData> {

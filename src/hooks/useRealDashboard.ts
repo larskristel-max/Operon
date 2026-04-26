@@ -13,6 +13,8 @@ const EMPTY_REAL_DASHBOARD: RealDashboardData = {
   batches: [],
   tasks: [],
   inventory: {},
+  inventory_movements: [],
+  sales: [],
 };
 
 export function useRealDashboard(enabled: boolean): UseRealDashboardResult {
@@ -38,6 +40,8 @@ export function useRealDashboard(enabled: boolean): UseRealDashboardResult {
         batches: Array.isArray(payload.batches) ? payload.batches : [],
         tasks: Array.isArray(payload.tasks) ? payload.tasks : [],
         inventory: payload.inventory && typeof payload.inventory === "object" ? payload.inventory : {},
+        inventory_movements: Array.isArray(payload.inventory_movements) ? payload.inventory_movements : [],
+        sales: Array.isArray(payload.sales) ? payload.sales : [],
       });
     } catch (requestError) {
       setData(EMPTY_REAL_DASHBOARD);

@@ -11,6 +11,8 @@ interface DashboardResponse {
   batches: JsonRecord[];
   tasks: JsonRecord[];
   inventory: JsonRecord;
+  inventory_movements: JsonRecord[];
+  sales: JsonRecord[];
 }
 
 const EMPTY_DASHBOARD: DashboardResponse = {
@@ -18,6 +20,8 @@ const EMPTY_DASHBOARD: DashboardResponse = {
   batches: [],
   tasks: [],
   inventory: {},
+  inventory_movements: [],
+  sales: [],
 };
 
 function adminHeaders(env: Env): Record<string, string> {
@@ -141,18 +145,22 @@ export async function onRequestGet(context: { request: Request; env: Env }): Pro
       return jsonResponse(EMPTY_DASHBOARD);
     }
 
-    const [tanks, batches, tasks, inventoryItems] = await Promise.all([
+    const [tanks, batches, tasks, ingredientRows, inventoryMovements, sales] = await Promise.all([
       fetchOptionalRows(env, "tanks", breweryId, "name.asc"),
       fetchRows(env, "batches", breweryId, "created_at.desc"),
       fetchRows(env, "tasks", breweryId, "created_at.desc"),
-      fetchOptionalRows(env, "inventory_items", breweryId, "created_at.desc"),
+      fetchOptionalRows(env, "ingredients", breweryId, "created_at.desc"),
+      fetchOptionalRows(env, "inventory_movements", breweryId, "created_at.desc"),
+      fetchOptionalRows(env, "sales", breweryId, "created_at.desc"),
     ]);
 
     return jsonResponse({
       tanks,
       batches,
       tasks,
-      inventory: summarizeInventory(inventoryItems),
+      inventory: summarizeInventory(ingredientRows),
+      inventory_movements: inventoryMovements,
+      sales,
     });
   } catch {
     return jsonResponse(EMPTY_DASHBOARD);

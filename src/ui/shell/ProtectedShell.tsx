@@ -171,8 +171,8 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
       recipes: [],
       packaging_formats: [],
       lots: [],
-      inventory_movements: [],
-      sales: [],
+      inventory_movements: realDashboardData.inventory_movements,
+      sales: realDashboardData.sales,
     };
   }, [realDashboardData]);
 

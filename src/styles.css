@@ -257,14 +257,28 @@ button, input { font: inherit; }
 .input-wrap input {
   border: 0;
   background: transparent;
-  color: var(--text-primary);
+  color: #f8fafc;
+  -webkit-text-fill-color: #f8fafc;
+  caret-color: #f8fafc;
   font-size: clamp(1rem, 3.8vw, 1.1rem);
   width: 100%;
   min-width: 0;
 }
 
+.input-wrap input::placeholder {
+  color: rgba(248, 250, 252, 0.55);
+  -webkit-text-fill-color: rgba(248, 250, 252, 0.55);
+}
+
+.input-wrap input:-webkit-autofill,
+.input-wrap input:-webkit-autofill:hover,
+.input-wrap input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f8fafc;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 .input-wrap input:focus-visible { outline: none; }
-.input-icon { color: #89929d; font-size: 1.15rem; text-align: center; }
+.input-icon { color: #aab4bf; font-size: 1.15rem; text-align: center; }
 .input-icon.right { justify-self: end; }
 
 .inline-link,

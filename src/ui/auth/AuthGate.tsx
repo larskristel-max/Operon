@@ -1,15 +1,36 @@
 import { useMemo, useState } from "react";
 import { useApp } from "@/context/AppContext";
-import { hasSelectedLanguage } from "@/contexts/LanguageContext";
+import { hasSelectedLanguage, useLanguage } from "@/contexts/LanguageContext";
 import operonLogo from "../../../assets/Operonv1.png";
 
 type AuthView = "login" | "signup" | "forgot";
+type DemoCardCopy = { title: string; subtitle: string };
+
+const demoCardCopy: Record<string, DemoCardCopy> = {
+  en: {
+    title: "Explore Demo",
+    subtitle: "See how Operon works with sample data",
+  },
+  fr: {
+    title: "Découvrir la démo",
+    subtitle: "Découvrez Operon avec des données d’exemple",
+  },
+  nl: {
+    title: "Demo verkennen",
+    subtitle: "Bekijk Operon met voorbeeldgegevens",
+  },
+  de: {
+    title: "Demo erkunden",
+    subtitle: "Operon mit Beispieldaten ansehen",
+  },
+};
 
 export function AuthGate({
   onRequireLanguageSelection,
 }: {
   onRequireLanguageSelection?: () => void;
 }) {
+  const { language } = useLanguage();
   const { signIn, signUp, sendReset, enterDemoMode, error } = useApp();
   const [view, setView] = useState<AuthView>("login");
   const [email, setEmail] = useState("");
@@ -30,6 +51,7 @@ export function AuthGate({
     () => Boolean(email && (isForgot || password)),
     [email, password, isForgot]
   );
+  const demoCopy = demoCardCopy[language] ?? demoCardCopy.en;
 
   const submit = async () => {
     setBusy(true);
@@ -135,8 +157,8 @@ export function AuthGate({
             </button>
             <button type="button" className="demo-card" onClick={() => void startDemo()} disabled={busy}>
               <div>
-                <strong>Try Demo Mode</strong>
-                <p>Explore Operon with sample data.</p>
+                <strong>{demoCopy.title}</strong>
+                <p>{demoCopy.subtitle}</p>
               </div>
               <span aria-hidden="true">›</span>
             </button>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/context/AppContext";
-import { hasSelectedLanguage, useLanguage, type Language } from "@/contexts/LanguageContext";
+import { useLanguage, type Language } from "@/contexts/LanguageContext";
 import operonLogo from "../assets/Operonv1.png";
 import tankImage from "../assets/Tankimageasset.png";
 import { AuthGate } from "@/ui/auth/AuthGate";
@@ -20,6 +20,15 @@ const languageOptions: LanguageOption[] = [
   { code: "de", label: "Deutsch", flag: "🇩🇪" },
   { code: "nl", label: "Nederlands", flag: "🇳🇱" },
 ];
+const selectLanguageTitle: Record<Language, string> = {
+  en: "Select your language",
+  es: "Selecciona tu idioma",
+  fr: "Choisissez votre langue",
+  de: "Sprache auswählen",
+  pt: "Selecione seu idioma",
+  ja: "言語を選択",
+  nl: "Selecteer je taal",
+};
 
 function SplashScreen() {
   return (
@@ -41,41 +50,33 @@ function SplashScreen() {
 
 function LanguageSelectionScreen({ onContinue }: { onContinue: () => void }) {
   const { language, setLanguage } = useLanguage();
-  const continueWithLanguage = () => {
-    setLanguage(language);
-    onContinue();
-  };
 
   return (
     <main className="operon-screen operon-language">
       <section className="glass-panel language-panel">
         <img src={operonLogo} alt="Operon brand mark" className="operon-mark" />
-        <h1>Welcome to Operon</h1>
-        <p className="screen-subtitle">Choose your preferred language.</p>
+        <h1>{selectLanguageTitle[language] ?? selectLanguageTitle.en}</h1>
 
         <ul className="language-list" role="listbox" aria-label="Language options">
           {languageOptions.map((option) => {
-            const selected = language === option.code;
             return (
               <li key={option.code}>
                 <button
                   type="button"
-                  className={`language-row${selected ? " selected" : ""}`}
-                  onClick={() => setLanguage(option.code)}
-                  aria-selected={selected}
+                  className="language-row"
+                  onClick={() => {
+                    setLanguage(option.code);
+                    onContinue();
+                  }}
                 >
                   <span className="language-flag">{option.flag}</span>
                   <span className="language-label">{option.label}</span>
-                  <span className="language-end">{selected ? "✓" : "›"}</span>
+                  <span className="language-end">›</span>
                 </button>
               </li>
             );
           })}
         </ul>
-
-        <button type="button" className="gold-btn" onClick={continueWithLanguage}>
-          Continue
-        </button>
       </section>
     </main>
   );
@@ -91,10 +92,10 @@ function BootScreen() {
 }
 
 export default function App() {
-  const { authStatus, isDemoMode } = useApp();
+  const { authStatus, isDemoMode, enterDemoMode } = useApp();
   const [splashVisible, setSplashVisible] = useState(true);
   const [languageSelectionOpen, setLanguageSelectionOpen] = useState(false);
-  const [languageComplete, setLanguageComplete] = useState(hasSelectedLanguage);
+  const [startDemoAfterLanguage, setStartDemoAfterLanguage] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setSplashVisible(false), SPLASH_MS);
@@ -102,16 +103,19 @@ export default function App() {
   }, []);
 
   const finishLanguage = useMemo(
-    () => () => {
-      setLanguageComplete(true);
+    () => async () => {
       setLanguageSelectionOpen(false);
+      if (startDemoAfterLanguage) {
+        setStartDemoAfterLanguage(false);
+        await enterDemoMode();
+      }
     },
-    []
+    [enterDemoMode, startDemoAfterLanguage]
   );
 
   if (authStatus === "booting") return <BootScreen />;
   if (splashVisible) return <SplashScreen />;
-  if (!languageComplete || languageSelectionOpen) {
+  if (languageSelectionOpen) {
     return <LanguageSelectionScreen onContinue={finishLanguage} />;
   }
 
@@ -120,7 +124,21 @@ export default function App() {
   }
   if (isDemoMode) return <ProtectedShell onChangeLanguage={() => setLanguageSelectionOpen(true)} />;
   if (authStatus === "unauthenticated") {
-    return <AuthGate onRequireLanguageSelection={() => setLanguageSelectionOpen(true)} />;
+    return (
+      <AuthGate
+        onRequireLanguageSelection={() => {
+          setStartDemoAfterLanguage(true);
+          setLanguageSelectionOpen(true);
+        }}
+      />
+    );
   }
-  return <AuthGate onRequireLanguageSelection={() => setLanguageSelectionOpen(true)} />;
+  return (
+    <AuthGate
+      onRequireLanguageSelection={() => {
+        setStartDemoAfterLanguage(true);
+        setLanguageSelectionOpen(true);
+      }}
+    />
+  );
 }

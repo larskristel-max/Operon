@@ -96,6 +96,7 @@ export default function App() {
   const [splashVisible, setSplashVisible] = useState(true);
   const [languageSelectionOpen, setLanguageSelectionOpen] = useState(false);
   const [startDemoAfterLanguage, setStartDemoAfterLanguage] = useState(false);
+  const [demoStartError, setDemoStartError] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setSplashVisible(false), SPLASH_MS);
@@ -104,11 +105,20 @@ export default function App() {
 
   const finishLanguage = useMemo(
     () => async () => {
-      setLanguageSelectionOpen(false);
       if (startDemoAfterLanguage) {
-        setStartDemoAfterLanguage(false);
-        await enterDemoMode();
+        try {
+          setDemoStartError(null);
+          await enterDemoMode();
+          setLanguageSelectionOpen(false);
+        } catch (error) {
+          setDemoStartError(error instanceof Error ? error.message : "Failed to start demo mode");
+          setLanguageSelectionOpen(false);
+        } finally {
+          setStartDemoAfterLanguage(false);
+        }
+        return;
       }
+      setLanguageSelectionOpen(false);
     },
     [enterDemoMode, startDemoAfterLanguage]
   );
@@ -126,7 +136,9 @@ export default function App() {
   if (authStatus === "unauthenticated") {
     return (
       <AuthGate
+        demoStartError={demoStartError}
         onRequireLanguageSelection={() => {
+          setDemoStartError(null);
           setStartDemoAfterLanguage(true);
           setLanguageSelectionOpen(true);
         }}
@@ -135,7 +147,9 @@ export default function App() {
   }
   return (
     <AuthGate
+      demoStartError={demoStartError}
       onRequireLanguageSelection={() => {
+        setDemoStartError(null);
         setStartDemoAfterLanguage(true);
         setLanguageSelectionOpen(true);
       }}

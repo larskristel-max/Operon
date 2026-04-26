@@ -27,8 +27,10 @@ const demoCardCopy: Record<string, DemoCardCopy> = {
 
 export function AuthGate({
   onRequireLanguageSelection,
+  demoStartError,
 }: {
   onRequireLanguageSelection?: () => void;
+  demoStartError?: string | null;
 }) {
   const { language } = useLanguage();
   const { signIn, signUp, sendReset, enterDemoMode, error } = useApp();
@@ -165,9 +167,10 @@ export function AuthGate({
           </>
         )}
 
-        {(formError || error || notice) && (
+        {(formError || demoStartError || error || notice) && (
           <div className="auth-feedback">
             {formError && <p className="error">{formError}</p>}
+            {demoStartError && <p className="error">{demoStartError}</p>}
             {error && <p className="error">{error}</p>}
             {notice && <p className="notice">{notice}</p>}
           </div>

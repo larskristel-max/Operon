@@ -11,6 +11,7 @@ export async function onRequestGet(context: { request: Request; env: Env }): Pro
     user: {
       id: user.id,
       email: user.email ?? null,
+      firstName: user.user_metadata?.display_name?.split(" ")[0] ?? user.user_metadata?.full_name?.split(" ")[0] ?? null,
       displayName: user.user_metadata?.display_name ?? user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
     },
   });

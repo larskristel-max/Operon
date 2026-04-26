@@ -99,7 +99,7 @@ export function AuthGate({
           <>
             <label className="field-label">
               First name
-              <span className="input-wrap">
+              <span className="input-wrap input-wrap-plain">
                 <input
                   type="text"
                   autoComplete="given-name"
@@ -111,7 +111,7 @@ export function AuthGate({
             </label>
             <label className="field-label">
               Last name (optional)
-              <span className="input-wrap">
+              <span className="input-wrap input-wrap-plain">
                 <input
                   type="text"
                   autoComplete="family-name"
@@ -123,7 +123,7 @@ export function AuthGate({
             </label>
             <label className="field-label">
               Brewery name
-              <span className="input-wrap">
+              <span className="input-wrap input-wrap-plain">
                 <input
                   type="text"
                   autoComplete="organization"

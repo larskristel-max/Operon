@@ -254,6 +254,14 @@ button, input { font: inherit; }
   padding: 0 10px;
 }
 
+.input-wrap.input-wrap-plain {
+  grid-template-columns: 1fr;
+}
+
+.input-wrap.input-wrap-plain input {
+  grid-column: 1;
+}
+
 .input-wrap input {
   border: 0;
   background: transparent;

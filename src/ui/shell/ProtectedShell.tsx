@@ -7,6 +7,7 @@ import { type DashboardData } from "@/data/demoData";
 import { mapDemoDashboardToViewModel } from "@/ui/shell/demoDashboardMapper";
 import { getDashboardCopy } from "@/ui/shell/dashboardI18n";
 import { useDemoDashboard } from "@/ui/shell/useDemoDashboard";
+import { useBottomNavHeight } from "@/ui/shell/useBottomNavHeight";
 
 type IconName =
   | "bell"
@@ -136,6 +137,7 @@ const defaultDashboardData: DashboardData = {
 };
 
 export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => void }) {
+  useBottomNavHeight();
   const { language } = useLanguage();
   const { me, profileError, refreshProfile, session, isDemoMode, exitDemoMode, signOut } = useApp();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -213,7 +215,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const quickActionIcons: IconName[] = ["brew", "fermentation", "inventory", "reports"];
 
   return (
-    <main className="operon-screen dashboard-screen">
+    <main className="operon-screen dashboard-screen screen-content">
       <section className="dashboard-hero">
         <img src={tankImage} alt="Brewery tanks" className="hero-bg" />
         <div className="hero-overlay" />

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/context/AppContext";
-import { useLanguage, type Language } from "@/contexts/LanguageContext";
+import { hasSelectedLanguage, useLanguage, type Language } from "@/contexts/LanguageContext";
 import operonLogo from "../assets/Operonv1.png";
 import tankImage from "../assets/Tankimageasset.png";
 import { AuthGate } from "@/ui/auth/AuthGate";
@@ -94,6 +94,7 @@ function BootScreen() {
 export default function App() {
   const { authStatus, isDemoMode, enterDemoMode } = useApp();
   const [splashVisible, setSplashVisible] = useState(true);
+  const [bootLanguagePending, setBootLanguagePending] = useState(() => !hasSelectedLanguage());
   const [languageSelectionOpen, setLanguageSelectionOpen] = useState(false);
   const [startDemoAfterLanguage, setStartDemoAfterLanguage] = useState(false);
   const [demoStartError, setDemoStartError] = useState<string | null>(null);
@@ -109,6 +110,7 @@ export default function App() {
         try {
           setDemoStartError(null);
           await enterDemoMode();
+          setBootLanguagePending(false);
           setLanguageSelectionOpen(false);
         } catch (error) {
           setDemoStartError(error instanceof Error ? error.message : "Failed to start demo mode");
@@ -118,6 +120,7 @@ export default function App() {
         }
         return;
       }
+      setBootLanguagePending(false);
       setLanguageSelectionOpen(false);
     },
     [enterDemoMode, startDemoAfterLanguage]
@@ -125,6 +128,9 @@ export default function App() {
 
   if (authStatus === "booting") return <BootScreen />;
   if (splashVisible) return <SplashScreen />;
+  if (bootLanguagePending && !isDemoMode && !languageSelectionOpen) {
+    return <LanguageSelectionScreen onContinue={finishLanguage} />;
+  }
   if (languageSelectionOpen) {
     return <LanguageSelectionScreen onContinue={finishLanguage} />;
   }

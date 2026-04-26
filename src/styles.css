@@ -10,6 +10,8 @@
   --gold-strong: #e0ae53;
   --divider: rgba(255, 255, 255, 0.08);
   --border: rgba(255, 255, 255, 0.1);
+  --bottom-nav-height: clamp(72px, 9vh, 96px);
+  --dashboard-bottom-gap: clamp(12px, 2vh, 28px);
 }
 
 * { box-sizing: border-box; }
@@ -315,7 +317,17 @@ button, input { font: inherit; }
   padding:
     max(2px, env(safe-area-inset-top))
     clamp(10px, 3.4vw, 14px)
-    calc(env(safe-area-inset-bottom) + 72px);
+    calc(
+      env(safe-area-inset-bottom)
+      + var(--bottom-nav-height)
+      + var(--dashboard-bottom-gap)
+    );
+}
+
+.screen-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 .dashboard-hero {
@@ -469,7 +481,7 @@ button, input { font: inherit; }
 .glance-card.amber::after { background: rgba(217, 164, 65, 0.52); }
 
 .quick-actions {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .quick-actions-grid {
@@ -608,10 +620,6 @@ button, input { font: inherit; }
 }
 
 @media (max-height: 750px) {
-  .dashboard-screen {
-    padding-bottom: calc(env(safe-area-inset-bottom) + 72px);
-  }
-
   .dashboard-hero {
     height: clamp(210px, 27svh, 282px);
   }

@@ -40,7 +40,11 @@ interface AppContextValue {
   enterDemoMode: () => Promise<void>;
   exitDemoMode: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (
+    email: string,
+    password: string,
+    onboarding: { firstName: string; lastName?: string; breweryName: string }
+  ) => Promise<{ requiresEmailConfirmation: boolean }>;
   sendReset: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -67,6 +71,29 @@ function clearDemoModeFlag(): void {
 async function resolveProfile(): Promise<MeResponse["user"] | null> {
   const { user } = await getMe();
   return user;
+}
+
+async function provisionOnboarding(
+  accessToken: string,
+  payload: { firstName: string; lastName?: string; breweryName: string }
+): Promise<void> {
+  const res = await fetch("/api/onboarding/provision", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      first_name: payload.firstName,
+      last_name: payload.lastName ?? "",
+      brewery_name: payload.breweryName,
+    }),
+  });
+
+  const body = (await res.json().catch(() => ({}))) as { error?: string };
+  if (!res.ok) {
+    throw new Error(body.error ?? "Failed to provision brewery workspace");
+  }
 }
 
 function isAuthFailure(error: unknown): boolean {
@@ -210,10 +237,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
+  const signUp = useCallback(async (
+    email: string,
+    password: string,
+    onboarding: { firstName: string; lastName?: string; breweryName: string }
+  ) => {
+    const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
-  }, []);
+
+    const session = data.session;
+    if (!session?.access_token) {
+      return { requiresEmailConfirmation: true };
+    }
+
+    await provisionOnboarding(session.access_token, onboarding);
+    const latestSession = (await supabase.auth.getSession()).data.session ?? session;
+    await hydrateSession(latestSession);
+    return { requiresEmailConfirmation: false };
+  }, [hydrateSession]);
 
   const sendReset = useCallback(async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {

@@ -16,6 +16,9 @@ export function AuthGate({
   const [view, setView] = useState<AuthView>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [breweryName, setBreweryName] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -25,12 +28,19 @@ export function AuthGate({
   const title = isForgot ? "Reset password" : isSignup ? "Create account" : "Welcome back";
   const subtitle = isForgot
     ? "We’ll email you a secure reset link."
-    : "Sign in to your Operon account.";
+    : isSignup
+      ? "Create your Operon workspace."
+      : "Sign in to your Operon account.";
   const cta = isForgot ? "Send reset link" : isSignup ? "Create account" : "Sign In";
 
   const canSubmit = useMemo(
-    () => Boolean(email && (isForgot || password)),
-    [email, password, isForgot]
+    () =>
+      Boolean(
+        email &&
+          (isForgot || password) &&
+          (!isSignup || (firstName.trim() && breweryName.trim()))
+      ),
+    [email, password, isForgot, isSignup, firstName, breweryName]
   );
 
   const submit = async () => {
@@ -41,8 +51,14 @@ export function AuthGate({
       if (view === "login") {
         await signIn(email, password);
       } else if (view === "signup") {
-        await signUp(email, password);
-        setNotice("Account created. Check your inbox to confirm your email before first login.");
+        const result = await signUp(email, password, {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          breweryName: breweryName.trim(),
+        });
+        if (result.requiresEmailConfirmation) {
+          setNotice("Account created. Check your email to confirm before logging in.");
+        }
       } else {
         await sendReset(email);
         setNotice("Password reset link sent. Check your inbox.");
@@ -78,6 +94,47 @@ export function AuthGate({
         <img src={operonLogo} alt="Operon brand mark" className="operon-mark" />
         <h1>{title}</h1>
         <p className="screen-subtitle">{subtitle}</p>
+
+        {isSignup && (
+          <>
+            <label className="field-label">
+              First name
+              <span className="input-wrap">
+                <input
+                  type="text"
+                  autoComplete="given-name"
+                  value={firstName}
+                  onChange={(event) => setFirstName(event.target.value)}
+                  placeholder="Lars"
+                />
+              </span>
+            </label>
+            <label className="field-label">
+              Last name (optional)
+              <span className="input-wrap">
+                <input
+                  type="text"
+                  autoComplete="family-name"
+                  value={lastName}
+                  onChange={(event) => setLastName(event.target.value)}
+                  placeholder="M."
+                />
+              </span>
+            </label>
+            <label className="field-label">
+              Brewery name
+              <span className="input-wrap">
+                <input
+                  type="text"
+                  autoComplete="organization"
+                  value={breweryName}
+                  onChange={(event) => setBreweryName(event.target.value)}
+                  placeholder="Test Brewery"
+                />
+              </span>
+            </label>
+          </>
+        )}
 
         <label className="field-label">
           Email

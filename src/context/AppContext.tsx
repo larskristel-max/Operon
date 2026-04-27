@@ -19,6 +19,14 @@ import {
 } from "@/api/demo";
 import { getMe, type MeResponse } from "@/api/me";
 import { ApiError, setUnauthorizedHandler } from "@/api/client";
+import { provisionOnboarding } from "@/domains/onboarding/api";
+import {
+  clearPendingOnboarding,
+  getPendingOnboarding,
+  normalizeEmail,
+  setPendingOnboarding,
+} from "@/domains/onboarding/storage";
+import type { OnboardingProvisionPayload } from "@/domains/onboarding/types";
 
 export type AuthStatus = "booting" | "unauthenticated" | "authenticated" | "refreshing";
 
@@ -43,7 +51,7 @@ interface AppContextValue {
   signUp: (
     email: string,
     password: string,
-    onboarding: { firstName: string; lastName?: string; breweryName: string }
+    onboarding: OnboardingProvisionPayload
   ) => Promise<{ requiresEmailConfirmation: boolean }>;
   sendReset: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -51,15 +59,6 @@ interface AppContextValue {
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
-const PENDING_ONBOARDING_KEY = "operon.pendingOnboarding";
-
-interface PendingOnboardingPayload {
-  firstName: string;
-  lastName?: string;
-  breweryName: string;
-  email: string;
-  createdAt: string;
-}
 
 function readDemoModeFlag(): boolean {
   const raw = sessionStorage.getItem(DEMO_MODE_KEY);
@@ -77,69 +76,9 @@ function clearDemoModeFlag(): void {
   localStorage.removeItem(DEMO_MODE_KEY);
 }
 
-function normalizeEmail(email: string): string {
-  return email.trim().toLowerCase();
-}
-
-function readPendingOnboarding(): Record<string, PendingOnboardingPayload> {
-  const raw = localStorage.getItem(PENDING_ONBOARDING_KEY);
-  if (!raw) return {};
-  try {
-    return JSON.parse(raw) as Record<string, PendingOnboardingPayload>;
-  } catch {
-    return {};
-  }
-}
-
-function writePendingOnboarding(next: Record<string, PendingOnboardingPayload>): void {
-  localStorage.setItem(PENDING_ONBOARDING_KEY, JSON.stringify(next));
-}
-
-function setPendingOnboarding(payload: PendingOnboardingPayload): void {
-  const current = readPendingOnboarding();
-  current[normalizeEmail(payload.email)] = payload;
-  writePendingOnboarding(current);
-}
-
-function getPendingOnboarding(email: string): PendingOnboardingPayload | null {
-  const current = readPendingOnboarding();
-  return current[normalizeEmail(email)] ?? null;
-}
-
-function clearPendingOnboarding(email: string): void {
-  const key = normalizeEmail(email);
-  const current = readPendingOnboarding();
-  if (!(key in current)) return;
-  delete current[key];
-  writePendingOnboarding(current);
-}
-
 async function resolveProfile(): Promise<MeResponse["user"] | null> {
   const { user } = await getMe();
   return user;
-}
-
-async function provisionOnboarding(
-  accessToken: string,
-  payload: { firstName: string; lastName?: string; breweryName: string }
-): Promise<void> {
-  const res = await fetch("/api/onboarding/provision", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify({
-      first_name: payload.firstName,
-      last_name: payload.lastName ?? "",
-      brewery_name: payload.breweryName,
-    }),
-  });
-
-  const body = (await res.json().catch(() => ({}))) as { error?: string };
-  if (!res.ok) {
-    throw new Error(body.error ?? "Failed to provision brewery workspace");
-  }
 }
 
 function isAuthFailure(error: unknown): boolean {
@@ -304,7 +243,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const signUp = useCallback(async (
     email: string,
     password: string,
-    onboarding: { firstName: string; lastName?: string; breweryName: string }
+    onboarding: OnboardingProvisionPayload
   ) => {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;

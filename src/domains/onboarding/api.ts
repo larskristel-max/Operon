@@ -18,15 +18,12 @@ export async function provisionOnboarding(
   try {
     await apiFetch<ProvisionResponse>("/api/onboarding/provision", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
       body: JSON.stringify({
         first_name: payload.firstName,
         last_name: payload.lastName ?? "",
         brewery_name: payload.breweryName,
       } satisfies ProvisionRequest),
-    });
+    }, { accessToken });
   } catch (error) {
     if (error instanceof ApiError) {
       if (/^Request failed \(\d+\)$/.test(error.message) || error.message === "Unauthorized") {

@@ -7,8 +7,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Session } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase";
 import {
   DEMO_MODE_KEY,
   clearStoredDemoSessionId,
@@ -19,6 +17,17 @@ import {
 } from "@/api/demo";
 import { getMe, type MeResponse } from "@/api/me";
 import { ApiError, setUnauthorizedHandler } from "@/api/client";
+import {
+  getSession,
+  onAuthStateChange,
+  resetPasswordForEmail,
+  signInWithPassword,
+  signOut as signOutSession,
+  signUp as signUpSession,
+  type AuthSession,
+  type AuthState,
+  type AuthStatus,
+} from "@/domains/auth";
 import { provisionOnboarding } from "@/domains/onboarding/api";
 import {
   clearPendingOnboarding,
@@ -28,19 +37,9 @@ import {
 } from "@/domains/onboarding/storage";
 import type { OnboardingProvisionPayload } from "@/domains/onboarding/types";
 
-export type AuthStatus = "booting" | "unauthenticated" | "authenticated" | "refreshing";
-
-interface AuthState {
-  status: AuthStatus;
-  session: Session | null;
-  me: MeResponse["user"] | null;
-  error: string | null;
-  profileError: string | null;
-}
-
 interface AppContextValue {
   authStatus: AuthStatus;
-  session: Session | null;
+  session: AuthSession | null;
   me: MeResponse["user"] | null;
   error: string | null;
   profileError: string | null;
@@ -127,7 +126,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const handleUnauthorized = useCallback(async () => {
-    await supabase.auth.signOut();
+    await signOutSession();
     setAuthState({
       status: "unauthenticated",
       session: null,
@@ -142,7 +141,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => setUnauthorizedHandler(null);
   }, [handleUnauthorized]);
 
-  const hydrateSession = useCallback(async (session: Session | null) => {
+  const hydrateSession = useCallback(async (session: AuthSession | null) => {
     if (isDemoMode) {
       setAuthState((prev) => ({
         ...prev,
@@ -173,7 +172,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setAuthState({ status: "authenticated", session, me, error: null, profileError: null });
     } catch (error) {
       if (isAuthFailure(error)) {
-        await supabase.auth.signOut();
+        await signOutSession();
         setAuthState({
           status: "unauthenticated",
           session: null,
@@ -199,14 +198,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    supabase.auth.getSession().then(async ({ data }) => {
+    getSession().then(async ({ data }) => {
       if (!mounted) return;
       await hydrateSession(data.session);
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = onAuthStateChange(async (_event, session) => {
       if (!mounted) return;
       await hydrateSession(session);
     });
@@ -218,10 +217,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [hydrateSession]);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await signInWithPassword({ email, password });
     if (error) throw error;
 
-    const session = data.session ?? (await supabase.auth.getSession()).data.session;
+    const session = data.session ?? (await getSession()).data.session;
     if (!session?.access_token) return;
 
     const pending = getPendingOnboarding(email);
@@ -245,7 +244,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     password: string,
     onboarding: OnboardingProvisionPayload
   ) => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await signUpSession({ email, password });
     if (error) throw error;
 
     const session = data.session;
@@ -261,13 +260,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     await provisionOnboarding(session.access_token, onboarding);
-    const latestSession = (await supabase.auth.getSession()).data.session ?? session;
+    const latestSession = (await getSession()).data.session ?? session;
     await hydrateSession(latestSession);
     return { requiresEmailConfirmation: false };
   }, [hydrateSession]);
 
   const sendReset = useCallback(async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/#auth=reset`,
     });
     if (error) throw error;
@@ -277,7 +276,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     clearDemoModeFlag();
     clearStoredDemoSessionId();
     setIsDemoMode(false);
-    const { error } = await supabase.auth.signOut();
+    const { error } = await signOutSession();
     if (error) throw error;
     setAuthState({
       status: "unauthenticated",
@@ -295,7 +294,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setAuthState((prev) => ({ ...prev, me, error: null, profileError: null }));
     } catch (error) {
       if (isAuthFailure(error)) {
-        await supabase.auth.signOut();
+        await signOutSession();
         setAuthState({
           status: "unauthenticated",
           session: null,

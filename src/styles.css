@@ -545,6 +545,64 @@ button, input { font: inherit; }
 
 .status-inline { margin-top: 14px; padding: 16px; display: grid; gap: 10px; }
 
+
+.dark-btn.ghost {
+  background: rgba(22, 28, 34, 0.55);
+}
+
+.brew-entry-sheet {
+  position: fixed;
+  left: clamp(10px, 3vw, 14px);
+  right: clamp(10px, 3vw, 14px);
+  bottom: calc(86px + env(safe-area-inset-bottom));
+  z-index: 6;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.brew-entry-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.brew-entry-actions.single {
+  grid-template-columns: 1fr;
+}
+
+.brew-entry-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.brew-entry-file-input,
+.brew-entry-textarea {
+  display: grid;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
+.brew-entry-file-input input,
+.brew-entry-textarea textarea {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--divider);
+  background: rgba(14, 19, 24, 0.9);
+  color: var(--text-primary);
+  padding: 10px 12px;
+}
+
+.brew-entry-textarea textarea {
+  resize: vertical;
+  min-height: 92px;
+}
+
+.brew-entry-sheet .dark-btn:disabled {
+  opacity: 0.6;
+}
+
 .more-menu {
   position: fixed;
   left: clamp(10px, 3vw, 14px);
@@ -637,6 +695,10 @@ button, input { font: inherit; }
   }
 
   .more-menu {
+    bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+
+  .brew-entry-sheet {
     bottom: calc(80px + env(safe-area-inset-bottom));
   }
 }

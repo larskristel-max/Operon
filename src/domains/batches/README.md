@@ -1,13 +1,12 @@
-# Batches Domain (Placeholder)
+# Batches Domain
 
-## Future responsibility
-- Own batch lifecycle business logic (planning, execution state, progression, status transitions).
-- Provide domain APIs/hooks used by UI and orchestration layers for batch operations.
-- Define domain-level types/contracts for batches, independent from UI rendering concerns.
+## Responsibility
+- Own brew entry and batch draft preparation logic.
+- Prepare a safe confirmation boundary before any batch write is executed.
+- Keep UI components thin by centralizing flow state and transitions.
 
-## Current status
-- Placeholder only.
-- No runtime logic is implemented in this directory in PR 6.
-
-## Guardrail
-- Do not add runtime logic here without a dedicated follow-up PR.
+## Current scope
+- Recipe source selection flow (`existing`, `new`, `upload`).
+- Upload intake handoff into recipe domain intake endpoint.
+- Batch draft preparation endpoint integration.
+- No direct final batch creation in this phase.

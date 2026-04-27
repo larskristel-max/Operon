@@ -9,9 +9,13 @@ export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): voi
   onUnauthorized = handler;
 }
 
-export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+interface ApiFetchOptions {
+  accessToken?: string;
+}
+
+export async function apiFetch<T>(path: string, init?: RequestInit, options?: ApiFetchOptions): Promise<T> {
   const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
+  const token = options?.accessToken ?? data.session?.access_token;
 
   const headers = new Headers(init?.headers ?? {});
   if (!headers.has("Content-Type") && init?.body) {

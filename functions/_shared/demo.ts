@@ -47,7 +47,23 @@ export class DemoHttpError extends Error {
   }
 }
 
+function requireDemoEnv(env: DemoEnv): void {
+  const missing: string[] = [];
+
+  if (!env.SUPABASE_URL) missing.push("SUPABASE_URL");
+  if (!env.SUPABASE_SERVICE_ROLE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+
+  if (missing.length > 0) {
+    throw new DemoHttpError(
+      `Missing required demo env vars: ${missing.join(", ")}. Configure Cloudflare Pages Functions secrets.`,
+      500
+    );
+  }
+}
+
 function adminHeaders(env: DemoEnv): Record<string, string> {
+  requireDemoEnv(env);
+
   return {
     Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
     apikey: env.SUPABASE_SERVICE_ROLE_KEY,

@@ -1,9 +1,5 @@
-function asNonEmptyString(value: string | null): string | null {
-  return typeof value === "string" && value.length > 0 ? value : null;
-}
-
 export function getSessionString(key: string): string | null {
-  return asNonEmptyString(sessionStorage.getItem(key));
+  return sessionStorage.getItem(key);
 }
 
 export function setSessionString(key: string, value: string): void {
@@ -15,7 +11,7 @@ export function removeSessionKey(key: string): void {
 }
 
 export function getLocalString(key: string): string | null {
-  return asNonEmptyString(localStorage.getItem(key));
+  return localStorage.getItem(key);
 }
 
 export function setLocalString(key: string, value: string): void {
@@ -28,7 +24,7 @@ export function removeLocalKey(key: string): void {
 
 export function getSessionJson<T>(key: string): T | null {
   const raw = sessionStorage.getItem(key);
-  if (!raw) return null;
+  if (raw === null) return null;
   try {
     return JSON.parse(raw) as T;
   } catch {
@@ -42,7 +38,7 @@ export function setSessionJson<T>(key: string, value: T): void {
 
 export function getLocalJson<T>(key: string): T | null {
   const raw = localStorage.getItem(key);
-  if (!raw) return null;
+  if (raw === null) return null;
   try {
     return JSON.parse(raw) as T;
   } catch {

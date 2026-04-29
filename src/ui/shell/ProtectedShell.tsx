@@ -11,6 +11,7 @@ import { useDemoDashboard } from "@/ui/shell/useDemoDashboard";
 import { useRealDashboard } from "@/hooks/useRealDashboard";
 import { mapRealDashboardToMerged } from "@/domains/dashboard/mappers";
 import { useBottomNavHeight } from "@/ui/shell/useBottomNavHeight";
+import { useBrewEntryFlow } from "@/domains/batches/hooks";
 
 type IconName =
   | "bell"
@@ -117,6 +118,19 @@ function Icon({ name, className }: { name: IconName; className?: string }) {
   }
 }
 
+
+function extractRecipeOptions(recipes: Array<Record<string, unknown>>): Array<{ id: string; name: string }> {
+  return recipes
+    .map((recipe) => {
+      const idRaw = recipe.id;
+      const nameRaw = recipe.name ?? recipe.recipe_name ?? recipe.title;
+      const id = typeof idRaw === "string" ? idRaw.trim() : "";
+      const name = typeof nameRaw === "string" ? nameRaw.trim() : "";
+      if (!id || !name) return null;
+      return { id, name };
+    })
+    .filter((recipe): recipe is { id: string; name: string } => recipe !== null);
+}
 const defaultDashboardData: DashboardData = {
   breweryName: "OPERON",
   hero: {
@@ -136,7 +150,7 @@ const defaultDashboardData: DashboardData = {
     { title: "ORDERS", subtitle: "To Fulfill", accent: "purple", value: "—" },
     { title: "INVENTORY", subtitle: "Low Stock", accent: "amber", value: "—" },
   ],
-  quickActions: ["Start Brew", "Fermentation", "Add Inventory", "View Reports"],
+  quickActions: ["Brew", "Ferment", "Stock", "Reports"],
 };
 
 export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => void }) {
@@ -160,6 +174,16 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     if (!realDashboardData) return null;
     return mapRealDashboardToMerged(realDashboardData);
   }, [realDashboardData]);
+
+  const existingRecipes = useMemo(() => {
+    if (isDemoMode) {
+      return extractRecipeOptions(demoMergedData?.recipes ?? []);
+    }
+
+    return extractRecipeOptions(realMergedData?.recipes ?? []);
+  }, [demoMergedData?.recipes, isDemoMode, realMergedData?.recipes]);
+
+  const brewEntryFlow = useBrewEntryFlow({ isDemoMode, existingRecipes });
 
   const dashboardData = useMemo<DashboardData>(() => {
     if (isDemoMode) {
@@ -300,7 +324,16 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
         <h3>{copy.quickActions}</h3>
         <div className="quick-actions-grid">
           {dashboardData.quickActions.map((label, index) => (
-            <button key={label} type="button" className="quick-action">
+            <button
+              key={label}
+              type="button"
+              className="quick-action"
+              onClick={() => {
+                if (index === 0) {
+                  brewEntryFlow.open();
+                }
+              }}
+            >
               <span className="quick-action-icon">
                 <Icon name={quickActionIcons[Math.min(quickActionIcons.length - 1, index)]} className="line-icon icon-md" />
               </span>
@@ -309,6 +342,188 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
           ))}
         </div>
       </section>
+
+      {brewEntryFlow.state.isOpen && (
+        <section className="glass-panel brew-entry-sheet" aria-label={copy.quickActionStartBrew}>
+          {brewEntryFlow.state.step === "recipe-source" && (
+            <>
+              <p className="eyebrow">{copy.brewEntryChooseRecipeSource}</p>
+              <div className="brew-entry-actions">
+                <button type="button" className="dark-btn" onClick={() => brewEntryFlow.chooseSource("existing-recipe")}>
+                  {copy.brewEntryExistingRecipe}
+                </button>
+                <button type="button" className="dark-btn" onClick={() => brewEntryFlow.chooseSource("new-recipe")}>
+                  {copy.brewEntryNewRecipe}
+                </button>
+              </div>
+              <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.close}>
+                {copy.brewEntryClose}
+              </button>
+            </>
+          )}
+
+          {brewEntryFlow.state.step === "existing-recipe-options" && (
+            <>
+              <p className="eyebrow">{copy.brewEntryChooseExistingRecipePath}</p>
+              <div className="brew-entry-actions">
+                <button type="button" className="dark-btn" onClick={brewEntryFlow.openRecipeList}>
+                  {copy.brewEntrySelectExistingRecipe}
+                </button>
+                <button type="button" className="dark-btn" onClick={brewEntryFlow.chooseUploadPath}>
+                  {copy.brewEntryUploadRecipe}
+                </button>
+              </div>
+              <div className="brew-entry-footer">
+                <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.back}>
+                  {copy.brewEntryBack}
+                </button>
+                <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.close}>
+                  {copy.brewEntryClose}
+                </button>
+              </div>
+            </>
+          )}
+
+          {brewEntryFlow.state.step === "select-existing-recipe" && (
+            <>
+              <p className="eyebrow">{copy.brewEntrySelectExistingRecipe}</p>
+              {brewEntryFlow.hasConnectedRecipes ? (
+                <div className="brew-entry-actions">
+                  {brewEntryFlow.existingRecipeOptions.map((recipe) => (
+                    <button
+                      key={recipe.id}
+                      type="button"
+                      className="dark-btn"
+                      onClick={() => brewEntryFlow.chooseExistingRecipe(recipe.id)}
+                    >
+                      {recipe.name}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="subtle">{copy.brewEntryNoRecipesConnected}</p>
+              )}
+              <div className="brew-entry-footer">
+                <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.back}>
+                  {copy.brewEntryBack}
+                </button>
+                <button
+                  type="button"
+                  className="dark-btn"
+                  onClick={() => void brewEntryFlow.prepareDraft()}
+                  disabled={!brewEntryFlow.canPrepareDraft || brewEntryFlow.state.isBusy}
+                >
+                  {copy.brewEntryPrepareDraft}
+                </button>
+              </div>
+            </>
+          )}
+
+          {brewEntryFlow.state.step === "upload-recipe" && (
+            <>
+              <p className="eyebrow">{copy.brewEntryUploadRecipe}</p>
+              <p className="subtle">{copy.brewEntryUploadHelp}</p>
+              <label className="brew-entry-file-input">
+                <span>{copy.brewEntrySelectFile}</span>
+                <input
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg,.webp,.heic,.csv,.xls,.xlsx,.ods,.txt,.xml,.beerxml,.json"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] ?? null;
+                    brewEntryFlow.setUploadFile(file);
+                  }}
+                />
+              </label>
+              {brewEntryFlow.state.upload.file && (
+                <p className="subtle">
+                  {brewEntryFlow.state.upload.file.name} · {Math.max(1, Math.round(brewEntryFlow.state.upload.file.size / 1024))} KB
+                </p>
+              )}
+              <label className="brew-entry-textarea">
+                <span>{copy.brewEntryManualPaste}</span>
+                <textarea
+                  value={brewEntryFlow.state.upload.manualText}
+                  onChange={(event) => brewEntryFlow.setManualText(event.target.value)}
+                  rows={4}
+                />
+              </label>
+              <div className="brew-entry-footer">
+                <button
+                  type="button"
+                  className="dark-btn"
+                  onClick={() => void brewEntryFlow.prepareDraft()}
+                  disabled={!brewEntryFlow.canPrepareDraft || brewEntryFlow.state.isBusy}
+                >
+                  {copy.brewEntryPrepareDraft}
+                </button>
+                <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.back}>
+                  {copy.brewEntryBack}
+                </button>
+              </div>
+            </>
+          )}
+
+          {brewEntryFlow.state.step === "new-recipe-placeholder" && (
+            <>
+              <p className="eyebrow">{copy.brewEntryNewRecipe}</p>
+              <p className="subtle">{copy.brewEntryNewRecipeComingSoon}</p>
+              <p className="subtle">{copy.brewEntryNoWritesYet}</p>
+              <div className="brew-entry-footer">
+                <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.back}>
+                  {copy.brewEntryBack}
+                </button>
+                <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.close}>
+                  {copy.brewEntryClose}
+                </button>
+              </div>
+            </>
+          )}
+
+          {brewEntryFlow.state.step === "ready-to-confirm" && (
+            <>
+              <p className="eyebrow">{copy.brewEntryReadyBoundary}</p>
+              {!brewEntryFlow.state.draftPreview ? (
+                <button
+                  type="button"
+                  className="dark-btn"
+                  onClick={() => void brewEntryFlow.prepareDraft()}
+                  disabled={!brewEntryFlow.canPrepareDraft || brewEntryFlow.state.isBusy}
+                >
+                  {copy.brewEntryPrepareDraft}
+                </button>
+              ) : (
+                <>
+                  <p className="subtle">{copy.brewEntryDraftReadyDescription}</p>
+                  <p className="subtle">{copy.brewEntryNoWritesYet}</p>
+                  {brewEntryFlow.state.draftPreview.nonPersistent && <p className="subtle">non_persistent: true</p>}
+                  <p className="subtle">
+                    {copy.brewEntrySelectedRecipePrefix}: {brewEntryFlow.state.draftPreview.recipeDraft.recipeId ?? "—"}
+                  </p>
+                  {brewEntryFlow.state.draftPreview.recipeDraft.uploadIntakeId && (
+                    <p className="subtle">Upload intake: {brewEntryFlow.state.draftPreview.recipeDraft.uploadIntakeId}</p>
+                  )}
+                  {isDemoMode && <p className="subtle">{copy.brewEntryDemoDraftMode}</p>}
+                </>
+              )}
+
+              {brewEntryFlow.state.error && <p className="error">{brewEntryFlow.state.error}</p>}
+
+              <div className="brew-entry-footer">
+                <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.back}>
+                  {copy.brewEntryBack}
+                </button>
+                <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.close}>
+                  {copy.brewEntryClose}
+                </button>
+              </div>
+            </>
+          )}
+
+          {brewEntryFlow.state.error && brewEntryFlow.state.step !== "ready-to-confirm" && (
+            <p className="error">{brewEntryFlow.state.error}</p>
+          )}
+        </section>
+      )}
 
       {!isDemoMode && profileError && (
         <section className="glass-panel status-inline">

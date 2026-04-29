@@ -33,7 +33,12 @@ export type DashboardCopy = {
   brewEntryPrepareDraft: string;
   brewEntryReadyBoundary: string;
   brewEntryDraftReadyDescription: string;
-  brewEntryNoWritesYet: string;
+  brewEntryConfirmationRequired: string;
+  brewEntryRecipeLabel: string;
+  brewEntryConfirm: string;
+  brewEntryConfirmError: string;
+  brewEntryCreatedTitle: string;
+  brewEntryCreatedDescription: string;
   brewEntryDemoDraftMode: string;
   brewEntrySelectedRecipePrefix: string;
   brewEntryNoRecipesConnected: string;
@@ -89,8 +94,13 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     brewEntrySelectFile: "Select file",
     brewEntryPrepareDraft: "Prepare draft",
     brewEntryReadyBoundary: "Ready to confirm",
-    brewEntryDraftReadyDescription: "Draft payload prepared. Confirmation is required before any batch write.",
-    brewEntryNoWritesYet: "No database write has been executed.",
+    brewEntryDraftReadyDescription: "The draft is ready.",
+    brewEntryConfirmationRequired: "Confirmation is required before creating the batch.",
+    brewEntryRecipeLabel: "Recipe",
+    brewEntryConfirm: "Confirm",
+    brewEntryConfirmError: "Could not create batch. Try again.",
+    brewEntryCreatedTitle: "BREW CREATED",
+    brewEntryCreatedDescription: "The batch was created successfully.",
     brewEntryDemoDraftMode: "Demo mode: draft is simulated and isolated from production data.",
     brewEntrySelectedRecipePrefix: "Selected recipe",
     brewEntryNoRecipesConnected: "No recipes connected yet",
@@ -145,8 +155,13 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     brewEntrySelectFile: "Sélectionner un fichier",
     brewEntryPrepareDraft: "Préparer le brouillon",
     brewEntryReadyBoundary: "Prêt à confirmer",
-    brewEntryDraftReadyDescription: "Le brouillon est préparé. Une confirmation est requise avant toute écriture de lot.",
-    brewEntryNoWritesYet: "Aucune écriture base de données n’a été effectuée.",
+    brewEntryDraftReadyDescription: "Le brouillon est prêt.",
+    brewEntryConfirmationRequired: "Une confirmation est requise avant création du lot.",
+    brewEntryRecipeLabel: "Recette",
+    brewEntryConfirm: "Confirmer",
+    brewEntryConfirmError: "Impossible de créer le lot. Réessayez.",
+    brewEntryCreatedTitle: "BRASSAGE CRÉÉ",
+    brewEntryCreatedDescription: "Le lot a été créé avec succès.",
     brewEntryDemoDraftMode: "Mode démo : le brouillon est simulé et isolé des données de production.",
     brewEntrySelectedRecipePrefix: "Recette sélectionnée",
     brewEntryNoRecipesConnected: "Aucune recette connectée pour le moment",
@@ -201,8 +216,13 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     brewEntrySelectFile: "Datei auswählen",
     brewEntryPrepareDraft: "Entwurf vorbereiten",
     brewEntryReadyBoundary: "Bereit zur Bestätigung",
-    brewEntryDraftReadyDescription: "Entwurfsdaten sind vorbereitet. Bestätigung ist vor jedem Batch-Write erforderlich.",
-    brewEntryNoWritesYet: "Es wurde noch kein Datenbank-Write ausgeführt.",
+    brewEntryDraftReadyDescription: "Der Entwurf ist bereit.",
+    brewEntryConfirmationRequired: "Eine Bestätigung ist erforderlich, bevor die Charge erstellt wird.",
+    brewEntryRecipeLabel: "Rezept",
+    brewEntryConfirm: "Bestätigen",
+    brewEntryConfirmError: "Charge konnte nicht erstellt werden. Bitte erneut versuchen.",
+    brewEntryCreatedTitle: "SUD ERSTELLT",
+    brewEntryCreatedDescription: "Die Charge wurde erfolgreich erstellt.",
     brewEntryDemoDraftMode: "Demo-Modus: Entwurf ist simuliert und von Produktionsdaten getrennt.",
     brewEntrySelectedRecipePrefix: "Ausgewähltes Rezept",
     brewEntryNoRecipesConnected: "Noch keine Rezepte verbunden",
@@ -257,8 +277,13 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     brewEntrySelectFile: "Bestand kiezen",
     brewEntryPrepareDraft: "Concept voorbereiden",
     brewEntryReadyBoundary: "Klaar om te bevestigen",
-    brewEntryDraftReadyDescription: "Conceptpayload voorbereid. Bevestiging is vereist vóór een batch-write.",
-    brewEntryNoWritesYet: "Er is nog geen database-write uitgevoerd.",
+    brewEntryDraftReadyDescription: "Het concept is klaar.",
+    brewEntryConfirmationRequired: "Bevestiging is vereist voordat de batch wordt aangemaakt.",
+    brewEntryRecipeLabel: "Recept",
+    brewEntryConfirm: "Bevestigen",
+    brewEntryConfirmError: "Kon batch niet aanmaken. Probeer opnieuw.",
+    brewEntryCreatedTitle: "BROUWSEL AANGEMAAKT",
+    brewEntryCreatedDescription: "De batch is succesvol aangemaakt.",
     brewEntryDemoDraftMode: "Demomodus: concept is gesimuleerd en gescheiden van productiedata.",
     brewEntrySelectedRecipePrefix: "Geselecteerd recept",
     brewEntryNoRecipesConnected: "Nog geen recepten gekoppeld",

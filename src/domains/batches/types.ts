@@ -4,7 +4,9 @@ export type BrewEntryStep =
   | "select-existing-recipe"
   | "upload-recipe"
   | "new-recipe-placeholder"
-  | "ready-to-confirm";
+  | "ready-to-confirm"
+  | "confirming"
+  | "confirmed";
 
 export type BrewEntrySource = "existing-recipe" | "new-recipe" | "upload-recipe";
 
@@ -57,11 +59,20 @@ export interface BrewEntryState {
   uploadIntake: RecipeUploadIntakeDraft | null;
   draftPreview: BrewDraftPreview | null;
   isBusy: boolean;
+  isConfirming: boolean;
   error: string | null;
+  confirmedBatchName: string | null;
 }
 
 export interface CreateBrewDraftInput {
   source: BrewEntrySource;
   recipeId?: string | null;
   uploadIntakeId?: string | null;
+}
+
+export interface ConfirmBrewDraftInput {
+  source: "existing-recipe" | "upload-recipe";
+  recipeId?: string | null;
+  uploadIntakeId?: string | null;
+  draftId?: string | null;
 }

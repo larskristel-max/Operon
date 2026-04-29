@@ -1,6 +1,7 @@
-import { jsonResponse, unauthorizedResponse, verifySupabaseJwt, type AuthEnv } from "../../_shared/auth";
+import { jsonResponse, unauthorizedResponse, verifySupabaseJwt } from "../../_shared/auth";
+import { resolveBreweryId, type BreweryEnv } from "../../_shared/brewery";
 
-type Env = AuthEnv;
+type Env = BreweryEnv;
 
 type UploadSourceType = "pdf" | "image" | "spreadsheet" | "text" | "beerxml" | "brewfather" | "unknown";
 
@@ -18,6 +19,11 @@ export async function onRequestPost(context: { request: Request; env: Env }): Pr
   const { request, env } = context;
   const user = await verifySupabaseJwt(request.headers.get("Authorization"), env);
   if (!user) return unauthorizedResponse();
+
+  const breweryId = await resolveBreweryId(env, user.id);
+  if (!breweryId) {
+    return jsonResponse({ error: "No brewery membership found" }, 403);
+  }
 
   let body: UploadIntakeBody;
   try {
@@ -40,6 +46,7 @@ export async function onRequestPost(context: { request: Request; env: Env }): Pr
   return jsonResponse(
     {
       intake_id: intakeId,
+      brewery_id: breweryId,
       parse_status: "pending",
       source_type: sourceType,
       file_name: body.fileName ?? null,
@@ -47,6 +54,8 @@ export async function onRequestPost(context: { request: Request; env: Env }): Pr
       file_size: typeof body.fileSize === "number" ? body.fileSize : null,
       manual_text: body.manualText?.trim() || null,
       next_step: "parse_and_confirm",
+      non_persistent: true,
+      contract_scaffold: "upload_intake_without_table",
     },
     201
   );

@@ -1,4 +1,10 @@
-export type BrewEntryStep = "recipe-source" | "existing-recipe-options" | "upload-recipe" | "ready-to-confirm";
+export type BrewEntryStep =
+  | "recipe-source"
+  | "existing-recipe-options"
+  | "select-existing-recipe"
+  | "upload-recipe"
+  | "new-recipe-placeholder"
+  | "ready-to-confirm";
 
 export type BrewEntrySource = "existing-recipe" | "new-recipe" | "upload-recipe";
 
@@ -18,12 +24,14 @@ export interface RecipeUploadIntakeDraft {
   fileSize: number | null;
   manualText: string | null;
   parseStatus: "pending";
+  nonPersistent: boolean;
 }
 
 export interface BrewDraftPreview {
   draftId: string;
   status: "ready_to_confirm";
   source: BrewEntrySource;
+  nonPersistent: boolean;
   recipeDraft: {
     recipeId: string | null;
     uploadIntakeId: string | null;

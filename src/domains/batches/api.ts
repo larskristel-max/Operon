@@ -5,6 +5,7 @@ interface CreateBrewDraftResponse {
   draft_id: string;
   status: "ready_to_confirm";
   source: "existing-recipe" | "new-recipe" | "upload-recipe";
+  non_persistent: boolean;
   recipe_draft: {
     recipe_id: string | null;
     upload_intake_id: string | null;

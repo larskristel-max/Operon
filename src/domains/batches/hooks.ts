@@ -17,11 +17,10 @@ const EMPTY_UPLOAD: UploadSelection = {
   manualText: "",
 };
 
-
-const DEFAULT_EXISTING_RECIPES: ExistingRecipeOption[] = [
-  { id: "recipe-placeholder-1", name: "House Pale Ale" },
-  { id: "recipe-placeholder-2", name: "Amber Session" },
-  { id: "recipe-placeholder-3", name: "Pils Core" },
+const DEMO_RECIPES: ExistingRecipeOption[] = [
+  { id: "demo-recipe-1", name: "House Pale Ale" },
+  { id: "demo-recipe-2", name: "Amber Session" },
+  { id: "demo-recipe-3", name: "Pils Core" },
 ];
 
 const initialBrewEntryState: BrewEntryState = {
@@ -54,11 +53,13 @@ function toPreview(input: {
   source: BrewEntrySource;
   recipeId?: string | null;
   uploadIntakeId?: string | null;
+  nonPersistent: boolean;
 }): BrewDraftPreview {
   return {
     draftId: input.draftId,
     status: "ready_to_confirm",
     source: input.source,
+    nonPersistent: input.nonPersistent,
     recipeDraft: {
       recipeId: input.recipeId ?? null,
       uploadIntakeId: input.uploadIntakeId ?? null,
@@ -80,11 +81,14 @@ function buildDemoUploadIntake(upload: UploadSelection): RecipeUploadIntakeDraft
     fileSize: upload.file?.size ?? null,
     manualText: upload.manualText.trim() ? upload.manualText.trim() : null,
     parseStatus: "pending",
+    nonPersistent: true,
   };
 }
 
 export function useBrewEntryFlow(isDemoMode: boolean) {
   const [state, setState] = useState<BrewEntryState>(initialBrewEntryState);
+
+  const existingRecipeOptions = useMemo<ExistingRecipeOption[]>(() => (isDemoMode ? DEMO_RECIPES : []), [isDemoMode]);
 
   const open = useCallback(() => {
     setState({ ...initialBrewEntryState, isOpen: true });
@@ -100,20 +104,21 @@ export function useBrewEntryFlow(isDemoMode: boolean) {
         return { ...prev, selectedSource: source, step: "existing-recipe-options", error: null, draftPreview: null };
       }
       if (source === "new-recipe") {
-        return {
-          ...prev,
-          selectedSource: source,
-          step: "ready-to-confirm",
-          error: null,
-          uploadIntake: null,
-          draftPreview: null,
-        };
+        return { ...prev, selectedSource: source, step: "new-recipe-placeholder", error: null, draftPreview: null };
       }
       return { ...prev, selectedSource: source, step: "upload-recipe", error: null, draftPreview: null };
     });
   }, []);
 
+  const openRecipeList = useCallback(() => {
+    setState((prev) => ({ ...prev, step: "select-existing-recipe", selectedSource: "existing-recipe", error: null }));
+  }, []);
+
   const chooseExistingRecipe = useCallback((recipeId: string) => {
+    if (recipeId.startsWith("recipe-placeholder-")) {
+      return;
+    }
+
     setState((prev) => ({
       ...prev,
       selectedSource: "existing-recipe",
@@ -160,16 +165,19 @@ export function useBrewEntryFlow(isDemoMode: boolean) {
   const back = useCallback(() => {
     setState((prev) => {
       if (prev.step === "ready-to-confirm") {
-        if (prev.selectedSource === "new-recipe") {
-          return { ...prev, step: "recipe-source", selectedSource: null, draftPreview: null, error: null };
-        }
         if (prev.selectedSource === "existing-recipe") {
-          return { ...prev, step: "existing-recipe-options", draftPreview: null, error: null };
+          return { ...prev, step: "select-existing-recipe", draftPreview: null, error: null };
         }
         return { ...prev, step: "upload-recipe", draftPreview: null, error: null };
       }
+      if (prev.step === "select-existing-recipe") {
+        return { ...prev, step: "existing-recipe-options", selectedRecipeId: null, error: null };
+      }
       if (prev.step === "upload-recipe") {
         return { ...prev, step: "existing-recipe-options", selectedSource: "existing-recipe", error: null };
+      }
+      if (prev.step === "new-recipe-placeholder") {
+        return { ...prev, step: "recipe-source", selectedSource: null, error: null };
       }
       if (prev.step === "existing-recipe-options") {
         return { ...prev, step: "recipe-source", selectedSource: null, error: null };
@@ -187,9 +195,23 @@ export function useBrewEntryFlow(isDemoMode: boolean) {
         throw new Error("Recipe source is required");
       }
 
+      if (current.selectedSource === "new-recipe") {
+        const preview = toPreview({
+          draftId: `new-recipe-boundary-${crypto.randomUUID()}`,
+          source: "new-recipe",
+          nonPersistent: true,
+        });
+        setState((prev) => ({ ...prev, isBusy: false, step: "new-recipe-placeholder", draftPreview: preview }));
+        return;
+      }
+
       if (current.selectedSource === "existing-recipe") {
         if (!current.selectedRecipeId) {
           throw new Error("Select an existing recipe first");
+        }
+
+        if (!isDemoMode && current.selectedRecipeId.startsWith("demo-recipe-")) {
+          throw new Error("Real mode cannot use demo recipe IDs");
         }
 
         if (isDemoMode) {
@@ -197,6 +219,7 @@ export function useBrewEntryFlow(isDemoMode: boolean) {
             draftId: `demo-draft-${crypto.randomUUID()}`,
             source: current.selectedSource,
             recipeId: current.selectedRecipeId,
+            nonPersistent: true,
           });
 
           setState((prev) => ({ ...prev, isBusy: false, step: "ready-to-confirm", draftPreview }));
@@ -208,42 +231,18 @@ export function useBrewEntryFlow(isDemoMode: boolean) {
           recipeId: current.selectedRecipeId,
         });
 
-        const draftPreview: BrewDraftPreview = {
+        const draftPreview = toPreview({
           draftId: response.draft_id,
-          status: response.status,
           source: response.source,
-          recipeDraft: {
-            recipeId: response.recipe_draft.recipe_id,
-            uploadIntakeId: response.recipe_draft.upload_intake_id,
-            newRecipePlaceholder: response.recipe_draft.new_recipe_placeholder,
-          },
-          batchDraft: {
-            proposedName: response.batch_draft.proposed_name,
-            stage: response.batch_draft.stage,
-          },
-        };
+          recipeId: response.recipe_draft.recipe_id,
+          uploadIntakeId: response.recipe_draft.upload_intake_id,
+          nonPersistent: response.non_persistent,
+        });
 
         setState((prev) => ({ ...prev, isBusy: false, step: "ready-to-confirm", draftPreview }));
         return;
       }
 
-      if (current.selectedSource === "new-recipe") {
-        if (isDemoMode) {
-          const draftPreview = toPreview({
-            draftId: `demo-draft-${crypto.randomUUID()}`,
-            source: current.selectedSource,
-          });
-          setState((prev) => ({ ...prev, isBusy: false, step: "ready-to-confirm", draftPreview }));
-          return;
-        }
-
-        const response = await createBrewDraft({ source: "new-recipe" });
-        const draftPreview = toPreview({ draftId: response.draft_id, source: response.source });
-        setState((prev) => ({ ...prev, isBusy: false, step: "ready-to-confirm", draftPreview }));
-        return;
-      }
-
-      // upload path
       const hasFile = Boolean(current.upload.file);
       const hasManualText = current.upload.manualText.trim().length > 0;
       if (!hasFile && !hasManualText) {
@@ -270,6 +269,7 @@ export function useBrewEntryFlow(isDemoMode: boolean) {
           fileSize: intakeResponse.file_size,
           manualText: intakeResponse.manual_text,
           parseStatus: intakeResponse.parse_status,
+          nonPersistent: intakeResponse.non_persistent,
         };
       }
 
@@ -278,11 +278,13 @@ export function useBrewEntryFlow(isDemoMode: boolean) {
             draftId: `demo-draft-${crypto.randomUUID()}`,
             source: "upload-recipe",
             uploadIntakeId: uploadIntake.intakeId,
+            nonPersistent: true,
           })
         : toPreview({
             draftId: (await createBrewDraft({ source: "upload-recipe", uploadIntakeId: uploadIntake.intakeId })).draft_id,
             source: "upload-recipe",
             uploadIntakeId: uploadIntake.intakeId,
+            nonPersistent: uploadIntake.nonPersistent,
           });
 
       setState((prev) => ({
@@ -303,18 +305,24 @@ export function useBrewEntryFlow(isDemoMode: boolean) {
 
   const canPrepareDraft = useMemo(() => {
     if (!state.selectedSource) return false;
-    if (state.selectedSource === "existing-recipe") return Boolean(state.selectedRecipeId);
-    if (state.selectedSource === "new-recipe") return true;
+    if (state.selectedSource === "existing-recipe") {
+      const selectedRecipeId = state.selectedRecipeId;
+      if (!selectedRecipeId) return false;
+      return selectedRecipeId.startsWith("demo-recipe-") === isDemoMode;
+    }
+    if (state.selectedSource === "new-recipe") return false;
     return Boolean(state.upload.file) || state.upload.manualText.trim().length > 0;
-  }, [state.selectedRecipeId, state.selectedSource, state.upload.file, state.upload.manualText]);
+  }, [isDemoMode, state.selectedRecipeId, state.selectedSource, state.upload.file, state.upload.manualText]);
 
   return {
     state,
-    existingRecipeOptions: DEFAULT_EXISTING_RECIPES,
+    existingRecipeOptions,
+    hasConnectedRecipes: existingRecipeOptions.length > 0,
     open,
     close,
     back,
     chooseSource,
+    openRecipeList,
     chooseExistingRecipe,
     chooseUploadPath,
     setUploadFile,

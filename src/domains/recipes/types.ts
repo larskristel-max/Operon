@@ -10,6 +10,7 @@ export interface RecipeUploadIntakeRequest {
 
 export interface RecipeUploadIntakeResponse {
   intake_id: string;
+  brewery_id: string;
   parse_status: "pending";
   source_type: UploadSourceType;
   file_name: string | null;
@@ -17,4 +18,5 @@ export interface RecipeUploadIntakeResponse {
   file_size: number | null;
   manual_text: string | null;
   next_step: "parse_and_confirm";
+  non_persistent: boolean;
 }

@@ -137,7 +137,7 @@ const defaultDashboardData: DashboardData = {
     { title: "ORDERS", subtitle: "To Fulfill", accent: "purple", value: "—" },
     { title: "INVENTORY", subtitle: "Low Stock", accent: "amber", value: "—" },
   ],
-  quickActions: ["Brew", "Fermentation", "Add Inventory", "View Reports"],
+  quickActions: ["Brew", "Ferment", "Stock", "Reports"],
 };
 
 export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => void }) {
@@ -344,11 +344,9 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
             <>
               <p className="eyebrow">{copy.brewEntryChooseExistingRecipePath}</p>
               <div className="brew-entry-actions">
-                {brewEntryFlow.existingRecipeOptions.map((recipe) => (
-                  <button key={recipe.id} type="button" className="dark-btn" onClick={() => brewEntryFlow.chooseExistingRecipe(recipe.id)}>
-                    {recipe.name}
-                  </button>
-                ))}
+                <button type="button" className="dark-btn" onClick={brewEntryFlow.openRecipeList}>
+                  {copy.brewEntrySelectExistingRecipe}
+                </button>
                 <button type="button" className="dark-btn" onClick={brewEntryFlow.chooseUploadPath}>
                   {copy.brewEntryUploadRecipe}
                 </button>
@@ -359,6 +357,41 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                 </button>
                 <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.close}>
                   {copy.brewEntryClose}
+                </button>
+              </div>
+            </>
+          )}
+
+          {brewEntryFlow.state.step === "select-existing-recipe" && (
+            <>
+              <p className="eyebrow">{copy.brewEntrySelectExistingRecipe}</p>
+              {brewEntryFlow.hasConnectedRecipes ? (
+                <div className="brew-entry-actions">
+                  {brewEntryFlow.existingRecipeOptions.map((recipe) => (
+                    <button
+                      key={recipe.id}
+                      type="button"
+                      className="dark-btn"
+                      onClick={() => brewEntryFlow.chooseExistingRecipe(recipe.id)}
+                    >
+                      {recipe.name}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="subtle">{copy.brewEntryNoRecipesConnected}</p>
+              )}
+              <div className="brew-entry-footer">
+                <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.back}>
+                  {copy.brewEntryBack}
+                </button>
+                <button
+                  type="button"
+                  className="dark-btn"
+                  onClick={() => void brewEntryFlow.prepareDraft()}
+                  disabled={!brewEntryFlow.canPrepareDraft || brewEntryFlow.state.isBusy}
+                >
+                  {copy.brewEntryPrepareDraft}
                 </button>
               </div>
             </>
@@ -393,7 +426,12 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                 />
               </label>
               <div className="brew-entry-footer">
-                <button type="button" className="dark-btn" onClick={() => void brewEntryFlow.prepareDraft()} disabled={!brewEntryFlow.canPrepareDraft || brewEntryFlow.state.isBusy}>
+                <button
+                  type="button"
+                  className="dark-btn"
+                  onClick={() => void brewEntryFlow.prepareDraft()}
+                  disabled={!brewEntryFlow.canPrepareDraft || brewEntryFlow.state.isBusy}
+                >
                   {copy.brewEntryPrepareDraft}
                 </button>
                 <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.back}>
@@ -403,18 +441,42 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
             </>
           )}
 
+          {brewEntryFlow.state.step === "new-recipe-placeholder" && (
+            <>
+              <p className="eyebrow">{copy.brewEntryNewRecipe}</p>
+              <p className="subtle">{copy.brewEntryNewRecipeComingSoon}</p>
+              <p className="subtle">{copy.brewEntryNoWritesYet}</p>
+              <div className="brew-entry-footer">
+                <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.back}>
+                  {copy.brewEntryBack}
+                </button>
+                <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.close}>
+                  {copy.brewEntryClose}
+                </button>
+              </div>
+            </>
+          )}
+
           {brewEntryFlow.state.step === "ready-to-confirm" && (
             <>
               <p className="eyebrow">{copy.brewEntryReadyBoundary}</p>
               {!brewEntryFlow.state.draftPreview ? (
-                <button type="button" className="dark-btn" onClick={() => void brewEntryFlow.prepareDraft()} disabled={!brewEntryFlow.canPrepareDraft || brewEntryFlow.state.isBusy}>
+                <button
+                  type="button"
+                  className="dark-btn"
+                  onClick={() => void brewEntryFlow.prepareDraft()}
+                  disabled={!brewEntryFlow.canPrepareDraft || brewEntryFlow.state.isBusy}
+                >
                   {copy.brewEntryPrepareDraft}
                 </button>
               ) : (
                 <>
                   <p className="subtle">{copy.brewEntryDraftReadyDescription}</p>
                   <p className="subtle">{copy.brewEntryNoWritesYet}</p>
-                  <p className="subtle">{copy.brewEntrySelectedRecipePrefix}: {brewEntryFlow.state.draftPreview.recipeDraft.recipeId ?? "—"}</p>
+                  {brewEntryFlow.state.draftPreview.nonPersistent && <p className="subtle">non_persistent: true</p>}
+                  <p className="subtle">
+                    {copy.brewEntrySelectedRecipePrefix}: {brewEntryFlow.state.draftPreview.recipeDraft.recipeId ?? "—"}
+                  </p>
                   {brewEntryFlow.state.draftPreview.recipeDraft.uploadIntakeId && (
                     <p className="subtle">Upload intake: {brewEntryFlow.state.draftPreview.recipeDraft.uploadIntakeId}</p>
                   )}

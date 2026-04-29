@@ -154,8 +154,8 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     copy.greetingBrewer;
   const greetingName = isDemoMode ? copy.greetingBrewer : firstName;
   const greeting = `${copy.greetingHello}, ${greetingName}!`;
-  const { data: demoMergedData, loading: demoLoading, error: demoError } = useDemoDashboard(isDemoMode);
-  const { data: realDashboardData } = useRealDashboard(!isDemoMode);
+  const { data: demoMergedData, loading: demoLoading, error: demoError, refetch: refetchDemoDashboard } = useDemoDashboard(isDemoMode);
+  const { data: realDashboardData, refetch: refetchRealDashboard } = useRealDashboard(!isDemoMode);
 
   const realMergedData = useMemo<DemoDashboardMerged | null>(() => {
     if (!realDashboardData) return null;
@@ -173,7 +173,14 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
       .filter((recipe) => recipe.id && recipe.name);
   }, [isDemoMode, demoMergedData?.recipes, realMergedData?.recipes]);
 
-  const brewEntryFlow = useBrewEntryFlow({ isDemoMode, existingRecipes });
+  const brewEntryFlow = useBrewEntryFlow({
+    isDemoMode,
+    existingRecipes,
+    onConfirmed: isDemoMode ? refetchDemoDashboard : refetchRealDashboard,
+  });
+
+  const selectedRecipeName =
+    existingRecipes.find((recipe) => recipe.id === brewEntryFlow.state.selectedRecipeId)?.name ?? copy.brewEntrySelectedRecipePrefix;
 
   const dashboardData = useMemo<DashboardData>(() => {
     if (isDemoMode) {
@@ -457,7 +464,6 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
             <>
               <p className="eyebrow">{copy.brewEntryNewRecipe}</p>
               <p className="subtle">{copy.brewEntryNewRecipeComingSoon}</p>
-              <p className="subtle">{copy.brewEntryNoWritesYet}</p>
               <div className="brew-entry-footer">
                 <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.back}>
                   {copy.brewEntryBack}
@@ -484,15 +490,10 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
               ) : (
                 <>
                   <p className="subtle">{copy.brewEntryDraftReadyDescription}</p>
-                  <p className="subtle">{copy.brewEntryNoWritesYet}</p>
-                  {brewEntryFlow.state.draftPreview.nonPersistent && <p className="subtle">non_persistent: true</p>}
+                  <p className="subtle">{copy.brewEntryConfirmationRequired}</p>
                   <p className="subtle">
-                    {copy.brewEntrySelectedRecipePrefix}: {brewEntryFlow.state.draftPreview.recipeDraft.recipeId ?? "—"}
+                    {copy.brewEntryRecipeLabel}: {selectedRecipeName}
                   </p>
-                  {brewEntryFlow.state.draftPreview.recipeDraft.uploadIntakeId && (
-                    <p className="subtle">Upload intake: {brewEntryFlow.state.draftPreview.recipeDraft.uploadIntakeId}</p>
-                  )}
-                  {isDemoMode && <p className="subtle">{copy.brewEntryDemoDraftMode}</p>}
                 </>
               )}
 
@@ -503,6 +504,30 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                   {copy.brewEntryBack}
                 </button>
                 <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.close}>
+                  {copy.brewEntryClose}
+                </button>
+                {brewEntryFlow.state.draftPreview && (
+                  <button
+                    type="button"
+                    className="dark-btn"
+                    onClick={() => void brewEntryFlow.confirmDraft()}
+                    disabled={brewEntryFlow.state.isConfirming}
+                  >
+                    {copy.brewEntryConfirm}
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+
+          {brewEntryFlow.state.step === "confirming" && <p className="subtle">{copy.brewEntryConfirm}</p>}
+
+          {brewEntryFlow.state.step === "confirmed" && (
+            <>
+              <p className="eyebrow">{copy.brewEntryCreatedTitle}</p>
+              <p className="subtle">{copy.brewEntryCreatedDescription}</p>
+              <div className="brew-entry-footer">
+                <button type="button" className="dark-btn" onClick={brewEntryFlow.close}>
                   {copy.brewEntryClose}
                 </button>
               </div>

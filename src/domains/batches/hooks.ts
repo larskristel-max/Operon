@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
-import { createBrewDraft } from "@/domains/batches/api";
+import { createBatchAfterConfirmation, createBrewDraft } from "@/domains/batches/api";
+import { writeDemoOverlay } from "@/domains/demo/api";
 import type {
   BrewDraftPreview,
   BrewEntrySource,
@@ -26,7 +27,9 @@ const initialBrewEntryState: BrewEntryState = {
   uploadIntake: null,
   draftPreview: null,
   isBusy: false,
+  isConfirming: false,
   error: null,
+  confirmedBatchName: null,
 };
 
 function detectUploadSourceType(file: File): UploadSourceType {
@@ -82,9 +85,11 @@ function buildDemoUploadIntake(upload: UploadSelection): RecipeUploadIntakeDraft
 export function useBrewEntryFlow({
   isDemoMode,
   existingRecipes,
+  onConfirmed,
 }: {
   isDemoMode: boolean;
   existingRecipes: ExistingRecipeOption[];
+  onConfirmed: () => Promise<void>;
 }) {
   const [state, setState] = useState<BrewEntryState>(initialBrewEntryState);
 
@@ -129,6 +134,7 @@ export function useBrewEntryFlow({
       step: "ready-to-confirm",
       error: null,
       draftPreview: null,
+      confirmedBatchName: null,
     }));
   }, []);
 
@@ -140,6 +146,7 @@ export function useBrewEntryFlow({
       selectedRecipeId: null,
       draftPreview: null,
       error: null,
+      confirmedBatchName: null,
     }));
   }, []);
 
@@ -149,6 +156,7 @@ export function useBrewEntryFlow({
       upload: { ...prev.upload, manualText },
       draftPreview: null,
       error: null,
+      confirmedBatchName: null,
     }));
   }, []);
 
@@ -162,6 +170,7 @@ export function useBrewEntryFlow({
       },
       draftPreview: null,
       error: null,
+      confirmedBatchName: null,
     }));
   }, []);
 
@@ -309,6 +318,56 @@ export function useBrewEntryFlow({
     }
   }, [existingRecipeOptions, isDemoMode, state]);
 
+  const confirmDraft = useCallback(async () => {
+    const current = state;
+    if (!current.draftPreview || !current.selectedSource || current.selectedSource === "new-recipe") {
+      setState((prev) => ({ ...prev, error: "Prepare a draft first" }));
+      return;
+    }
+
+    const selectedRecipeName = existingRecipeOptions.find((recipe) => recipe.id === current.selectedRecipeId)?.name ?? null;
+    const fallbackName = current.selectedSource === "upload-recipe" ? "Uploaded Recipe Batch" : "New Batch";
+    const batchName = selectedRecipeName ?? fallbackName;
+
+    setState((prev) => ({ ...prev, isConfirming: true, step: "confirming", error: null }));
+
+    try {
+      if (isDemoMode) {
+        const recordId = crypto.randomUUID();
+        await writeDemoOverlay({
+          table_name: "batches",
+          record_id: recordId,
+          operation: "insert",
+          payload: {
+            id: recordId,
+            brewery_id: "00000000-0000-4000-8000-0000000d3110",
+            recipe_id: current.selectedRecipeId,
+            name: batchName,
+            status: "planned",
+            created_at: new Date().toISOString(),
+          },
+        });
+      } else {
+        await createBatchAfterConfirmation({
+          source: current.selectedSource,
+          recipeId: current.selectedRecipeId,
+          uploadIntakeId: current.uploadIntake?.intakeId ?? current.draftPreview.recipeDraft.uploadIntakeId,
+          draftId: current.draftPreview.draftId,
+        });
+      }
+
+      await onConfirmed();
+      setState((prev) => ({ ...prev, isConfirming: false, step: "confirmed", confirmedBatchName: batchName }));
+    } catch (error) {
+      setState((prev) => ({
+        ...prev,
+        isConfirming: false,
+        step: "ready-to-confirm",
+        error: error instanceof Error ? error.message : "Could not create batch. Try again.",
+      }));
+    }
+  }, [existingRecipeOptions, isDemoMode, onConfirmed, state]);
+
   const canPrepareDraft = useMemo(() => {
     if (!state.selectedSource) return false;
     if (state.selectedSource === "existing-recipe") {
@@ -334,6 +393,7 @@ export function useBrewEntryFlow({
     setUploadFile,
     setManualText,
     prepareDraft,
+    confirmDraft,
     canPrepareDraft,
   };
 }

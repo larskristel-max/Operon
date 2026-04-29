@@ -20,8 +20,8 @@ const EMPTY_UPLOAD: UploadSelection = {
 
 const initialBrewEntryState: BrewEntryState = {
   isOpen: false,
-  step: "recipe-source",
-  selectedSource: null,
+  step: "select-existing-recipe",
+  selectedSource: "existing-recipe",
   selectedRecipeId: null,
   upload: EMPTY_UPLOAD,
   uploadIntake: null,
@@ -183,16 +183,16 @@ export function useBrewEntryFlow({
         return { ...prev, step: "upload-recipe", draftPreview: null, error: null };
       }
       if (prev.step === "select-existing-recipe") {
-        return { ...prev, step: "existing-recipe-options", selectedRecipeId: null, error: null };
+        return initialBrewEntryState;
       }
       if (prev.step === "upload-recipe") {
-        return { ...prev, step: "existing-recipe-options", selectedSource: "existing-recipe", error: null };
+        return { ...prev, step: "select-existing-recipe", selectedSource: "existing-recipe", error: null };
       }
       if (prev.step === "new-recipe-placeholder") {
-        return { ...prev, step: "recipe-source", selectedSource: null, error: null };
+        return { ...prev, step: "select-existing-recipe", selectedSource: "existing-recipe", error: null };
       }
       if (prev.step === "existing-recipe-options") {
-        return { ...prev, step: "recipe-source", selectedSource: null, error: null };
+        return initialBrewEntryState;
       }
       return prev;
     });

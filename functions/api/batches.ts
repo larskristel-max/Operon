@@ -38,6 +38,22 @@ async function parseResponseBody(response: Response): Promise<unknown> {
   }
 }
 
+async function verifyRecipeBelongsToBrewery(env: Env, recipeId: string, breweryId: string): Promise<boolean> {
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/recipes?id=eq.${encodeURIComponent(recipeId)}&brewery_id=eq.${encodeURIComponent(
+      breweryId
+    )}&select=id&limit=1`,
+    { headers: adminHeaders(env) }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to verify recipe ownership");
+  }
+
+  const rows = (await parseResponseBody(res)) as unknown;
+  return Array.isArray(rows) && rows.length > 0;
+}
+
 export async function onRequestPost(context: { request: Request; env: Env }): Promise<Response> {
   const user = await verifySupabaseJwt(context.request.headers.get("Authorization"), context.env);
   if (!user) return unauthorizedResponse();
@@ -58,6 +74,17 @@ export async function onRequestPost(context: { request: Request; env: Env }): Pr
 
   if (body.source === "existing-recipe" && !body.recipeId) return jsonResponse({ error: "recipeId is required" }, 400);
   if (body.source === "upload-recipe" && !body.uploadIntakeId) return jsonResponse({ error: "uploadIntakeId is required" }, 400);
+
+  if (body.recipeId) {
+    try {
+      const recipeMatchesBrewery = await verifyRecipeBelongsToBrewery(context.env, body.recipeId, breweryId);
+      if (!recipeMatchesBrewery) {
+        return jsonResponse({ error: "Recipe not found for brewery" }, 404);
+      }
+    } catch {
+      return jsonResponse({ error: "Failed to verify recipe ownership" }, 500);
+    }
+  }
 
   const batchName = body.source === "upload-recipe" ? "Uploaded Recipe Batch" : "New Batch";
   const basePayload: Record<string, unknown> = {

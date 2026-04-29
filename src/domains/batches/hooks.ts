@@ -340,7 +340,7 @@ export function useBrewEntryFlow({
           operation: "insert",
           payload: {
             id: recordId,
-            brewery_id: "demo-brewery",
+            brewery_id: "00000000-0000-4000-8000-0000000d3110",
             recipe_id: current.selectedRecipeId,
             name: batchName,
             status: "planned",

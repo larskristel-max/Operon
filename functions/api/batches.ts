@@ -28,6 +28,16 @@ async function postInsert(env: Env, payload: Record<string, unknown>): Promise<R
   });
 }
 
+async function parseResponseBody(response: Response): Promise<unknown> {
+  const raw = await response.text();
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return { raw };
+  }
+}
+
 export async function onRequestPost(context: { request: Request; env: Env }): Promise<Response> {
   const user = await verifySupabaseJwt(context.request.headers.get("Authorization"), context.env);
   if (!user) return unauthorizedResponse();
@@ -57,21 +67,28 @@ export async function onRequestPost(context: { request: Request; env: Env }): Pr
     name: batchName,
   };
 
-  let insertRes = await postInsert(context.env, basePayload);
-  if (!insertRes.ok) {
-    const text = await insertRes.text();
-    if (text.toLowerCase().includes("column") && text.toLowerCase().includes("name")) {
-      const { name: _ignored, ...withoutName } = basePayload;
-      insertRes = await postInsert(context.env, withoutName);
-    }
+  const firstInsertRes = await postInsert(context.env, basePayload);
+  const firstPayload = await parseResponseBody(firstInsertRes);
+
+  const firstErrorText =
+    !firstInsertRes.ok && typeof firstPayload === "object" && firstPayload
+      ? JSON.stringify(firstPayload).toLowerCase()
+      : "";
+  const missingNameColumn = firstErrorText.includes("column") && firstErrorText.includes("name");
+
+  let finalRes = firstInsertRes;
+  let finalPayload: unknown = firstPayload;
+
+  if (!firstInsertRes.ok && missingNameColumn) {
+    const { name: _ignored, ...withoutName } = basePayload;
+    finalRes = await postInsert(context.env, withoutName);
+    finalPayload = await parseResponseBody(finalRes);
   }
 
-  const responseText = await insertRes.text();
-  const payload = responseText ? JSON.parse(responseText) : null;
-  if (!insertRes.ok) {
-    return jsonResponse({ error: "Failed to create batch", detail: payload }, 400);
+  if (!finalRes.ok) {
+    return jsonResponse({ error: "Failed to create batch", detail: finalPayload }, 400);
   }
 
-  const batch = Array.isArray(payload) ? payload[0] : payload;
+  const batch = Array.isArray(finalPayload) ? finalPayload[0] : finalPayload;
   return jsonResponse({ batch }, 201);
 }

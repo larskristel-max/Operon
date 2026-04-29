@@ -17,12 +17,6 @@ const EMPTY_UPLOAD: UploadSelection = {
   manualText: "",
 };
 
-const DEMO_RECIPES: ExistingRecipeOption[] = [
-  { id: "demo-recipe-1", name: "House Pale Ale" },
-  { id: "demo-recipe-2", name: "Amber Session" },
-  { id: "demo-recipe-3", name: "Pils Core" },
-];
-
 const initialBrewEntryState: BrewEntryState = {
   isOpen: false,
   step: "recipe-source",
@@ -85,10 +79,19 @@ function buildDemoUploadIntake(upload: UploadSelection): RecipeUploadIntakeDraft
   };
 }
 
-export function useBrewEntryFlow(isDemoMode: boolean) {
+export function useBrewEntryFlow({
+  isDemoMode,
+  existingRecipes,
+}: {
+  isDemoMode: boolean;
+  existingRecipes: ExistingRecipeOption[];
+}) {
   const [state, setState] = useState<BrewEntryState>(initialBrewEntryState);
 
-  const existingRecipeOptions = useMemo<ExistingRecipeOption[]>(() => (isDemoMode ? DEMO_RECIPES : []), [isDemoMode]);
+  const existingRecipeOptions = useMemo<ExistingRecipeOption[]>(
+    () => existingRecipes,
+    [existingRecipes],
+  );
 
   const open = useCallback(() => {
     setState({ ...initialBrewEntryState, isOpen: true });
@@ -210,8 +213,11 @@ export function useBrewEntryFlow(isDemoMode: boolean) {
           throw new Error("Select an existing recipe first");
         }
 
-        if (!isDemoMode && current.selectedRecipeId.startsWith("demo-recipe-")) {
-          throw new Error("Real mode cannot use demo recipe IDs");
+        const selectedRecipeIsAvailable = existingRecipeOptions.some(
+          (recipe) => recipe.id === current.selectedRecipeId,
+        );
+        if (!selectedRecipeIsAvailable) {
+          throw new Error("Selected recipe is not available");
         }
 
         if (isDemoMode) {
@@ -301,18 +307,18 @@ export function useBrewEntryFlow(isDemoMode: boolean) {
         error: error instanceof Error ? error.message : "Failed to prepare draft",
       }));
     }
-  }, [isDemoMode, state]);
+  }, [existingRecipeOptions, isDemoMode, state]);
 
   const canPrepareDraft = useMemo(() => {
     if (!state.selectedSource) return false;
     if (state.selectedSource === "existing-recipe") {
       const selectedRecipeId = state.selectedRecipeId;
       if (!selectedRecipeId) return false;
-      return selectedRecipeId.startsWith("demo-recipe-") === isDemoMode;
+      return existingRecipeOptions.some((recipe) => recipe.id === selectedRecipeId);
     }
     if (state.selectedSource === "new-recipe") return false;
     return Boolean(state.upload.file) || state.upload.manualText.trim().length > 0;
-  }, [isDemoMode, state.selectedRecipeId, state.selectedSource, state.upload.file, state.upload.manualText]);
+  }, [existingRecipeOptions, state.selectedRecipeId, state.selectedSource, state.upload.file, state.upload.manualText]);
 
   return {
     state,

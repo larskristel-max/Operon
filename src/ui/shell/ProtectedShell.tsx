@@ -145,7 +145,6 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const { language } = useLanguage();
   const { me, profileError, refreshProfile, session, isDemoMode, exitDemoMode, signOut } = useApp();
   const [moreOpen, setMoreOpen] = useState(false);
-  const brewEntryFlow = useBrewEntryFlow(isDemoMode);
   const copy = getDashboardCopy(language);
   const firstName =
     me?.firstName?.split(" ")[0] ??
@@ -162,6 +161,19 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     if (!realDashboardData) return null;
     return mapRealDashboardToMerged(realDashboardData);
   }, [realDashboardData]);
+
+  const existingRecipes = useMemo(() => {
+    const recipes = isDemoMode ? demoMergedData?.recipes : realMergedData?.recipes;
+
+    return (recipes ?? [])
+      .map((recipe) => ({
+        id: String((recipe as { id?: unknown }).id ?? ""),
+        name: String((recipe as { name?: unknown }).name ?? "").trim(),
+      }))
+      .filter((recipe) => recipe.id && recipe.name);
+  }, [isDemoMode, demoMergedData?.recipes, realMergedData?.recipes]);
+
+  const brewEntryFlow = useBrewEntryFlow({ isDemoMode, existingRecipes });
 
   const dashboardData = useMemo<DashboardData>(() => {
     if (isDemoMode) {

@@ -342,45 +342,6 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
 
       {brewEntryFlow.state.isOpen && (
         <section className="glass-panel brew-entry-sheet" aria-label={copy.quickActionStartBrew}>
-          {brewEntryFlow.state.step === "recipe-source" && (
-            <>
-              <p className="eyebrow">{copy.brewEntryChooseRecipeSource}</p>
-              <div className="brew-entry-actions">
-                <button type="button" className="dark-btn" onClick={() => brewEntryFlow.chooseSource("existing-recipe")}>
-                  {copy.brewEntryExistingRecipe}
-                </button>
-                <button type="button" className="dark-btn" onClick={() => brewEntryFlow.chooseSource("new-recipe")}>
-                  {copy.brewEntryNewRecipe}
-                </button>
-              </div>
-              <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.close}>
-                {copy.brewEntryClose}
-              </button>
-            </>
-          )}
-
-          {brewEntryFlow.state.step === "existing-recipe-options" && (
-            <>
-              <p className="eyebrow">{copy.brewEntryChooseExistingRecipePath}</p>
-              <div className="brew-entry-actions">
-                <button type="button" className="dark-btn" onClick={brewEntryFlow.openRecipeList}>
-                  {copy.brewEntrySelectExistingRecipe}
-                </button>
-                <button type="button" className="dark-btn" onClick={brewEntryFlow.chooseUploadPath}>
-                  {copy.brewEntryUploadRecipe}
-                </button>
-              </div>
-              <div className="brew-entry-footer">
-                <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.back}>
-                  {copy.brewEntryBack}
-                </button>
-                <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.close}>
-                  {copy.brewEntryClose}
-                </button>
-              </div>
-            </>
-          )}
-
           {brewEntryFlow.state.step === "select-existing-recipe" && (
             <>
               <p className="eyebrow">{copy.brewEntrySelectExistingRecipe}</p>
@@ -401,16 +362,14 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                 <p className="subtle">{copy.brewEntryNoRecipesConnected}</p>
               )}
               <div className="brew-entry-footer">
+                <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.chooseUploadPath}>
+                  {copy.brewEntryUploadRecipe}
+                </button>
+                <button type="button" className="dark-btn ghost" onClick={() => brewEntryFlow.chooseSource("new-recipe")}>
+                  {copy.brewEntryNewRecipe}
+                </button>
                 <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.back}>
                   {copy.brewEntryBack}
-                </button>
-                <button
-                  type="button"
-                  className="dark-btn"
-                  onClick={() => void brewEntryFlow.prepareDraft()}
-                  disabled={!brewEntryFlow.canPrepareDraft || brewEntryFlow.state.isBusy}
-                >
-                  {copy.brewEntryPrepareDraft}
                 </button>
               </div>
             </>

@@ -249,6 +249,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   }, [copy, demoLoading, demoMergedData, firstName, isDemoMode, realMergedData]);
 
   const progressLabel = dashboardData.brewCard.progressPercent > 0 ? `${dashboardData.brewCard.progressPercent}%` : "—";
+  const brewDayLabel = dashboardData.brewCard.stageCount && dashboardData.brewCard.stageCount !== "—" ? `Jour ${dashboardData.brewCard.stageCount}` : copy.waitingForData;
   const glanceIcons: IconName[] = ["tank", "water", "orders", "inventory"];
   const quickActionIcons: IconName[] = ["brew", "fermentation", "inventory", "reports"];
   const isPreparingRecipeDraft = brewEntryFlow.state.isBusy && brewEntryFlow.state.step === "ready-to-confirm" && !brewEntryFlow.state.draftPreview;
@@ -322,11 +323,10 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
             </div>
           </div>
           <div className="brew-side">
-            <strong>{dashboardData.brewCard.stageCount ? `Jour ${dashboardData.brewCard.stageCount}` : "—"}</strong>
+            <strong>{brewDayLabel}</strong>
             <span>{dashboardData.brewCard.batchStageLabel}</span>
           </div>
         </div>
-        <div className="brew-divider" />
         <div className="fermentation-row">
           <p>{copy.fermentationProgress}</p>
           <span>{progressLabel}</span>
@@ -587,7 +587,8 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
       )}
 
       <nav className="bottom-nav" aria-label="Primary">
-        <button type="button" className="brew-fab" aria-label={copy.quickActionStartBrew} onClick={brewEntryFlow.open}>
+        <div className="nav-brew-slot" aria-hidden="true" />
+        <button type="button" className="brew-fab center-brew-action" aria-label={copy.quickActionStartBrew} onClick={brewEntryFlow.open}>
           <Icon name="brew" className="line-icon icon-lg" />
         </button>
         <button type="button" className="active">

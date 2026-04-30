@@ -1,6 +1,6 @@
 import operonLogo from "../../../assets/Operonv1.png";
 import tankImage from "../../../assets/Tankimageasset.png";
-import { useMemo, useState } from "react";
+import { type TouchEvent, useMemo, useRef, useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { type DashboardData } from "@/data/demoData";
@@ -145,6 +145,10 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const { language } = useLanguage();
   const { me, profileError, refreshProfile, session, isDemoMode, exitDemoMode, signOut } = useApp();
   const [moreOpen, setMoreOpen] = useState(false);
+  const touchStartY = useRef<number | null>(null);
+  const touchStartX = useRef<number | null>(null);
+  const touchDeltaY = useRef(0);
+  const touchDeltaX = useRef(0);
   const copy = getDashboardCopy(language);
   const firstName =
     me?.firstName?.split(" ")[0] ??
@@ -247,6 +251,34 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const progressLabel = dashboardData.brewCard.progressPercent > 0 ? `${dashboardData.brewCard.progressPercent}%` : "—";
   const glanceIcons: IconName[] = ["tank", "water", "orders", "inventory"];
   const quickActionIcons: IconName[] = ["brew", "fermentation", "inventory", "reports"];
+  const isPreparingRecipeDraft = brewEntryFlow.state.isBusy && brewEntryFlow.state.step === "ready-to-confirm" && !brewEntryFlow.state.draftPreview;
+
+  const handleSheetTouchStart = (event: TouchEvent<HTMLElement>) => {
+    const touch = event.touches[0];
+    touchStartY.current = touch.clientY;
+    touchStartX.current = touch.clientX;
+    touchDeltaY.current = 0;
+    touchDeltaX.current = 0;
+  };
+
+  const handleSheetTouchMove = (event: TouchEvent<HTMLElement>) => {
+    if (touchStartY.current === null || touchStartX.current === null) return;
+    const touch = event.touches[0];
+    touchDeltaY.current = touch.clientY - touchStartY.current;
+    touchDeltaX.current = touch.clientX - touchStartX.current;
+  };
+
+  const handleSheetTouchEnd = () => {
+    const verticalDrag = touchDeltaY.current;
+    const horizontalDrift = Math.abs(touchDeltaX.current);
+    if (verticalDrag > 60 && verticalDrag > horizontalDrift) {
+      brewEntryFlow.close();
+    }
+    touchStartY.current = null;
+    touchStartX.current = null;
+    touchDeltaY.current = 0;
+    touchDeltaX.current = 0;
+  };
 
   return (
     <main className="operon-screen dashboard-screen screen-content">
@@ -341,7 +373,15 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
       </section>
 
       {brewEntryFlow.state.isOpen && (
-        <section className="glass-panel brew-entry-sheet" aria-label={copy.quickActionStartBrew}>
+        <section className="brew-entry-backdrop" onClick={brewEntryFlow.close} aria-label={copy.quickActionStartBrew}>
+          <div
+            className="glass-panel brew-entry-sheet"
+            onClick={(event) => event.stopPropagation()}
+            onTouchStart={handleSheetTouchStart}
+            onTouchMove={handleSheetTouchMove}
+            onTouchEnd={handleSheetTouchEnd}
+          >
+            <span className="brew-entry-handle" aria-hidden="true" />
           {brewEntryFlow.state.step === "select-existing-recipe" && (
             <>
               <p className="eyebrow">{copy.brewEntrySelectExistingRecipe}</p>
@@ -361,15 +401,12 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
               ) : (
                 <p className="subtle">{copy.brewEntryNoRecipesConnected}</p>
               )}
-              <div className="brew-entry-footer">
+              <div className="brew-entry-secondary-actions">
                 <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.chooseUploadPath}>
                   {copy.brewEntryUploadRecipe}
                 </button>
                 <button type="button" className="dark-btn ghost" onClick={() => brewEntryFlow.chooseSource("new-recipe")}>
                   {copy.brewEntryNewRecipe}
-                </button>
-                <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.back}>
-                  {copy.brewEntryBack}
                 </button>
               </div>
             </>
@@ -437,15 +474,11 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
           {brewEntryFlow.state.step === "ready-to-confirm" && (
             <>
               <p className="eyebrow">{copy.brewEntryReadyBoundary}</p>
-              {!brewEntryFlow.state.draftPreview ? (
-                <button
-                  type="button"
-                  className="dark-btn"
-                  onClick={() => void brewEntryFlow.prepareDraft()}
-                  disabled={!brewEntryFlow.canPrepareDraft || brewEntryFlow.state.isBusy}
-                >
-                  {copy.brewEntryPrepareDraft}
-                </button>
+              {!brewEntryFlow.state.draftPreview && isPreparingRecipeDraft ? (
+                <div className="brew-entry-loading" role="status" aria-live="polite">
+                  <span className="brew-entry-spinner" aria-hidden="true" />
+                  <span>{copy.brewEntryPreparing}</span>
+                </div>
               ) : (
                 <>
                   <p className="subtle">{copy.brewEntryDraftReadyDescription}</p>
@@ -496,6 +529,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
           {brewEntryFlow.state.error && brewEntryFlow.state.step !== "ready-to-confirm" && (
             <p className="error">{brewEntryFlow.state.error}</p>
           )}
+          </div>
         </section>
       )}
 

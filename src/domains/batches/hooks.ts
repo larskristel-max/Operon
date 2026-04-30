@@ -122,22 +122,6 @@ export function useBrewEntryFlow({
     setState((prev) => ({ ...prev, step: "select-existing-recipe", selectedSource: "existing-recipe", error: null }));
   }, []);
 
-  const chooseExistingRecipe = useCallback((recipeId: string) => {
-    if (recipeId.startsWith("recipe-placeholder-")) {
-      return;
-    }
-
-    setState((prev) => ({
-      ...prev,
-      selectedSource: "existing-recipe",
-      selectedRecipeId: recipeId,
-      step: "ready-to-confirm",
-      error: null,
-      draftPreview: null,
-      confirmedBatchName: null,
-    }));
-  }, []);
-
   const chooseUploadPath = useCallback(() => {
     setState((prev) => ({
       ...prev,
@@ -198,65 +182,80 @@ export function useBrewEntryFlow({
     });
   }, []);
 
-  const prepareDraft = useCallback(async () => {
-    setState((prev) => ({ ...prev, isBusy: true, error: null }));
+  const prepareDraft = useCallback(
+    async (input?: { source: BrewEntrySource; recipeId?: string }) => {
+      setState((prev) => ({ ...prev, isBusy: true, error: null }));
 
-    try {
-      const current = state;
-      if (!current.selectedSource) {
-        throw new Error("Recipe source is required");
-      }
-
-      if (current.selectedSource === "new-recipe") {
-        const preview = toPreview({
-          draftId: `new-recipe-boundary-${crypto.randomUUID()}`,
-          source: "new-recipe",
-          nonPersistent: true,
-        });
-        setState((prev) => ({ ...prev, isBusy: false, step: "new-recipe-placeholder", draftPreview: preview }));
-        return;
-      }
-
-      if (current.selectedSource === "existing-recipe") {
-        if (!current.selectedRecipeId) {
-          throw new Error("Select an existing recipe first");
+      try {
+        const current = state;
+        const source = input?.source ?? current.selectedSource;
+        if (!source) {
+          throw new Error("Recipe source is required");
         }
 
-        const selectedRecipeIsAvailable = existingRecipeOptions.some(
-          (recipe) => recipe.id === current.selectedRecipeId,
-        );
-        if (!selectedRecipeIsAvailable) {
-          throw new Error("Selected recipe is not available");
-        }
-
-        if (isDemoMode) {
-          const draftPreview = toPreview({
-            draftId: `demo-draft-${crypto.randomUUID()}`,
-            source: current.selectedSource,
-            recipeId: current.selectedRecipeId,
+        if (source === "new-recipe") {
+          const preview = toPreview({
+            draftId: `new-recipe-boundary-${crypto.randomUUID()}`,
+            source: "new-recipe",
             nonPersistent: true,
           });
-
-          setState((prev) => ({ ...prev, isBusy: false, step: "ready-to-confirm", draftPreview }));
+          setState((prev) => ({ ...prev, isBusy: false, step: "new-recipe-placeholder", draftPreview: preview }));
           return;
         }
 
-        const response = await createBrewDraft({
-          source: "existing-recipe",
-          recipeId: current.selectedRecipeId,
-        });
+        if (source === "existing-recipe") {
+          const selectedRecipeId = input?.recipeId ?? current.selectedRecipeId;
+          if (!selectedRecipeId) {
+            throw new Error("Select an existing recipe first");
+          }
 
-        const draftPreview = toPreview({
-          draftId: response.draft_id,
-          source: response.source,
-          recipeId: response.recipe_draft.recipe_id,
-          uploadIntakeId: response.recipe_draft.upload_intake_id,
-          nonPersistent: response.non_persistent,
-        });
+          const selectedRecipeIsAvailable = existingRecipeOptions.some((recipe) => recipe.id === selectedRecipeId);
+          if (!selectedRecipeIsAvailable) {
+            throw new Error("Selected recipe is not available");
+          }
 
-        setState((prev) => ({ ...prev, isBusy: false, step: "ready-to-confirm", draftPreview }));
-        return;
-      }
+          if (isDemoMode) {
+            const draftPreview = toPreview({
+              draftId: `demo-draft-${crypto.randomUUID()}`,
+              source,
+              recipeId: selectedRecipeId,
+              nonPersistent: true,
+            });
+
+            setState((prev) => ({
+              ...prev,
+              selectedSource: source,
+              selectedRecipeId,
+              isBusy: false,
+              step: "ready-to-confirm",
+              draftPreview,
+            }));
+            return;
+          }
+
+          const response = await createBrewDraft({
+            source: "existing-recipe",
+            recipeId: selectedRecipeId,
+          });
+
+          const draftPreview = toPreview({
+            draftId: response.draft_id,
+            source: response.source,
+            recipeId: response.recipe_draft.recipe_id,
+            uploadIntakeId: response.recipe_draft.upload_intake_id,
+            nonPersistent: response.non_persistent,
+          });
+
+          setState((prev) => ({
+            ...prev,
+            selectedSource: source,
+            selectedRecipeId,
+            isBusy: false,
+            step: "ready-to-confirm",
+            draftPreview,
+          }));
+          return;
+        }
 
       const hasFile = Boolean(current.upload.file);
       const hasManualText = current.upload.manualText.trim().length > 0;
@@ -316,7 +315,29 @@ export function useBrewEntryFlow({
         error: error instanceof Error ? error.message : "Failed to prepare draft",
       }));
     }
-  }, [existingRecipeOptions, isDemoMode, state]);
+    },
+    [existingRecipeOptions, isDemoMode, state],
+  );
+
+  const chooseExistingRecipe = useCallback(
+    (recipeId: string) => {
+      if (recipeId.startsWith("recipe-placeholder-")) {
+        return;
+      }
+
+      setState((prev) => ({
+        ...prev,
+        selectedSource: "existing-recipe",
+        selectedRecipeId: recipeId,
+        step: "ready-to-confirm",
+        error: null,
+        draftPreview: null,
+        confirmedBatchName: null,
+      }));
+      void prepareDraft({ source: "existing-recipe", recipeId });
+    },
+    [prepareDraft],
+  );
 
   const confirmDraft = useCallback(async () => {
     const current = state;

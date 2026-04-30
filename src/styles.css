@@ -337,7 +337,7 @@ button, input { font: inherit; }
 .dashboard-screen {
   min-height: 100svh;
   padding:
-    max(0px, calc(env(safe-area-inset-top) - 10px))
+    max(2px, env(safe-area-inset-top))
     clamp(10px, 3.4vw, 14px)
     calc(
       env(safe-area-inset-bottom)

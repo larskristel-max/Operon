@@ -615,11 +615,10 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
           <span>{copy.navMore}</span>
         </button>
       </nav>
-      <button type="button" className="brew-fab center-brew-action" aria-label={copy.quickActionStartBrew} onClick={brewEntryFlow.open}>
+      <button type="button" className="brew-fab" aria-label={copy.quickActionStartBrew} onClick={brewEntryFlow.open}>
         <span className="brew-fab-icon" aria-hidden="true">
           <Icon name="brew" className="line-icon icon-lg" />
         </span>
-        <span className="brew-fab-label">Brew</span>
       </button>
 
       {moreOpen && (

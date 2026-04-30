@@ -760,33 +760,28 @@ button, input { font: inherit; }
   background: rgba(76, 139, 245, 0.2);
 }
 
-.brew-fab,
-.center-brew-action {
+.brew-fab {
   position: fixed;
   left: 50%;
-  bottom: calc(env(safe-area-inset-bottom) + 14px);
-  transform: translateY(-18px);
-  width: 64px;
-  height: 64px;
+  bottom: calc(env(safe-area-inset-bottom) + 40px);
+  transform: translateX(-50%) translateY(-12px);
+  width: 56px;
+  height: 56px;
   border-radius: 999px;
   border: 0;
   background: var(--accent);
   color: #fff;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 2px;
-  box-shadow: 0 12px 28px rgba(76, 139, 245, 0.35), 0 0 0 6px rgba(14, 14, 17, 0.9);
-  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 10px 24px rgba(76, 139, 245, 0.30),
+    0 0 0 5px rgba(14, 14, 17, 0.9);
+  z-index: 20;
 }
 
-.brew-fab:active,
-.center-brew-action:active {
-  transform: translate(-50%, -18px) scale(0.95);
-}
-
-.brew-fab.center-brew-action {
-  transform: translate(-50%, -18px);
+.brew-fab:active {
+  transform: translateX(-50%) translateY(-12px) scale(0.95);
 }
 
 .brew-fab-icon {
@@ -796,10 +791,6 @@ button, input { font: inherit; }
   place-items: center;
 }
 
-.brew-fab-label {
-  font-size: clamp(0.64rem, 2.4vw, 0.76rem);
-  line-height: 1;
-}
 
 .line-icon {
   width: 100%;

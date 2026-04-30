@@ -569,13 +569,19 @@ button, input { font: inherit; }
   background: rgba(3, 6, 10, 0.42);
 }
 
+.brew-entry-grab-zone {
+  height: 40px;
+  margin: -6px -6px 0;
+  display: grid;
+  place-items: center;
+  cursor: grab;
+  touch-action: none;
+}
+
 .brew-entry-handle {
   width: 42px;
   height: 4px;
-  border: 0;
-  padding: 0;
   border-radius: 999px;
-  justify-self: center;
   background: rgba(229, 236, 244, 0.35);
 }
 

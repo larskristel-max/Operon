@@ -11,7 +11,7 @@
   --divider: rgba(255, 255, 255, 0.08);
   --border: rgba(255, 255, 255, 0.1);
   --bottom-nav-height: clamp(72px, 9vh, 96px);
-  --dashboard-bottom-gap: clamp(12px, 2vh, 28px);
+  --dashboard-bottom-gap: clamp(8px, 1.2vh, 16px);
 }
 
 * { box-sizing: border-box; }
@@ -337,7 +337,7 @@ button, input { font: inherit; }
 .dashboard-screen {
   min-height: 100svh;
   padding:
-    max(2px, env(safe-area-inset-top))
+    max(0px, calc(env(safe-area-inset-top) - 10px))
     clamp(10px, 3.4vw, 14px)
     calc(
       env(safe-area-inset-bottom)
@@ -353,7 +353,7 @@ button, input { font: inherit; }
 }
 
 .dashboard-hero {
-  height: clamp(224px, 29svh, 320px);
+  height: clamp(236px, 31svh, 336px);
   border-radius: 0 0 34px 34px;
   overflow: hidden;
   position: relative;
@@ -364,8 +364,8 @@ button, input { font: inherit; }
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(92deg, rgba(5, 9, 14, 0.96) 2%, rgba(5, 9, 14, 0.7) 43%, rgba(5, 9, 14, 0.3) 100%),
-    linear-gradient(180deg, rgba(6, 9, 13, 0.08) 34%, rgba(5, 8, 12, 0.9) 82%, rgba(5, 8, 12, 1) 100%);
+    linear-gradient(92deg, rgba(5, 9, 14, 0.93) 2%, rgba(5, 9, 14, 0.62) 45%, rgba(5, 9, 14, 0.24) 100%),
+    linear-gradient(180deg, rgba(6, 9, 13, 0.04) 38%, rgba(5, 8, 12, 0.82) 84%, rgba(5, 8, 12, 0.98) 100%);
 }
 
 .dashboard-hero::after {
@@ -388,7 +388,7 @@ button, input { font: inherit; }
 }
 
 .hero-top {
-  top: clamp(8px, 1.8svh, 14px);
+  top: clamp(14px, 2.4svh, 22px);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -398,7 +398,7 @@ button, input { font: inherit; }
 .icon-pill { border-radius: 999px; width: 36px; height: 36px; border: 0; background: transparent; color: #e9edf1; }
 .bell-btn { position: relative; display: grid; place-items: center; }
 .bell-btn::after { content: ""; position: absolute; right: 3px; top: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--gold); }
-.hero-copy { bottom: clamp(12px, 2.4svh, 22px); }
+.hero-copy { bottom: clamp(18px, 3.1svh, 30px); }
 .hero-copy h1 { font-size: clamp(1.35rem, 5.7vw, 2.02rem); letter-spacing: -0.02em; }
 .hero-copy p { margin: clamp(4px, 1.1svh, 8px) 0 0; color: #abb4bd; font-size: clamp(0.74rem, 2.5vw, 0.9rem); }
 
@@ -503,7 +503,7 @@ button, input { font: inherit; }
 .glance-card.amber::after { background: rgba(217, 164, 65, 0.52); }
 
 .quick-actions {
-  margin-bottom: 8px;
+  margin-bottom: 2px;
 }
 
 .quick-actions-grid {

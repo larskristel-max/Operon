@@ -252,6 +252,15 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const glanceIcons: IconName[] = ["tank", "water", "orders", "inventory"];
   const quickActionIcons: IconName[] = ["brew", "fermentation", "inventory", "reports"];
   const isPreparingRecipeDraft = brewEntryFlow.state.isBusy && brewEntryFlow.state.step === "ready-to-confirm" && !brewEntryFlow.state.draftPreview;
+  const canRetryRecipeDraft = Boolean(brewEntryFlow.state.selectedRecipeId);
+
+  const retryExistingRecipeDraft = () => {
+    if (!brewEntryFlow.state.selectedRecipeId) return;
+    void brewEntryFlow.prepareDraft({
+      source: "existing-recipe",
+      recipeId: brewEntryFlow.state.selectedRecipeId,
+    });
+  };
 
   const handleSheetTouchStart = (event: TouchEvent<HTMLButtonElement>) => {
     const touch = event.touches[0];
@@ -476,41 +485,60 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
           {brewEntryFlow.state.step === "ready-to-confirm" && (
             <>
               <p className="eyebrow">{copy.brewEntryReadyBoundary}</p>
-              {!brewEntryFlow.state.draftPreview && isPreparingRecipeDraft ? (
+              {!brewEntryFlow.state.draftPreview && isPreparingRecipeDraft && (
                 <div className="brew-entry-loading" role="status" aria-live="polite">
                   <span className="brew-entry-spinner" aria-hidden="true" />
                   <span>{copy.brewEntryPreparing}</span>
                 </div>
-              ) : (
+              )}
+
+              {!brewEntryFlow.state.draftPreview && !isPreparingRecipeDraft && (
+                <>
+                  <p className="subtle">{copy.brewEntryPrepareFailed}</p>
+                  {brewEntryFlow.state.error && <p className="error">{brewEntryFlow.state.error}</p>}
+                  <div className="brew-entry-footer">
+                    {canRetryRecipeDraft ? (
+                      <button type="button" className="dark-btn" onClick={retryExistingRecipeDraft} disabled={brewEntryFlow.state.isBusy}>
+                        {copy.brewEntryRetry}
+                      </button>
+                    ) : (
+                      <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.back}>
+                        {copy.brewEntryBack}
+                      </button>
+                    )}
+                    <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.close}>
+                      {copy.brewEntryClose}
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {brewEntryFlow.state.draftPreview && (
                 <>
                   <p className="subtle">{copy.brewEntryDraftReadyDescription}</p>
                   <p className="subtle">{copy.brewEntryConfirmationRequired}</p>
                   <p className="subtle">
                     {copy.brewEntryRecipeLabel}: {selectedRecipeName}
                   </p>
+                  {brewEntryFlow.state.error && <p className="error">{brewEntryFlow.state.error}</p>}
+                  <div className="brew-entry-footer">
+                    <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.back}>
+                      {copy.brewEntryBack}
+                    </button>
+                    <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.close}>
+                      {copy.brewEntryClose}
+                    </button>
+                    <button
+                      type="button"
+                      className="dark-btn"
+                      onClick={() => void brewEntryFlow.confirmDraft()}
+                      disabled={brewEntryFlow.state.isConfirming}
+                    >
+                      {copy.brewEntryConfirm}
+                    </button>
+                  </div>
                 </>
               )}
-
-              {brewEntryFlow.state.error && <p className="error">{brewEntryFlow.state.error}</p>}
-
-              <div className="brew-entry-footer">
-                <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.back}>
-                  {copy.brewEntryBack}
-                </button>
-                <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.close}>
-                  {copy.brewEntryClose}
-                </button>
-                {brewEntryFlow.state.draftPreview && (
-                  <button
-                    type="button"
-                    className="dark-btn"
-                    onClick={() => void brewEntryFlow.confirmDraft()}
-                    disabled={brewEntryFlow.state.isConfirming}
-                  >
-                    {copy.brewEntryConfirm}
-                  </button>
-                )}
-              </div>
             </>
           )}
 

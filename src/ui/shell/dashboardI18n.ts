@@ -32,6 +32,8 @@ export type DashboardCopy = {
   brewEntrySelectFile: string;
   brewEntryPrepareDraft: string;
   brewEntryPreparing: string;
+  brewEntryPrepareFailed: string;
+  brewEntryRetry: string;
   brewEntryReadyBoundary: string;
   brewEntryDraftReadyDescription: string;
   brewEntryConfirmationRequired: string;
@@ -95,6 +97,8 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     brewEntrySelectFile: "Select file",
     brewEntryPrepareDraft: "Prepare draft",
     brewEntryPreparing: "Preparing…",
+    brewEntryPrepareFailed: "Preparation failed.",
+    brewEntryRetry: "Retry",
     brewEntryReadyBoundary: "Ready to confirm",
     brewEntryDraftReadyDescription: "The draft is ready.",
     brewEntryConfirmationRequired: "Confirmation is required before creating the batch.",
@@ -157,6 +161,8 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     brewEntrySelectFile: "Sélectionner un fichier",
     brewEntryPrepareDraft: "Préparer le brouillon",
     brewEntryPreparing: "Préparation…",
+    brewEntryPrepareFailed: "La préparation a échoué.",
+    brewEntryRetry: "Réessayer",
     brewEntryReadyBoundary: "Prêt à confirmer",
     brewEntryDraftReadyDescription: "Le brouillon est prêt.",
     brewEntryConfirmationRequired: "Une confirmation est requise avant création du lot.",
@@ -219,6 +225,8 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     brewEntrySelectFile: "Datei auswählen",
     brewEntryPrepareDraft: "Entwurf vorbereiten",
     brewEntryPreparing: "Wird vorbereitet…",
+    brewEntryPrepareFailed: "Vorbereitung fehlgeschlagen.",
+    brewEntryRetry: "Erneut versuchen",
     brewEntryReadyBoundary: "Bereit zur Bestätigung",
     brewEntryDraftReadyDescription: "Der Entwurf ist bereit.",
     brewEntryConfirmationRequired: "Eine Bestätigung ist erforderlich, bevor die Charge erstellt wird.",
@@ -281,6 +289,8 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     brewEntrySelectFile: "Bestand kiezen",
     brewEntryPrepareDraft: "Concept voorbereiden",
     brewEntryPreparing: "Voorbereiden…",
+    brewEntryPrepareFailed: "Voorbereiden mislukt.",
+    brewEntryRetry: "Opnieuw proberen",
     brewEntryReadyBoundary: "Klaar om te bevestigen",
     brewEntryDraftReadyDescription: "Het concept is klaar.",
     brewEntryConfirmationRequired: "Bevestiging is vereist voordat de batch wordt aangemaakt.",

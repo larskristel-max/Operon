@@ -602,11 +602,6 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
           </span>
           <span>{copy.navBrewery}</span>
         </button>
-        <div className="nav-brew-slot">
-          <button type="button" className="brew-fab center-brew-action" aria-label={copy.quickActionStartBrew} onClick={brewEntryFlow.open}>
-            <Icon name="brew" className="line-icon icon-lg" />
-          </button>
-        </div>
         <button type="button">
           <span className="nav-icon">
             <Icon name="tasks" className="line-icon icon-md" />
@@ -620,6 +615,12 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
           <span>{copy.navMore}</span>
         </button>
       </nav>
+      <button type="button" className="brew-fab center-brew-action" aria-label={copy.quickActionStartBrew} onClick={brewEntryFlow.open}>
+        <span className="brew-fab-icon" aria-hidden="true">
+          <Icon name="brew" className="line-icon icon-lg" />
+        </span>
+        <span className="brew-fab-label">Brew</span>
+      </button>
 
       {moreOpen && (
         <section className="glass-panel more-menu" aria-label="More options">

@@ -248,8 +248,11 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     };
   }, [copy, demoLoading, demoMergedData, firstName, isDemoMode, realMergedData]);
 
-  const progressLabel = dashboardData.brewCard.progressPercent > 0 ? `${dashboardData.brewCard.progressPercent}%` : "—";
-  const brewDayLabel = dashboardData.brewCard.stageCount && dashboardData.brewCard.stageCount !== "—" ? `Jour ${dashboardData.brewCard.stageCount}` : copy.waitingForData;
+  const progressLabel = dashboardData.brewCard.progressPercent > 0 ? `${dashboardData.brewCard.progressPercent}%` : null;
+  const stageCountRaw = dashboardData.brewCard.stageCount;
+  const stageCountValue = stageCountRaw == null ? "" : String(stageCountRaw).trim();
+  const isPlaceholderStage = stageCountValue === "" || ["-", "–", "—"].includes(stageCountValue);
+  const brewDayLabel = !isPlaceholderStage ? `${copy.days} ${stageCountValue}` : null;
   const glanceIcons: IconName[] = ["tank", "water", "orders", "inventory"];
   const quickActionIcons: IconName[] = ["brew", "fermentation", "inventory", "reports"];
   const isPreparingRecipeDraft = brewEntryFlow.state.isBusy && brewEntryFlow.state.step === "ready-to-confirm" && !brewEntryFlow.state.draftPreview;
@@ -318,18 +321,18 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
             </div>
             <div>
               <p className="eyebrow gold">{copy.currentlyBrewing}</p>
-              <h2>{dashboardData.brewCard.batchName}</h2>
-              <p className="subtle">{dashboardData.brewCard.batchId}</p>
+              <h2 className="brew-card-title">{dashboardData.brewCard.batchName}</h2>
+              <p className="subtle brew-card-lot">{dashboardData.brewCard.batchId}</p>
             </div>
           </div>
           <div className="brew-side">
-            <strong>{brewDayLabel}</strong>
+            {brewDayLabel ? <strong>{brewDayLabel}</strong> : null}
             <span>{dashboardData.brewCard.batchStageLabel}</span>
           </div>
         </div>
         <div className="fermentation-row">
           <p>{copy.fermentationProgress}</p>
-          <span>{progressLabel}</span>
+          {progressLabel ? <span>{progressLabel}</span> : null}
         </div>
         <div className="progress-track" aria-hidden="true">
           <span className="progress-fill" style={{ width: `${dashboardData.brewCard.progressPercent}%` }} />
@@ -587,10 +590,6 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
       )}
 
       <nav className="bottom-nav" aria-label="Primary">
-        <div className="nav-brew-slot" aria-hidden="true" />
-        <button type="button" className="brew-fab center-brew-action" aria-label={copy.quickActionStartBrew} onClick={brewEntryFlow.open}>
-          <Icon name="brew" className="line-icon icon-lg" />
-        </button>
         <button type="button" className="active">
           <span className="nav-icon">
             <Icon name="home" className="line-icon icon-md" />
@@ -599,10 +598,15 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
         </button>
         <button type="button">
           <span className="nav-icon">
-            <Icon name="brew" className="line-icon icon-md" />
+            <Icon name="tank" className="line-icon icon-md" />
           </span>
           <span>{copy.navBrewery}</span>
         </button>
+        <div className="nav-brew-slot">
+          <button type="button" className="brew-fab center-brew-action" aria-label={copy.quickActionStartBrew} onClick={brewEntryFlow.open}>
+            <Icon name="brew" className="line-icon icon-lg" />
+          </button>
+        </div>
         <button type="button">
           <span className="nav-icon">
             <Icon name="tasks" className="line-icon icon-md" />

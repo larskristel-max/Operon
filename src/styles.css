@@ -430,7 +430,21 @@ button, input { font: inherit; }
 .brew-main .eyebrow { letter-spacing: 0.03em; font-size: clamp(0.56rem, 1.7vw, 0.66rem); }
 .brew-main h2 { margin: 3px 0 4px; font-size: clamp(1.05rem, 4.2vw, 1.5rem); line-height: 1.08; }
 .brew-main .subtle { font-size: clamp(0.72rem, 2.3vw, 0.86rem); }
-.brew-side { min-width: clamp(92px, 24vw, 120px); text-align: right; color: var(--text-secondary); border-left: none; padding-left: 0; align-items: flex-end; display: grid; }
+.brew-card-title,
+.batch-title {
+  font-size: clamp(24px, 7vw, 34px);
+  line-height: 1.05;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.brew-card-lot,
+.batch-lot {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.brew-side { min-width: clamp(84px, 21vw, 108px); text-align: right; color: var(--text-secondary); border-left: none; padding-left: 0; align-items: flex-end; display: grid; justify-items: end; }
 .brew-side strong { color: var(--accent); font-size: clamp(0.9rem, 3.6vw, 0.98rem); line-height: 1.1; display: block; font-weight: 600; }
 .brew-side span { display: block; font-size: clamp(0.78rem, 2.5vw, 0.94rem); margin-top: 6px; color: var(--text-secondary); }
 .fermentation-row { display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); }
@@ -709,26 +723,34 @@ button, input { font: inherit; }
 
 .bottom-nav {
   position: fixed;
-  left: 10px;
-  right: 10px;
-  bottom: calc(env(safe-area-inset-bottom) + 2px);
+  left: 12px;
+  right: 12px;
+  bottom: calc(env(safe-area-inset-bottom) + 8px);
   margin-top: 0;
   width: auto;
-  border-radius: 24px;
-  border: 1px solid var(--border);
-  background: rgba(18, 18, 21, 0.9);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.34);
-  padding: 10px 10px;
+  min-height: 76px;
+  border-radius: 28px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(20, 20, 22, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+  padding: 10px 12px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
+  grid-template-columns: 1fr 1fr 76px 1fr 1fr;
+  align-items: center;
 }
 
 .nav-brew-slot {
-  grid-column: 2 / 4;
-  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.nav-brew-slot .brew-fab,
+.nav-brew-slot .center-brew-action {
+  position: static;
 }
 
 .bottom-nav button {
@@ -752,10 +774,7 @@ button, input { font: inherit; }
 
 .brew-fab,
 .center-brew-action {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  transform: translate(-50%, -18px);
+  transform: translateY(-18px);
   width: 64px;
   height: 64px;
   border-radius: 999px;
@@ -770,7 +789,7 @@ button, input { font: inherit; }
 
 .brew-fab:active,
 .center-brew-action:active {
-  transform: translate(-50%, -18px) scale(0.95);
+  transform: translateY(-18px) scale(0.95);
 }
 
 .line-icon {

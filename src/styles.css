@@ -579,6 +579,7 @@ button, input { font: inherit; }
 }
 
 .brew-entry-handle {
+  display: block;
   width: 42px;
   height: 4px;
   border-radius: 999px;

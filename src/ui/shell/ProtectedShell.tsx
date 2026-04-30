@@ -262,7 +262,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     });
   };
 
-  const handleSheetTouchStart = (event: TouchEvent<HTMLButtonElement>) => {
+  const handleSheetTouchStart = (event: TouchEvent<HTMLDivElement>) => {
     const touch = event.touches[0];
     touchStartY.current = touch.clientY;
     touchStartX.current = touch.clientX;
@@ -270,7 +270,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     touchDeltaX.current = 0;
   };
 
-  const handleSheetTouchMove = (event: TouchEvent<HTMLButtonElement>) => {
+  const handleSheetTouchMove = (event: TouchEvent<HTMLDivElement>) => {
     if (touchStartY.current === null || touchStartX.current === null) return;
     const touch = event.touches[0];
     touchDeltaY.current = touch.clientY - touchStartY.current;
@@ -384,15 +384,24 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
       {brewEntryFlow.state.isOpen && (
         <section className="brew-entry-backdrop" onClick={brewEntryFlow.close} aria-label={copy.quickActionStartBrew}>
           <div className="glass-panel brew-entry-sheet" onClick={(event) => event.stopPropagation()}>
-            <button
-              type="button"
-              className="brew-entry-handle"
+            <div
+              className="brew-entry-grab-zone"
+              role="button"
+              tabIndex={0}
               aria-label={copy.brewEntryClose}
               onTouchStart={handleSheetTouchStart}
               onTouchMove={handleSheetTouchMove}
               onTouchEnd={handleSheetTouchEnd}
               onClick={brewEntryFlow.close}
-            />
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  brewEntryFlow.close();
+                }
+              }}
+            >
+              <span className="brew-entry-handle" aria-hidden="true" />
+            </div>
           {brewEntryFlow.state.step === "select-existing-recipe" && (
             <>
               <p className="eyebrow">{copy.brewEntrySelectExistingRecipe}</p>

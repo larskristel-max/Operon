@@ -322,8 +322,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
             </div>
           </div>
           <div className="brew-side">
-            <strong>{dashboardData.brewCard.stageCount}</strong>
-            <small>{copy.days}</small>
+            <strong>{dashboardData.brewCard.stageCount ? `Jour ${dashboardData.brewCard.stageCount}` : "—"}</strong>
             <span>{dashboardData.brewCard.batchStageLabel}</span>
           </div>
         </div>
@@ -333,7 +332,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
           <span>{progressLabel}</span>
         </div>
         <div className="progress-track" aria-hidden="true">
-          <span style={{ width: `${dashboardData.brewCard.progressPercent}%` }} />
+          <span className="progress-fill" style={{ width: `${dashboardData.brewCard.progressPercent}%` }} />
         </div>
       </section>
 
@@ -588,6 +587,9 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
       )}
 
       <nav className="bottom-nav" aria-label="Primary">
+        <button type="button" className="brew-fab" aria-label={copy.quickActionStartBrew} onClick={brewEntryFlow.open}>
+          <Icon name="brew" className="line-icon icon-lg" />
+        </button>
         <button type="button" className="active">
           <span className="nav-icon">
             <Icon name="home" className="line-icon icon-md" />

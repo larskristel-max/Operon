@@ -186,16 +186,17 @@ export function AuthGate({
         {view === "login" && (
           <>
             <div className="line-divider">or</div>
-            <button type="button" className="dark-btn auth-social-button" disabled>
-              <span>G</span> Continue with Google
-            </button>
-            <button type="button" className="dark-btn auth-social-button" disabled>
-              <span></span> Continue with Apple
-            </button>
+            <div className="auth-social-row">
+              <button type="button" className="dark-btn auth-social-button auth-social-icon-button" disabled aria-label="Continue with Google">
+                <span aria-hidden="true">G</span>
+              </button>
+              <button type="button" className="dark-btn auth-social-button auth-social-icon-button" disabled aria-label="Continue with Apple">
+                <span aria-hidden="true"></span>
+              </button>
+            </div>
             <button type="button" className="demo-card" onClick={() => void startDemo()} disabled={busy}>
               <div>
                 <strong className="demo-card-title">Explore Demo</strong>
-                <p className="demo-card-subtitle">See how Operon works with sample data</p>
               </div>
               <span aria-hidden="true">›</span>
             </button>

@@ -409,9 +409,14 @@ button, input { font: inherit; }
   padding: 0;
 }
 
-.auth-social-icon-button span {
-  font-size: 1.1rem;
-  opacity: 0.92;
+.auth-social-icon-button svg {
+  width: 1.12rem;
+  height: 1.12rem;
+  display: block;
+}
+
+.auth-social-icon-button[aria-label="Continue with Apple"] {
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .auth-primary-button:active,

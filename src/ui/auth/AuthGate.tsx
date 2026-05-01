@@ -92,14 +92,14 @@ export function AuthGate({
     <main className="operon-screen auth-screen">
       <section className="auth-panel">
         <img src={operonLogo} alt="Operon brand mark" className="operon-mark" />
-        <h1>{title}</h1>
-        <p className="screen-subtitle">{subtitle}</p>
+        <h1 className="auth-title">{title}</h1>
+        <p className="screen-subtitle auth-subtitle">{subtitle}</p>
 
         {isSignup && (
           <>
-            <label className="field-label">
+            <label className="field-label auth-form-group">
               First name
-              <span className="input-wrap input-wrap-plain">
+              <span className="input-wrap input-wrap-plain auth-input">
                 <input
                   type="text"
                   autoComplete="given-name"
@@ -109,9 +109,9 @@ export function AuthGate({
                 />
               </span>
             </label>
-            <label className="field-label">
+            <label className="field-label auth-form-group">
               Last name (optional)
-              <span className="input-wrap input-wrap-plain">
+              <span className="input-wrap input-wrap-plain auth-input">
                 <input
                   type="text"
                   autoComplete="family-name"
@@ -121,9 +121,9 @@ export function AuthGate({
                 />
               </span>
             </label>
-            <label className="field-label">
+            <label className="field-label auth-form-group">
               Brewery name
-              <span className="input-wrap input-wrap-plain">
+              <span className="input-wrap input-wrap-plain auth-input">
                 <input
                   type="text"
                   autoComplete="organization"
@@ -136,11 +136,11 @@ export function AuthGate({
           </>
         )}
 
-        <label className="field-label">
+        <label className="field-label auth-form-group">
           Email
-          <span className="input-wrap">
+          <span className="input-wrap auth-input">
             <span aria-hidden="true" className="input-icon">
-              ✉
+              @
             </span>
             <input
               type="email"
@@ -153,11 +153,11 @@ export function AuthGate({
         </label>
 
         {!isForgot && (
-          <label className="field-label">
+          <label className="field-label auth-form-group">
             Password
-            <span className="input-wrap">
+            <span className="input-wrap auth-input">
               <span aria-hidden="true" className="input-icon">
-                🔒
+                •
               </span>
               <input
                 type="password"
@@ -179,23 +179,23 @@ export function AuthGate({
           </button>
         )}
 
-        <button type="button" className="gold-btn" onClick={submit} disabled={busy || !canSubmit}>
+        <button type="button" className="gold-btn auth-primary-button auth-actions" onClick={submit} disabled={busy || !canSubmit}>
           {busy ? "Please wait…" : cta}
         </button>
 
         {view === "login" && (
           <>
             <div className="line-divider">or</div>
-            <button type="button" className="dark-btn" disabled>
+            <button type="button" className="dark-btn auth-social-button" disabled>
               <span>G</span> Continue with Google
             </button>
-            <button type="button" className="dark-btn" disabled>
+            <button type="button" className="dark-btn auth-social-button" disabled>
               <span></span> Continue with Apple
             </button>
             <button type="button" className="demo-card" onClick={() => void startDemo()} disabled={busy}>
               <div>
-                <strong>Explore Demo</strong>
-                <p>See how Operon works with sample data</p>
+                <strong className="demo-card-title">Explore Demo</strong>
+                <p className="demo-card-subtitle">See how Operon works with sample data</p>
               </div>
               <span aria-hidden="true">›</span>
             </button>

@@ -632,7 +632,6 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
           <span className="brew-fab-icon" aria-hidden="true">
             <Icon name="plus" className="line-icon icon-lg" />
           </span>
-          <span className="brew-fab-label">{copy.quickActionStartBrew}</span>
         </button>
       </div>
 

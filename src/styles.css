@@ -188,7 +188,10 @@ button, input { font: inherit; }
 
 .auth-screen {
   display: block;
-  padding-inline: clamp(12px, 4vw, 22px);
+  padding: calc(env(safe-area-inset-top) + 32px) 24px calc(32px + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(circle at 50% -10%, rgba(76, 139, 245, 0.1), transparent 34%),
+    #0e0e11;
 }
 
 .auth-panel {
@@ -197,7 +200,27 @@ button, input { font: inherit; }
   margin: 0;
   padding: clamp(8px, 2.1vw, 14px) 0;
   display: grid;
-  gap: clamp(8px, 2vw, 11px);
+  gap: 12px;
+}
+
+.auth-title {
+  font-size: clamp(34px, 9vw, 44px) !important;
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.auth-subtitle {
+  font-size: 17px;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.auth-form-group {
+  margin-bottom: 6px;
+}
+
+.auth-actions {
+  margin-top: 24px;
 }
 
 .language-panel h1,
@@ -258,6 +281,19 @@ button, input { font: inherit; }
   padding: 0 10px;
 }
 
+.auth-input {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  min-height: 56px;
+  color: rgba(255, 255, 255, 0.96);
+}
+
+.auth-input:focus-within {
+  border-color: rgba(76, 139, 245, 0.45);
+  box-shadow: 0 0 0 4px rgba(76, 139, 245, 0.12);
+}
+
 .input-wrap.input-wrap-plain {
   grid-template-columns: 1fr;
 }
@@ -290,7 +326,7 @@ button, input { font: inherit; }
 }
 
 .input-wrap input:focus-visible { outline: none; }
-.input-icon { color: #aab4bf; font-size: 1.15rem; text-align: center; }
+.input-icon { color: rgba(170, 180, 191, 0.6); font-size: 0.95rem; text-align: center; font-weight: 500; }
 .input-icon.right { justify-self: end; }
 
 .inline-link,
@@ -320,9 +356,11 @@ button, input { font: inherit; }
 }
 
 .demo-card {
-  border-radius: 20px;
-  border: 1px solid rgba(217, 164, 65, 0.65);
-  background: linear-gradient(130deg, rgba(30, 24, 12, 0.52), rgba(17, 19, 23, 0.88));
+  border-radius: 22px;
+  border: 1px solid rgba(255, 159, 10, 0.22);
+  background:
+    radial-gradient(circle at 85% 100%, rgba(255, 159, 10, 0.12), transparent 42%),
+    rgba(255, 255, 255, 0.035);
   color: var(--text-primary);
   min-height: 74px;
   display: flex;
@@ -332,6 +370,61 @@ button, input { font: inherit; }
 }
 .demo-card p { margin: 4px 0 0; color: var(--text-secondary); }
 .demo-card strong { font-size: clamp(0.95rem, 3.8vw, 1.12rem); color: var(--gold); }
+.demo-card-title { color: rgba(255, 159, 10, 0.95); }
+.demo-card-subtitle { color: rgba(255, 255, 255, 0.62) !important; }
+
+.auth-primary-button {
+  min-height: 58px;
+  border-radius: 22px;
+  font-weight: 700;
+  color: #fff;
+  background:
+    radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.35), transparent 28%),
+    linear-gradient(145deg, #6ea8ff 0%, #4c8bf5 52%, #2f5fd1 100%);
+  box-shadow:
+    0 14px 30px rgba(76, 139, 245, 0.3),
+    0 4px 10px rgba(0, 0, 0, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.28),
+    inset 0 -6px 12px rgba(0, 0, 0, 0.18);
+}
+
+.auth-social-button {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  min-height: 56px;
+}
+
+.auth-primary-button:active,
+.auth-social-button:active {
+  transform: scale(0.98);
+}
+
+.auth-primary-button:active {
+  opacity: 0.92;
+}
+
+.auth-social-button:active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.auth-header {
+  margin-bottom: 36px;
+}
+
+.auth-primary-button,
+.auth-social-button,
+.demo-card,
+.auth-link,
+.auth-input {
+  transition:
+    transform 140ms ease,
+    opacity 140ms ease,
+    background-color 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
 
 .auth-footer-links p { margin: 10px 0 0; color: var(--text-secondary); text-align: center; font-size: clamp(0.9rem, 3.6vw, 1rem); }
 .auth-feedback p { margin: 0; }

@@ -777,7 +777,7 @@ button, input { font: inherit; }
   box-shadow:
     0 10px 24px rgba(76, 139, 245, 0.30),
     0 0 0 5px rgba(14, 14, 17, 0.9);
-  z-index: 20;
+  z-index: 4;
 }
 
 .brew-fab:active {

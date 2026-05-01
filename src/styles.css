@@ -817,7 +817,7 @@ button, input { font: inherit; }
   bottom: calc(env(safe-area-inset-bottom) + 32px);
   transform: translateX(-50%);
   pointer-events: none;
-  z-index: 20;
+  z-index: 4;
 }
 
 .brew-fab {

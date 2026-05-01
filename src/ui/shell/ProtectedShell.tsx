@@ -24,7 +24,8 @@ type IconName =
   | "reports"
   | "home"
   | "tasks"
-  | "more";
+  | "more"
+  | "plus";
 
 function Icon({ name, className }: { name: IconName; className?: string }) {
   switch (name) {
@@ -96,6 +97,13 @@ function Icon({ name, className }: { name: IconName; className?: string }) {
           <path d="M8 16v-4" />
           <path d="M12 16V9" />
           <path d="M16 16v-7" />
+        </svg>
+      );
+    case "plus":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+          <path d="M12 5v14" />
+          <path d="M5 12h14" />
         </svg>
       );
     case "home":
@@ -253,6 +261,9 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const stageCountValue = stageCountRaw == null ? "" : String(stageCountRaw).trim();
   const isPlaceholderStage = stageCountValue === "" || ["-", "–", "—"].includes(stageCountValue);
   const brewDayLabel = !isPlaceholderStage ? `${copy.days} ${stageCountValue}` : null;
+  const isPlaceholderStageStatus = ["", "-", "–", "—", copy.waitingForData].includes(
+    dashboardData.brewCard.batchStageLabel.trim(),
+  );
   const glanceIcons: IconName[] = ["tank", "water", "orders", "inventory"];
   const quickActionIcons: IconName[] = ["brew", "fermentation", "inventory", "reports"];
   const isPreparingRecipeDraft = brewEntryFlow.state.isBusy && brewEntryFlow.state.step === "ready-to-confirm" && !brewEntryFlow.state.draftPreview;
@@ -327,7 +338,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
           </div>
           <div className="brew-side">
             {brewDayLabel ? <strong>{brewDayLabel}</strong> : null}
-            <span>{dashboardData.brewCard.batchStageLabel}</span>
+            {!isPlaceholderStageStatus ? <span>{dashboardData.brewCard.batchStageLabel}</span> : null}
           </div>
         </div>
         <div className="fermentation-row">
@@ -617,8 +628,9 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
       </nav>
       <button type="button" className="brew-fab" aria-label={copy.quickActionStartBrew} onClick={brewEntryFlow.open}>
         <span className="brew-fab-icon" aria-hidden="true">
-          <Icon name="brew" className="line-icon icon-lg" />
+          <Icon name="plus" className="line-icon icon-lg" />
         </span>
+        <span className="brew-fab-label">{copy.quickActionStartBrew}</span>
       </button>
 
       {moreOpen && (

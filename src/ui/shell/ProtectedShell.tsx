@@ -339,7 +339,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
           </div>
           <div className="brew-side">
             {brewDayLabel ? <strong>{brewDayLabel}</strong> : null}
-            <span className="batch-status">{brewStatusLabel}</span>
+            <small className="batch-status">{brewStatusLabel}</small>
           </div>
         </div>
         <div className="fermentation-row">
@@ -627,7 +627,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
           <span>{copy.navMore}</span>
         </button>
       </nav>
-      <div className="brew-fab-wrap" aria-hidden="true">
+      <div className="brew-fab-wrapper" aria-hidden="true">
         <button type="button" className="brew-fab" aria-label={copy.quickActionStartBrew} onClick={brewEntryFlow.open}>
           <span className="brew-fab-icon" aria-hidden="true">
             <Icon name="plus" className="line-icon icon-lg" />

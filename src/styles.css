@@ -219,11 +219,11 @@ button, input { font: inherit; }
 }
 
 .auth-form-group {
-  margin-bottom: 1px;
+  margin-bottom: 16px;
 }
 
 .auth-actions {
-  margin-top: 6px;
+  margin-top: 20px;
 }
 
 .language-panel h1,
@@ -285,7 +285,7 @@ button, input { font: inherit; }
 }
 
 .auth-input {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.035);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 18px;
   min-height: 46px;
@@ -293,8 +293,8 @@ button, input { font: inherit; }
 }
 
 .auth-input:focus-within {
-  border-color: rgba(76, 139, 245, 0.45);
-  box-shadow: 0 0 0 4px rgba(76, 139, 245, 0.12);
+  border-color: rgba(76, 139, 245, 0.35);
+  box-shadow: 0 0 0 3px rgba(76, 139, 245, 0.10);
 }
 
 .input-wrap.input-wrap-plain {
@@ -343,28 +343,31 @@ button, input { font: inherit; }
 
 .inline-link { justify-self: end; margin-top: -4px; font-size: 0.86rem; }
 
-.line-divider {
+.line-divider,
+.auth-divider {
   display: flex;
   align-items: center;
   gap: 8px;
   margin: 0;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.35);
   font-size: clamp(0.8rem, 2.8vw, 0.9rem);
 }
 .line-divider::before,
-.line-divider::after {
+.line-divider::after,
+.auth-divider::before,
+.auth-divider::after {
   content: "";
   height: 1px;
   flex: 1;
-  background: var(--divider);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .demo-card {
   border-radius: 16px;
-  border: 1px solid rgba(255, 159, 10, 0.12);
+  border: 1px solid rgba(255, 159, 10, 0.18);
   background:
-    radial-gradient(circle at 85% 100%, rgba(255, 159, 10, 0.045), transparent 42%),
-    rgba(255, 255, 255, 0.035);
+    radial-gradient(circle at 85% 100%, rgba(255, 159, 10, 0.10), transparent 42%),
+    rgba(255, 255, 255, 0.025);
   color: var(--text-primary);
   min-height: 48px;
   display: flex;
@@ -373,10 +376,11 @@ button, input { font: inherit; }
   justify-content: center;
   text-align: center;
   padding: 18px;
+  margin-top: 18px;
 }
 .demo-card strong { font-size: clamp(0.9rem, 3.2vw, 1rem); color: rgba(255, 197, 108, 0.9); }
-.demo-card-title { color: rgba(255, 159, 10, 0.95); margin-bottom: 6px; }
-.demo-card-subtitle { color: rgba(255, 255, 255, 0.62) !important; text-align: center; }
+.demo-card-title { color: rgba(255, 159, 10, 0.9); margin-bottom: 6px; }
+.demo-card-subtitle { color: rgba(255, 255, 255, 0.55) !important; text-align: center; }
 
 .auth-primary-button {
   min-height: 48px;
@@ -387,9 +391,9 @@ button, input { font: inherit; }
     radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.35), transparent 28%),
     linear-gradient(145deg, #6ea8ff 0%, #4c8bf5 52%, #2f5fd1 100%);
   box-shadow:
-    0 10px 22px rgba(76, 139, 245, 0.24),
+    0 10px 24px rgba(76, 139, 245, 0.28),
     0 4px 10px rgba(0, 0, 0, 0.35),
-    inset 0 1px 1px rgba(255, 255, 255, 0.28),
+    inset 0 1px 1px rgba(255, 255, 255, 0.25),
     inset 0 -6px 12px rgba(0, 0, 0, 0.18);
 }
 
@@ -399,7 +403,7 @@ button, input { font: inherit; }
   border-radius: 18px;
   min-height: 44px;
   font-weight: 500;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
 }
@@ -408,6 +412,7 @@ button, input { font: inherit; }
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+  margin-top: 16px;
 }
 
 .auth-social-icon-button {
@@ -421,8 +426,8 @@ button, input { font: inherit; }
 }
 
 .auth-social-button.apple svg {
-  width: 20px;
-  height: 20px;
+  width: 21px;
+  height: 21px;
 }
 
 .auth-social-icon-button svg {

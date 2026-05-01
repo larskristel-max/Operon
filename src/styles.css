@@ -368,13 +368,15 @@ button, input { font: inherit; }
   color: var(--text-primary);
   min-height: 48px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 11px;
+  justify-content: center;
+  text-align: center;
+  padding: 18px;
 }
 .demo-card strong { font-size: clamp(0.9rem, 3.2vw, 1rem); color: rgba(255, 197, 108, 0.9); }
-.demo-card-title { color: rgba(255, 159, 10, 0.95); }
-.demo-card-subtitle { color: rgba(255, 255, 255, 0.62) !important; }
+.demo-card-title { color: rgba(255, 159, 10, 0.95); margin-bottom: 6px; }
+.demo-card-subtitle { color: rgba(255, 255, 255, 0.62) !important; text-align: center; }
 
 .auth-primary-button {
   min-height: 48px;
@@ -397,6 +399,9 @@ button, input { font: inherit; }
   border-radius: 18px;
   min-height: 44px;
   font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .auth-social-row {
@@ -409,9 +414,18 @@ button, input { font: inherit; }
   padding: 0;
 }
 
+.auth-social-button svg,
+.auth-social-button img {
+  width: 20px;
+  height: 20px;
+}
+
+.auth-social-button.apple svg {
+  width: 20px;
+  height: 20px;
+}
+
 .auth-social-icon-button svg {
-  width: 1.12rem;
-  height: 1.12rem;
   display: block;
 }
 

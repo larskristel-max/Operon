@@ -221,18 +221,16 @@ export function AuthGate({
           <>
             <div className="line-divider">or</div>
             <div className="auth-social-row">
-              <button type="button" className="dark-btn auth-social-button auth-social-icon-button" disabled aria-label="Continue with Google">
+              <button type="button" className="dark-btn auth-social-button auth-social-icon-button google" disabled aria-label="Continue with Google">
                 <GoogleIcon />
               </button>
-              <button type="button" className="dark-btn auth-social-button auth-social-icon-button" disabled aria-label="Continue with Apple">
+              <button type="button" className="dark-btn auth-social-button auth-social-icon-button apple" disabled aria-label="Continue with Apple">
                 <AppleIcon />
               </button>
             </div>
             <button type="button" className="demo-card" onClick={() => void startDemo()} disabled={busy}>
-              <div>
-                <strong className="demo-card-title">Explore Demo</strong>
-              </div>
-              <span aria-hidden="true">›</span>
+              <strong className="demo-card-title">Explore Demo</strong>
+              <span className="demo-card-subtitle">Try Operon with sample brewery data.</span>
             </button>
           </>
         )}

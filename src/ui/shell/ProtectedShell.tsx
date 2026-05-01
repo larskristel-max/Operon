@@ -257,13 +257,14 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   }, [copy, demoLoading, demoMergedData, firstName, isDemoMode, realMergedData]);
 
   const progressLabel = dashboardData.brewCard.progressPercent > 0 ? `${dashboardData.brewCard.progressPercent}%` : null;
-  const stageCountRaw = dashboardData.brewCard.stageCount;
-  const stageCountValue = stageCountRaw == null ? "" : String(stageCountRaw).trim();
-  const isPlaceholderStage = stageCountValue === "" || ["-", "–", "—"].includes(stageCountValue);
-  const brewDayLabel = !isPlaceholderStage ? `${copy.days} ${stageCountValue}` : null;
-  const isPlaceholderStageStatus = ["", "-", "–", "—", copy.waitingForData].includes(
-    dashboardData.brewCard.batchStageLabel.trim(),
-  );
+  const isPlaceholderValue = (value: string | number | null | undefined): boolean => {
+    const text = String(value ?? "").trim();
+    return text === "" || ["-", "–", "—"].includes(text);
+  };
+  const stageCountValue = String(dashboardData.brewCard.stageCount ?? "").trim();
+  const brewDayLabel = !isPlaceholderValue(stageCountValue) ? `${copy.days} ${stageCountValue}` : null;
+  const batchStageValue = String(dashboardData.brewCard.batchStageLabel ?? "").trim();
+  const brewStatusLabel = !isPlaceholderValue(batchStageValue) ? batchStageValue : copy.waitingForData;
   const glanceIcons: IconName[] = ["tank", "water", "orders", "inventory"];
   const quickActionIcons: IconName[] = ["brew", "fermentation", "inventory", "reports"];
   const isPreparingRecipeDraft = brewEntryFlow.state.isBusy && brewEntryFlow.state.step === "ready-to-confirm" && !brewEntryFlow.state.draftPreview;
@@ -338,7 +339,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
           </div>
           <div className="brew-side">
             {brewDayLabel ? <strong>{brewDayLabel}</strong> : null}
-            {!isPlaceholderStageStatus ? <span>{dashboardData.brewCard.batchStageLabel}</span> : null}
+            <span className="batch-status">{brewStatusLabel}</span>
           </div>
         </div>
         <div className="fermentation-row">
@@ -626,12 +627,14 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
           <span>{copy.navMore}</span>
         </button>
       </nav>
-      <button type="button" className="brew-fab" aria-label={copy.quickActionStartBrew} onClick={brewEntryFlow.open}>
-        <span className="brew-fab-icon" aria-hidden="true">
-          <Icon name="plus" className="line-icon icon-lg" />
-        </span>
-        <span className="brew-fab-label">{copy.quickActionStartBrew}</span>
-      </button>
+      <div className="brew-fab-wrap" aria-hidden="true">
+        <button type="button" className="brew-fab" aria-label={copy.quickActionStartBrew} onClick={brewEntryFlow.open}>
+          <span className="brew-fab-icon" aria-hidden="true">
+            <Icon name="plus" className="line-icon icon-lg" />
+          </span>
+          <span className="brew-fab-label">{copy.quickActionStartBrew}</span>
+        </button>
+      </div>
 
       {moreOpen && (
         <section className="glass-panel more-menu" aria-label="More options">

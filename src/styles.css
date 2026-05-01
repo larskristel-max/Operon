@@ -449,6 +449,7 @@ button, input { font: inherit; }
 .brew-side { min-width: clamp(84px, 21vw, 108px); text-align: right; color: var(--text-secondary); border-left: none; padding-left: 0; align-items: flex-end; display: grid; justify-items: end; }
 .brew-side strong { color: var(--accent); font-size: clamp(0.9rem, 3.6vw, 0.98rem); line-height: 1.1; display: block; font-weight: 600; }
 .brew-side span { display: block; font-size: clamp(0.78rem, 2.5vw, 0.94rem); margin-top: 6px; color: var(--text-secondary); }
+.batch-status { min-height: 1em; }
 .fermentation-row { display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); }
 .fermentation-row p { margin: 0; font-size: clamp(0.65rem, 2vw, 0.74rem); letter-spacing: 0.03em; }
 .fermentation-row span { color: var(--gold); font-size: clamp(0.9rem, 3.8vw, 1.15rem); font-weight: 600; }
@@ -811,13 +812,18 @@ button, input { font: inherit; }
   background: rgba(76, 139, 245, 0.2);
 }
 
-.brew-fab {
+.brew-fab-wrap {
   position: fixed;
   left: 50%;
   bottom: calc(env(safe-area-inset-bottom) + 28px);
-  transform: translateX(-50%) translateY(-12px);
-  width: 106px;
-  height: 106px;
+  transform: translateX(-50%) translateY(-10px);
+  pointer-events: none;
+  z-index: 4;
+}
+
+.brew-fab {
+  width: 64px;
+  height: 64px;
   border-radius: 999px;
   border: 0;
   background: radial-gradient(circle at 30% 24%, #8cb7ff 0%, #5f97f5 42%, #3f72d4 100%);
@@ -827,18 +833,18 @@ button, input { font: inherit; }
   align-content: center;
   gap: 2px;
   box-shadow:
-    0 14px 28px rgba(56, 106, 216, 0.48),
-    0 0 0 6px rgba(10, 16, 27, 0.9);
-  z-index: 4;
+    0 12px 24px rgba(56, 106, 216, 0.42),
+    0 0 0 4px rgba(10, 16, 27, 0.88);
+  pointer-events: auto;
 }
 
 .brew-fab:active {
-  transform: translateX(-50%) translateY(-12px) scale(0.95);
+  transform: scale(0.95);
 }
 
 .brew-fab-icon {
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   display: grid;
   place-items: center;
 }
@@ -910,4 +916,4 @@ button, input { font: inherit; }
   }
 }
 
-.brew-fab-label { font-size: 0.58rem; font-weight: 500; line-height: 1; }
+.brew-fab-label { font-size: 0.48rem; font-weight: 500; line-height: 1; }

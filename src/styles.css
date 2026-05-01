@@ -188,7 +188,7 @@ button, input { font: inherit; }
 
 .auth-screen {
   display: block;
-  padding: calc(env(safe-area-inset-top) + 32px) 24px 32px;
+  padding: calc(env(safe-area-inset-top) + 32px) 24px calc(32px + env(safe-area-inset-bottom));
   background:
     radial-gradient(circle at 50% -10%, rgba(76, 139, 245, 0.1), transparent 34%),
     #0e0e11;

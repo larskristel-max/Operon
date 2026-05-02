@@ -34,6 +34,29 @@ type IconName =
   | "plus"
   | "package";
 
+const BREW_INPUT_ALLOWED_TERMS = ["malt", "grain", "hop", "yeast", "sugar", "adjunct", "brewing salt", "water treatment"];
+const BREW_INPUT_BLOCKED_TERMS = ["crown cap", "cap", "bottle", "label", "packaging", "carton", "cleaning", "cleaner", "chemical", "caustic", "sanitizer", "starsan", "detergent", "keg", "co2", "office", "sales"];
+
+function normalizeIngredientText(value: unknown): string {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function containsAnyTerm(value: string, terms: string[]): boolean {
+  return terms.some((term) => value.includes(term));
+}
+
+function isBrewInputIngredient(ingredient: Record<string, unknown>): boolean {
+  const category = normalizeIngredientText(ingredient.category);
+  const name = normalizeIngredientText(ingredient.name);
+  if (!category && !name) return false;
+  if (category) {
+    if (containsAnyTerm(category, BREW_INPUT_BLOCKED_TERMS)) return false;
+    return containsAnyTerm(category, BREW_INPUT_ALLOWED_TERMS);
+  }
+  if (containsAnyTerm(name, BREW_INPUT_BLOCKED_TERMS)) return false;
+  return containsAnyTerm(name, BREW_INPUT_ALLOWED_TERMS);
+}
+
 function Icon({ name, className }: { name: IconName; className?: string }) {
   switch (name) {
     case "bell":
@@ -355,7 +378,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   );
   const availableIngredients = ((merged?.ingredients ?? []) as Array<Record<string, unknown>>).filter((ing) => {
     const id = typeof ing.id === "string" ? ing.id : null;
-    return id !== null;
+    return id !== null && isBrewInputIngredient(ing);
   });
   const isPreparingRecipeDraft = brewEntryFlow.state.isBusy && brewEntryFlow.state.step === "ready-to-confirm" && !brewEntryFlow.state.draftPreview;
   const canRetryRecipeDraft = Boolean(brewEntryFlow.state.selectedRecipeId);
@@ -723,7 +746,15 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
           <div className="glass-panel brew-entry-sheet" onClick={(event) => event.stopPropagation()}>
             <p className="eyebrow">NEEDS ACTION</p>
             <button type="button" className="dark-btn ghost tasks-back-btn" onClick={() => setTasksOpen(false)}>Back</button>
-            {executableTasks.length === 0 ? <p className="subtle">No executable tasks.</p> : null}
+            {executableTasks.length === 0 ? (
+              <article className="task-empty-state" aria-live="polite">
+                <div className="task-empty-icon" aria-hidden="true">
+                  <Icon name="tasks" className="line-icon icon-md" />
+                </div>
+                <h4>No executable tasks</h4>
+                <p className="subtle">Remaining suggestions are not wired to actions yet.</p>
+              </article>
+            ) : null}
             {executableTasks.map((task) => (
               <div key={task.id} className="brew-confirm-summary task-item">
                 <div className="brew-confirm-row"><span className="brew-confirm-label">{task.batchLabel}</span><span className="brew-confirm-value">{task.label}</span></div>

@@ -1075,6 +1075,78 @@ button, input { font: inherit; }
   to { opacity: 1; transform: translateY(0); }
 }
 
+.brewing-card { cursor: pointer; }
+
+.batches-filter-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.batches-filter-tab {
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(22, 28, 34, 0.55);
+  color: var(--text-secondary);
+  padding: 8px 4px;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.batches-filter-tab.active {
+  background: rgba(55, 100, 215, 0.25);
+  border-color: rgba(110, 160, 255, 0.35);
+  color: var(--text-primary);
+}
+
+.batch-list { display: grid; gap: 8px; }
+
+.batch-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(22, 28, 34, 0.55);
+  cursor: pointer;
+  gap: 8px;
+}
+
+.batch-list-item:active { transform: scale(0.99); }
+
+.batch-list-name {
+  display: block;
+  font-size: 0.92rem;
+  font-weight: 560;
+  color: var(--text-primary);
+}
+
+.batch-list-status {
+  display: block;
+  font-size: 0.72rem;
+  margin-top: 2px;
+}
+
+.batch-list-badge {
+  flex-shrink: 0;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(58, 96, 176, 0.35);
+  border: 1px solid rgba(110, 160, 255, 0.3);
+  color: rgba(150, 186, 255, 0.95);
+  font-size: 0.72rem;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+  padding: 0 6px;
+}
+
 .more-menu {
   position: fixed;
   left: clamp(10px, 3vw, 14px);

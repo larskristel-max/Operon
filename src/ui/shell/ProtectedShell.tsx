@@ -374,35 +374,35 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
           <button type="button">{copy.viewAll}</button>
         </div>
         <div className="glance-grid">
-          {dashboardData.glanceCards.map((card, index) => (
-            <article key={card.title} className={`glance-card ${card.accent}`}>
-              <div className="glance-icon">
-                <Icon name={glanceIcons[Math.min(glanceIcons.length - 1, index)]} className="line-icon icon-md" />
-              </div>
-              <div className="glance-copy">
-                <p className="eyebrow">{card.title}</p>
-                <strong>{card.value}</strong>
-                <span>{card.subtitle}</span>
-              </div>
-            </article>
-          ))}
+          {dashboardData.glanceCards.map((card, index) => {
+            if (index === 1) {
+              return (
+                <article key="needs-action" className="glance-card green">
+                  <div className="glance-icon">
+                    <Icon name="tasks" className="line-icon icon-md" />
+                  </div>
+                  <div className="glance-copy">
+                    <p className="eyebrow">Needs action</p>
+                    <strong>Open tasks: {operational.openTaskCount}</strong>
+                    <span>Active batches: {operational.activeBatchCount}</span>
+                  </div>
+                </article>
+              );
+            }
+            return (
+              <article key={card.title} className={`glance-card ${card.accent}`}>
+                <div className="glance-icon">
+                  <Icon name={glanceIcons[Math.min(glanceIcons.length - 1, index)]} className="line-icon icon-md" />
+                </div>
+                <div className="glance-copy">
+                  <p className="eyebrow">{card.title}</p>
+                  <strong>{card.value}</strong>
+                  <span>{card.subtitle}</span>
+                </div>
+              </article>
+            );
+          })}
         </div>
-      </section>
-
-
-      <section className="dashboard-section">
-        <div className="section-head">
-          <h3>Needs action</h3>
-        </div>
-        <article className="glance-card green">
-          <div className="glance-copy">
-            <p className="eyebrow">Active batches: {operational.activeBatchCount}</p>
-            <strong>Open tasks: {operational.openTaskCount}</strong>
-            {operational.openTasks.slice(0, 3).map((task) => (
-              <span key={task.id}>- {task.label} · {task.batchLabel}</span>
-            ))}
-          </div>
-        </article>
       </section>
 
       <section className="dashboard-section quick-actions">

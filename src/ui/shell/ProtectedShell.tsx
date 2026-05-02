@@ -174,6 +174,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const { me, profileError, refreshProfile, session, isDemoMode, exitDemoMode, signOut } = useApp();
   const [moreOpen, setMoreOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
+  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [selectedTankId, setSelectedTankId] = useState<string>("");
   const [mashVolumeInput, setMashVolumeInput] = useState<string>("");
@@ -345,6 +346,18 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const glanceIcons: IconName[] = ["tank", "water", "package", "inventory"];
   const quickActionIcons: IconName[] = ["brew", "fermentation", "inventory", "reports"];
   const merged = isDemoMode ? demoMergedData : realMergedData;
+  const batches = (merged?.batches ?? []) as Array<Record<string, unknown>>;
+  const selectedBatch = selectedBatchId ? batches.find((batch) => String(batch.id ?? "") === selectedBatchId) ?? null : null;
+  const batchTank = selectedBatchId
+    ? ((merged?.tanks ?? []) as Array<Record<string, unknown>>).find((tank) => String(tank.current_batch_id ?? "") === selectedBatchId) ?? null
+    : null;
+  const batchInputs = selectedBatchId
+    ? ((merged?.batch_inputs ?? []) as Array<Record<string, unknown>>).filter((input) => String(input.batch_id ?? "") === selectedBatchId)
+    : [];
+  const batchLogs = selectedBatchId
+    ? ((merged?.brew_logs ?? []) as Array<Record<string, unknown>>).filter((log) => String(log.batch_id ?? "") === selectedBatchId)
+    : [];
+  const batchTasks = selectedBatchId ? operational.openTasks.filter((task) => task.batchId === selectedBatchId) : [];
   const availableTanks = ((merged?.tanks ?? []) as Array<Record<string, unknown>>).filter((tank) => {
     const currentBatchId = typeof tank.current_batch_id === "string" ? tank.current_batch_id : null;
     return currentBatchId === null;
@@ -420,7 +433,24 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
         </div>
       </section>
 
-      <section className="glass-panel brewing-card">
+      <section
+        className="glass-panel brewing-card"
+        role="button"
+        tabIndex={0}
+        onClick={() => {
+          const activeBatch = batches[0];
+          if (!activeBatch) return;
+          setSelectedBatchId(String(activeBatch.id ?? ""));
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            const activeBatch = batches[0];
+            if (!activeBatch) return;
+            setSelectedBatchId(String(activeBatch.id ?? ""));
+          }
+        }}
+      >
         <div className="brewing-top">
           <div className="brew-main">
             <div className="brew-icon">
@@ -720,6 +750,97 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
           {brewEntryFlow.state.error && brewEntryFlow.state.step !== "ready-to-confirm" && (
             <p className="error">{brewEntryFlow.state.error}</p>
           )}
+          </div>
+        </section>
+      )}
+
+      {selectedBatchId && (
+        <section className="brew-entry-backdrop" onClick={() => setSelectedBatchId(null)} aria-label="Batch details">
+          <div className="glass-panel brew-entry-sheet batch-detail-sheet" onClick={(event) => event.stopPropagation()}>
+            <div className="section-head">
+              <h3>Détails</h3>
+              <button type="button" onClick={() => setSelectedBatchId(null)}>
+                Back
+              </button>
+            </div>
+            {!selectedBatch ? (
+              <p className="subtle">Batch introuvable</p>
+            ) : (
+              <>
+                <section className="glass-panel brewing-card batch-hero-card">
+                  <div className="brewing-top">
+                    <div className="brew-main">
+                      <div className="brew-icon">
+                        <Icon name="tank" className="line-icon icon-xl gold-icon" />
+                      </div>
+                      <div>
+                        <p className="eyebrow gold">EN BRASSAGE</p>
+                        <h2 className="brew-card-title">{String(selectedBatch.name ?? dashboardData.brewCard.batchName ?? "—")}</h2>
+                        <p className="subtle brew-card-lot">{String(selectedBatch.lot_number ?? selectedBatch.id ?? "—")}</p>
+                      </div>
+                    </div>
+                    <div className="brew-side">
+                      <small className="batch-status">{String(selectedBatch.status ?? brewStatusLabel)}</small>
+                    </div>
+                  </div>
+                </section>
+                <div className="glance-grid batch-detail-grid">
+                  <article className="glance-card blue">
+                    <div className="glance-icon">
+                      <Icon name="brew" className="line-icon icon-md" />
+                    </div>
+                    <div className="glance-copy">
+                      <p className="eyebrow">STATUS</p>
+                      <strong>{String(selectedBatch.status ?? "À compléter")}</strong>
+                      <span>Process run</span>
+                    </div>
+                  </article>
+                  <article className="glance-card green">
+                    <div className="glance-icon">
+                      <Icon name="tank" className="line-icon icon-md" />
+                    </div>
+                    <div className="glance-copy">
+                      <p className="eyebrow">TANK</p>
+                      <strong>{String(batchTank?.name ?? "Non assigné")}</strong>
+                      <span>Cuve active</span>
+                    </div>
+                  </article>
+                  <article className="glance-card purple">
+                    <div className="glance-icon">
+                      <Icon name="inventory" className="line-icon icon-md" />
+                    </div>
+                    <div className="glance-copy">
+                      <p className="eyebrow">INGREDIENTS</p>
+                      <strong>{batchInputs.length > 0 ? `${batchInputs.length} liés` : "À compléter"}</strong>
+                      <span>{batchInputs[0] ? String(batchInputs[0].ingredient_id ?? "") : ""}</span>
+                    </div>
+                  </article>
+                  <article className="glance-card">
+                    <div className="glance-icon">
+                      <Icon name="orders" className="line-icon icon-md" />
+                    </div>
+                    <div className="glance-copy">
+                      <p className="eyebrow">LOGS</p>
+                      <strong>{batchLogs.length}</strong>
+                      <span>Entrées</span>
+                    </div>
+                  </article>
+                  <article className="glance-card blue">
+                    <div className="glance-icon">
+                      <Icon name="tasks" className="line-icon icon-md" />
+                    </div>
+                    <div className="glance-copy">
+                      <p className="eyebrow">NEEDS ACTION</p>
+                      <strong>{batchTasks.length} tasks</strong>
+                      <span>{batchTasks[0]?.label ?? "À compléter"}</span>
+                    </div>
+                    <button type="button" className="dark-btn" onClick={() => setTasksOpen(true)}>
+                      Voir tâches
+                    </button>
+                  </article>
+                </div>
+              </>
+            )}
           </div>
         </section>
       )}

@@ -42,6 +42,10 @@ export type DashboardCopy = {
   brewEntryConfirmError: string;
   brewEntryCreatedTitle: string;
   brewEntryCreatedDescription: string;
+  brewEntryLaunchedTitle: string;
+  brewEntryBatchCreated: string;
+  brewEntryContinue: string;
+  brewEntryBackToDashboard: string;
   brewEntryDemoDraftMode: string;
   brewEntrySelectedRecipePrefix: string;
   brewEntryNoRecipesConnected: string;
@@ -114,6 +118,10 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     brewEntryConfirmError: "Could not create batch. Try again.",
     brewEntryCreatedTitle: "BREW CREATED",
     brewEntryCreatedDescription: "The batch was created successfully.",
+    brewEntryLaunchedTitle: "BREW LAUNCHED",
+    brewEntryBatchCreated: "Batch created",
+    brewEntryContinue: "Continue",
+    brewEntryBackToDashboard: "Back to dashboard",
     brewEntryDemoDraftMode: "Demo mode: draft is simulated and isolated from production data.",
     brewEntrySelectedRecipePrefix: "Selected recipe",
     brewEntryNoRecipesConnected: "No recipes connected yet",
@@ -185,6 +193,10 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     brewEntryConfirmError: "Impossible de créer le lot. Réessayez.",
     brewEntryCreatedTitle: "BRASSAGE CRÉÉ",
     brewEntryCreatedDescription: "Le lot a été créé avec succès.",
+    brewEntryLaunchedTitle: "BRASSAGE LANCÉ",
+    brewEntryBatchCreated: "Batch créé",
+    brewEntryContinue: "Continuer",
+    brewEntryBackToDashboard: "Retour au tableau",
     brewEntryDemoDraftMode: "Mode démo : le brouillon est simulé et isolé des données de production.",
     brewEntrySelectedRecipePrefix: "Recette sélectionnée",
     brewEntryNoRecipesConnected: "Aucune recette connectée pour le moment",
@@ -256,6 +268,10 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     brewEntryConfirmError: "Charge konnte nicht erstellt werden. Bitte erneut versuchen.",
     brewEntryCreatedTitle: "SUD ERSTELLT",
     brewEntryCreatedDescription: "Die Charge wurde erfolgreich erstellt.",
+    brewEntryLaunchedTitle: "SUD GESTARTET",
+    brewEntryBatchCreated: "Charge erstellt",
+    brewEntryContinue: "Weiter",
+    brewEntryBackToDashboard: "Zurück zur Übersicht",
     brewEntryDemoDraftMode: "Demo-Modus: Entwurf ist simuliert und von Produktionsdaten getrennt.",
     brewEntrySelectedRecipePrefix: "Ausgewähltes Rezept",
     brewEntryNoRecipesConnected: "Noch keine Rezepte verbunden",
@@ -327,6 +343,10 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     brewEntryConfirmError: "Kon batch niet aanmaken. Probeer opnieuw.",
     brewEntryCreatedTitle: "BROUWSEL AANGEMAAKT",
     brewEntryCreatedDescription: "De batch is succesvol aangemaakt.",
+    brewEntryLaunchedTitle: "BROUWSEL GESTART",
+    brewEntryBatchCreated: "Batch aangemaakt",
+    brewEntryContinue: "Doorgaan",
+    brewEntryBackToDashboard: "Terug naar dashboard",
     brewEntryDemoDraftMode: "Demomodus: concept is gesimuleerd en gescheiden van productiedata.",
     brewEntrySelectedRecipePrefix: "Geselecteerd recept",
     brewEntryNoRecipesConnected: "Nog geen recepten gekoppeld",

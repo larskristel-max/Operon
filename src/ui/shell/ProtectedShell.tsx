@@ -641,11 +641,15 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
 
           {brewEntryFlow.state.step === "confirmed" && (
             <>
-              <p className="eyebrow">{copy.brewEntryCreatedTitle}</p>
-              <p className="subtle">{copy.brewEntryCreatedDescription}</p>
-              <div className="brew-entry-footer">
-                <button type="button" className="dark-btn" onClick={brewEntryFlow.close}>
-                  {copy.brewEntryClose}
+              <p className="eyebrow">{copy.brewEntryLaunchedTitle}</p>
+              <p className="brew-confirm-title">{brewEntryFlow.state.confirmedBatchName}</p>
+              <p className="brew-confirm-status">{copy.brewEntryBatchCreated}</p>
+              <div className="brew-confirm-actions">
+                <button type="button" className="dark-btn brew-confirm-primary" onClick={brewEntryFlow.close}>
+                  {copy.brewEntryContinue}
+                </button>
+                <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.close}>
+                  {copy.brewEntryBackToDashboard}
                 </button>
               </div>
             </>

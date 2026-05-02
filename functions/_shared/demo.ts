@@ -36,6 +36,9 @@ export interface DemoDashboardData {
   lots: Array<Record<string, unknown>>;
   inventory_movements: Array<Record<string, unknown>>;
   sales: Array<Record<string, unknown>>;
+  batch_inputs: Array<Record<string, unknown>>;
+  brew_logs: Array<Record<string, unknown>>;
+  pending_movements: Array<Record<string, unknown>>;
 }
 
 export class DemoHttpError extends Error {
@@ -224,7 +227,7 @@ export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string
     "Failed to load demo brewery profile"
   );
 
-  const [tanks, batches, tasks, ingredients, recipes, packagingFormats, lots, inventoryMovements, sales] = await Promise.all([
+  const [tanks, batches, tasks, ingredients, recipes, packagingFormats, lots, inventoryMovements, sales, batchInputs, brewLogs, pendingMovements] = await Promise.all([
     fetchTableRows(env, "tanks", demoBreweryId, "*", "name.asc"),
     fetchTableRows(env, "batches", demoBreweryId, "*", "created_at.desc"),
     fetchTableRows(env, "tasks", demoBreweryId, "*", "created_at.desc"),
@@ -234,6 +237,9 @@ export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string
     fetchTableRows(env, "lots", demoBreweryId, "*", "created_at.desc"),
     fetchTableRows(env, "inventory_movements", demoBreweryId, "*", "created_at.desc"),
     fetchTableRows(env, "sales", demoBreweryId, "*", "created_at.desc"),
+    fetchTableRows(env, "batch_inputs", demoBreweryId, "*", "created_at.desc"),
+    fetchTableRows(env, "brew_logs", demoBreweryId, "*", "created_at.desc"),
+    fetchTableRows(env, "pending_movements", demoBreweryId, "*", "created_at.desc"),
   ]);
 
   return {
@@ -247,6 +253,9 @@ export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string
     lots,
     inventory_movements: inventoryMovements,
     sales,
+    batch_inputs: batchInputs,
+    brew_logs: brewLogs,
+    pending_movements: pendingMovements,
   };
 }
 
@@ -322,6 +331,9 @@ const DASHBOARD_OVERLAY_TABLES: ReadonlyArray<keyof DemoDashboardData> = [
   "recipes",
   "packaging_formats",
   "sales",
+  "batch_inputs",
+  "brew_logs",
+  "pending_movements",
 ];
 
 export function applyDashboardOverlay(baseline: DemoDashboardData, overlays: OverlayRecordRow[]): DemoDashboardData {
@@ -336,6 +348,9 @@ export function applyDashboardOverlay(baseline: DemoDashboardData, overlays: Ove
     lots: [...baseline.lots],
     inventory_movements: [...baseline.inventory_movements],
     sales: [...baseline.sales],
+    batch_inputs: [...baseline.batch_inputs],
+    brew_logs: [...baseline.brew_logs],
+    pending_movements: [...baseline.pending_movements],
   };
 
   for (const tableKey of DASHBOARD_OVERLAY_TABLES) {

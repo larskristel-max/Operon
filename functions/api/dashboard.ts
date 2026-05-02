@@ -13,6 +13,10 @@ interface DashboardResponse {
   inventory: JsonRecord;
   inventory_movements: JsonRecord[];
   sales: JsonRecord[];
+  lots: JsonRecord[];
+  batch_inputs: JsonRecord[];
+  brew_logs: JsonRecord[];
+  pending_movements: JsonRecord[];
 }
 
 const EMPTY_DASHBOARD: DashboardResponse = {
@@ -22,6 +26,10 @@ const EMPTY_DASHBOARD: DashboardResponse = {
   inventory: {},
   inventory_movements: [],
   sales: [],
+  lots: [],
+  batch_inputs: [],
+  brew_logs: [],
+  pending_movements: [],
 };
 
 function adminHeaders(env: Env): Record<string, string> {
@@ -145,13 +153,17 @@ export async function onRequestGet(context: { request: Request; env: Env }): Pro
       return jsonResponse(EMPTY_DASHBOARD);
     }
 
-    const [tanks, batches, tasks, ingredientRows, inventoryMovements, sales] = await Promise.all([
+    const [tanks, batches, tasks, ingredientRows, inventoryMovements, sales, lots, batchInputs, brewLogs, pendingMovements] = await Promise.all([
       fetchOptionalRows(env, "tanks", breweryId, "name.asc"),
       fetchRows(env, "batches", breweryId, "created_at.desc"),
       fetchRows(env, "tasks", breweryId, "created_at.desc"),
       fetchOptionalRows(env, "ingredients", breweryId, "created_at.desc"),
       fetchOptionalRows(env, "inventory_movements", breweryId, "created_at.desc"),
       fetchOptionalRows(env, "sales", breweryId, "created_at.desc"),
+      fetchOptionalRows(env, "lots", breweryId, "created_at.desc"),
+      fetchOptionalRows(env, "batch_inputs", breweryId, "created_at.desc"),
+      fetchOptionalRows(env, "brew_logs", breweryId, "created_at.desc"),
+      fetchOptionalRows(env, "pending_movements", breweryId, "created_at.desc"),
     ]);
 
     return jsonResponse({
@@ -161,6 +173,10 @@ export async function onRequestGet(context: { request: Request; env: Env }): Pro
       inventory: summarizeInventory(ingredientRows),
       inventory_movements: inventoryMovements,
       sales,
+      lots,
+      batch_inputs: batchInputs,
+      brew_logs: brewLogs,
+      pending_movements: pendingMovements,
     });
   } catch {
     return jsonResponse(EMPTY_DASHBOARD);

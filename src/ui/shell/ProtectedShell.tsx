@@ -12,6 +12,7 @@ import { useRealDashboard } from "@/hooks/useRealDashboard";
 import { mapRealDashboardToMerged } from "@/domains/dashboard/mappers";
 import { useBottomNavHeight } from "@/ui/shell/useBottomNavHeight";
 import { useBrewEntryFlow } from "@/domains/batches/hooks";
+import { computeOperationalSummary } from "@/domains/dashboard/operational";
 
 type IconName =
   | "bell"
@@ -256,6 +257,22 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     };
   }, [copy, demoLoading, demoMergedData, firstName, isDemoMode, realMergedData]);
 
+
+  const operational = useMemo(() => {
+    const merged = isDemoMode ? demoMergedData : realMergedData;
+    if (!merged) return { activeBatchCount: 0, openTaskCount: 0, openTasks: [] };
+    if (merged.operational) return merged.operational;
+
+    return computeOperationalSummary({
+      batches: merged.batches,
+      tanks: merged.tanks,
+      tasks: merged.tasks,
+      lots: merged.lots,
+      batchInputs: merged.batch_inputs ?? [],
+      brewLogs: merged.brew_logs ?? [],
+    });
+  }, [demoMergedData, isDemoMode, realMergedData]);
+
   const progressLabel = dashboardData.brewCard.progressPercent > 0 ? `${dashboardData.brewCard.progressPercent}%` : null;
   const isPlaceholderValue = (value: string | number | null | undefined): boolean => {
     const text = String(value ?? "").trim();
@@ -370,6 +387,22 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
             </article>
           ))}
         </div>
+      </section>
+
+
+      <section className="dashboard-section">
+        <div className="section-head">
+          <h3>Needs action</h3>
+        </div>
+        <article className="glance-card green">
+          <div className="glance-copy">
+            <p className="eyebrow">Active batches: {operational.activeBatchCount}</p>
+            <strong>Open tasks: {operational.openTaskCount}</strong>
+            {operational.openTasks.slice(0, 3).map((task) => (
+              <span key={task.id}>- {task.label} · {task.batchLabel}</span>
+            ))}
+          </div>
+        </article>
       </section>
 
       <section className="dashboard-section quick-actions">

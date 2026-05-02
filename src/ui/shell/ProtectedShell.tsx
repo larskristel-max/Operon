@@ -40,6 +40,7 @@ function isBrewInputIngredient(ingredient: Record<string, unknown>): boolean {
 }
 
 const BATCH_ACTIVE_FILTER_STATUSES = new Set(["brewing", "fermenting", "conditioning", "ready"]);
+const BATCH_ARCHIVED_FILTER_STATUSES = new Set(["packaged", "closed", "cancelled"]);
 
 function getBatchStatusKey(batch: Record<string, unknown>): string {
   for (const key of ["status", "stage", "batch_status"]) {
@@ -397,7 +398,8 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     const s = getBatchStatusKey(batch);
     if (batchFilter === "active") return BATCH_ACTIVE_FILTER_STATUSES.has(s);
     if (batchFilter === "planned") return s === "planned";
-    return !BATCH_ACTIVE_FILTER_STATUSES.has(s) && s !== "planned";
+    if (batchFilter === "archived") return BATCH_ARCHIVED_FILTER_STATUSES.has(s);
+    return false;
   });
   const selectedBatch = selectedBatchId
     ? allBatches.find((b) => String(b.id ?? "") === selectedBatchId) ?? null
@@ -481,9 +483,14 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
         role="button"
         tabIndex={0}
         aria-label="Open batches overview"
-        onClick={() => setBatchesOpen(true)}
+        onClick={() => { setBatchFilter("active"); setSelectedBatchId(null); setBatchesOpen(true); }}
         onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") setBatchesOpen(true);
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            setBatchFilter("active");
+            setSelectedBatchId(null);
+            setBatchesOpen(true);
+          }
         }}
       >
         <div className="brewing-top">
@@ -1010,7 +1017,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                           tabIndex={0}
                           onClick={() => setSelectedBatchId(id)}
                           onKeyDown={(event) => {
-                            if (event.key === "Enter" || event.key === " ") setSelectedBatchId(id);
+                            if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedBatchId(id); }
                           }}
                         >
                           <div>

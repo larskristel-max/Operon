@@ -1103,19 +1103,21 @@ button, input { font: inherit; }
   color: var(--text-primary);
 }
 
-.batch-list { display: grid; }
+.batch-list { display: grid; gap: 8px; }
 
 .batch-list-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 4px;
-  border-bottom: 1px solid var(--divider);
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(22, 28, 34, 0.55);
   cursor: pointer;
   gap: 8px;
 }
 
-.batch-list-item:last-child { border-bottom: none; }
+.batch-list-item:active { transform: scale(0.99); }
 
 .batch-list-name {
   display: block;

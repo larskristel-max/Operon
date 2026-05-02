@@ -651,7 +651,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                   <p className="eyebrow">{copy.brewEntryReadyToBrew}</p>
                   <p className="brew-confirm-title">{selectedRecipeName}</p>
                   <p className="brew-confirm-status">{copy.brewEntryDraftReadyStatus}</p>
-                  <div className="brew-confirm-summary">
+                  <div className="brew-confirm-summary task-item">
                     <div className="brew-confirm-row">
                       <span className="brew-confirm-label">{copy.brewEntryRecipeLabel}</span>
                       <span className="brew-confirm-value">{selectedRecipeName}</span>
@@ -722,20 +722,20 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
         <section className="brew-entry-backdrop" onClick={() => setTasksOpen(false)} aria-label="Tasks">
           <div className="glass-panel brew-entry-sheet" onClick={(event) => event.stopPropagation()}>
             <p className="eyebrow">NEEDS ACTION</p>
-            <button type="button" className="dark-btn ghost" onClick={() => setTasksOpen(false)}>Back</button>
+            <button type="button" className="dark-btn ghost tasks-back-btn" onClick={() => setTasksOpen(false)}>Back</button>
             {executableTasks.length === 0 ? <p className="subtle">No executable tasks.</p> : null}
             {executableTasks.map((task) => (
-              <div key={task.id} className="brew-confirm-summary">
+              <div key={task.id} className="brew-confirm-summary task-item">
                 <div className="brew-confirm-row"><span className="brew-confirm-label">{task.batchLabel}</span><span className="brew-confirm-value">{task.label}</span></div>
-                <button type="button" className="dark-btn" onClick={() => { setActiveTaskId((prev) => (prev === task.id ? null : task.id)); setTaskError(null); }}>{activeTaskId === task.id ? "Close" : "Start"}</button>
+                <button type="button" className="dark-btn task-toggle-btn" onClick={() => { setActiveTaskId((prev) => (prev === task.id ? null : task.id)); setTaskError(null); }}>Start</button>
                 {activeTaskId === task.id && task.id.endsWith(":assign-tank") && (
-                  <div>
-                    <select value={selectedTankId} onChange={(event) => setSelectedTankId(event.target.value)}>
+                  <div className="task-action-panel">
+                    <div className="task-field-group"><label className="task-select-wrap"><span className="task-field-label">Tank</span><select className="task-select" value={selectedTankId} onChange={(event) => setSelectedTankId(event.target.value)}>
                       <option value="">Select tank</option>
                       {availableTanks.map((tank) => <option key={String(tank.id ?? "")} value={String(tank.id ?? "")}>{String(tank.name ?? tank.id ?? "Tank")}</option>)}
-                    </select>
+                    </select><span className="task-select-chevron" aria-hidden="true">⌄</span></label></div>
                     {availableTanks.length === 0 ? <p className="subtle">No available tanks.</p> : null}
-                    <button type="button" className="dark-btn" disabled={taskBusy || !selectedTankId} onClick={async () => {
+                    <button type="button" className="dark-btn brew-confirm-primary task-confirm-btn" disabled={taskBusy || !selectedTankId} onClick={async () => {
                       try { setTaskBusy(true); await assignTank({ tankId: selectedTankId, batchId: task.batchId }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setSelectedTankId(""); }
                       catch (error) { setTaskError(error instanceof Error ? error.message : "Failed to assign tank"); }
                       finally { setTaskBusy(false); }
@@ -743,9 +743,12 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                   </div>
                 )}
                 {activeTaskId === task.id && task.id.endsWith(":record-mash-volume") && (
-                  <div>
-                    <input type="number" inputMode="decimal" min="0" step="0.1" value={mashVolumeInput} onChange={(event) => setMashVolumeInput(event.target.value)} placeholder="Liters" />
-                    <button type="button" className="dark-btn" disabled={taskBusy} onClick={async () => {
+                  <div className="task-action-panel">
+                    <div className="task-inline-row">
+                      <input className="task-input" type="number" inputMode="decimal" min="0" step="0.1" value={mashVolumeInput} onChange={(event) => setMashVolumeInput(event.target.value)} placeholder="10" />
+                      <input type="text" className="task-input task-input-unit" value="L" readOnly aria-label="Unit liters" />
+                    </div>
+                    <button type="button" className="dark-btn brew-confirm-primary task-confirm-btn" disabled={taskBusy} onClick={async () => {
                       const liters = Number(mashVolumeInput);
                       if (!Number.isFinite(liters) || liters <= 0) { setTaskError("Enter a valid volume in liters."); return; }
                       try { setTaskBusy(true); await recordMashVolume({ batchId: task.batchId, actualMashVolumeLiters: liters }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setMashVolumeInput(""); }
@@ -755,8 +758,8 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                   </div>
                 )}
                 {activeTaskId === task.id && task.id.endsWith(":assign-input-lots") && (
-                  <div>
-                    <select value={ingredientIdInput} onChange={(event) => {
+                  <div className="task-action-panel">
+                    <div className="task-field-group"><label className="task-select-wrap"><span className="task-field-label">Ingredient</span><select className="task-select" value={ingredientIdInput} onChange={(event) => {
                       const id = event.target.value;
                       setIngredientIdInput(id);
                       const ing = availableIngredients.find((i) => String(i.id ?? "") === id);
@@ -765,11 +768,11 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                     }}>
                       <option value="">Select ingredient</option>
                       {availableIngredients.map((ing) => <option key={String(ing.id ?? "")} value={String(ing.id ?? "")}>{String(ing.name ?? ing.id ?? "Ingredient")}</option>)}
-                    </select>
+                    </select><span className="task-select-chevron" aria-hidden="true">⌄</span></label></div>
                     {availableIngredients.length === 0 ? <p className="subtle">No ingredients available.</p> : null}
-                    <input type="number" inputMode="decimal" min="0" step="0.01" value={ingredientQuantityInput} onChange={(event) => setIngredientQuantityInput(event.target.value)} placeholder="Quantity" />
-                    <input type="text" value={ingredientUnitInput} onChange={(event) => setIngredientUnitInput(event.target.value)} placeholder="Unit (e.g. kg, g, L)" />
-                    <button type="button" className="dark-btn" disabled={taskBusy || !ingredientIdInput} onClick={async () => {
+                    <div className="task-inline-row"><input className="task-input" type="number" inputMode="decimal" min="0" step="0.01" value={ingredientQuantityInput} onChange={(event) => setIngredientQuantityInput(event.target.value)} placeholder="10" />
+                    <input className="task-input task-input-unit" type="text" value={ingredientUnitInput} onChange={(event) => setIngredientUnitInput(event.target.value)} placeholder="kg" /></div>
+                    <button type="button" className="dark-btn brew-confirm-primary task-confirm-btn" disabled={taskBusy || !ingredientIdInput} onClick={async () => {
                       const qty = Number(ingredientQuantityInput);
                       if (!ingredientIdInput) { setTaskError("Select an ingredient."); return; }
                       if (!Number.isFinite(qty) || qty <= 0) { setTaskError("Enter a valid quantity."); return; }
@@ -781,9 +784,12 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                   </div>
                 )}
                 {activeTaskId === task.id && task.id.endsWith(":record-transfer-volume") && (
-                  <div>
-                    <input type="number" inputMode="decimal" min="0" step="0.1" value={transferVolumeInput} onChange={(event) => setTransferVolumeInput(event.target.value)} placeholder="Liters" />
-                    <button type="button" className="dark-btn" disabled={taskBusy} onClick={async () => {
+                  <div className="task-action-panel">
+                    <div className="task-inline-row">
+                      <input className="task-input" type="number" inputMode="decimal" min="0" step="0.1" value={transferVolumeInput} onChange={(event) => setTransferVolumeInput(event.target.value)} placeholder="10" />
+                      <input type="text" className="task-input task-input-unit" value="L" readOnly aria-label="Unit liters" />
+                    </div>
+                    <button type="button" className="dark-btn brew-confirm-primary task-confirm-btn" disabled={taskBusy} onClick={async () => {
                       const liters = Number(transferVolumeInput);
                       if (!Number.isFinite(liters) || liters <= 0) { setTaskError("Enter a valid volume in liters."); return; }
                       try { setTaskBusy(true); await recordTransferVolume({ batchId: task.batchId, actualFermenterVolumeLiters: liters }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setTransferVolumeInput(""); }
@@ -793,10 +799,10 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                   </div>
                 )}
                 {activeTaskId === task.id && task.id.endsWith(":take-gravity-reading") && (
-                  <div>
-                    <input type="number" inputMode="decimal" min="0" step="0.001" value={gravityInput} onChange={(event) => setGravityInput(event.target.value)} placeholder="Gravity (e.g. 1.050)" />
-                    <input type="number" inputMode="decimal" step="0.1" value={tempInput} onChange={(event) => setTempInput(event.target.value)} placeholder="Temp °C (optional)" />
-                    <button type="button" className="dark-btn" disabled={taskBusy} onClick={async () => {
+                  <div className="task-action-panel">
+                    <input className="task-input" type="number" inputMode="decimal" min="0" step="0.001" value={gravityInput} onChange={(event) => setGravityInput(event.target.value)} placeholder="Gravity (e.g. 1.050)" />
+                    <input className="task-input" type="number" inputMode="decimal" step="0.1" value={tempInput} onChange={(event) => setTempInput(event.target.value)} placeholder="Temp °C (optional)" />
+                    <button type="button" className="dark-btn brew-confirm-primary task-confirm-btn" disabled={taskBusy} onClick={async () => {
                       const gravity = Number(gravityInput);
                       if (!Number.isFinite(gravity) || gravity <= 0) { setTaskError("Enter a valid gravity value."); return; }
                       const tempC = tempInput.trim() ? Number(tempInput) : null;
@@ -808,11 +814,11 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                   </div>
                 )}
                 {activeTaskId === task.id && task.id.endsWith(":create-output-lot") && (
-                  <div>
-                    <input type="text" value={lotNumberInput} onChange={(event) => setLotNumberInput(event.target.value)} placeholder="Lot number" />
-                    <input type="number" inputMode="decimal" min="0" step="0.1" value={lotVolumeInput} onChange={(event) => setLotVolumeInput(event.target.value)} placeholder="Volume (L, optional)" />
-                    <input type="number" inputMode="numeric" min="0" step="1" value={lotUnitsInput} onChange={(event) => setLotUnitsInput(event.target.value)} placeholder="Units count (optional)" />
-                    <button type="button" className="dark-btn" disabled={taskBusy || !lotNumberInput.trim()} onClick={async () => {
+                  <div className="task-action-panel">
+                    <input className="task-input" type="text" value={lotNumberInput} onChange={(event) => setLotNumberInput(event.target.value)} placeholder="Lot number" />
+                    <div className="task-inline-row"><input className="task-input" type="number" inputMode="decimal" min="0" step="0.1" value={lotVolumeInput} onChange={(event) => setLotVolumeInput(event.target.value)} placeholder="Volume (L, optional)" />
+                    <input className="task-input" type="number" inputMode="numeric" min="0" step="1" value={lotUnitsInput} onChange={(event) => setLotUnitsInput(event.target.value)} placeholder="Units count (optional)" /></div>
+                    <button type="button" className="dark-btn brew-confirm-primary task-confirm-btn" disabled={taskBusy || !lotNumberInput.trim()} onClick={async () => {
                       if (!lotNumberInput.trim()) { setTaskError("Enter a lot number."); return; }
                       const volumeLiters = lotVolumeInput.trim() ? Number(lotVolumeInput) : null;
                       const unitsCount = lotUnitsInput.trim() ? Number(lotUnitsInput) : null;

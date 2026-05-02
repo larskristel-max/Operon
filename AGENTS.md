@@ -1,408 +1,645 @@
-# 📘 Operon (BrewOS) — agents.md
+# Operon — AGENTS.md
 
-This document defines how agents (Codex, ChatGPT, or any future AI contributor) must operate when working on the Operon codebase and product.
+This file is the durable operating guide for Codex, ChatGPT, and any future AI contributor working on Operon.
 
-It is derived from the full project history, decisions, regressions, architecture work, and product pivots.
+It exists so every new execution thread starts from the same architecture and product understanding.
 
-This is NOT a suggestion document.
-These are **operating rules**.
+This document is not a wish list. Treat it as project law unless the user explicitly changes the architecture.
 
-⸻
+---
 
-# 1. 🧠 PRODUCT UNDERSTANDING (MANDATORY)
+# 1. Product identity
 
-Operon is NOT a traditional app.
+Operon is a mobile-first brewery operating system.
 
-It is:
-→ a **mobile-first brewery operating system**
+It is not a generic dashboard, CRUD app, or form system.
 
-Core principle:
+Core loop:
+
+```text
 User acts → system suggests → user confirms → system structures, links, and logs data
+```
 
-The system must:
+Primary product goal:
 
-* reduce admin
-* preserve traceability
-* guide real-world workflows
-* never block operations
+```text
+Reduce brewery admin while preserving traceability and operational control.
+```
 
-⸻
+The app must help the brewer act faster, safer, and with less admin.
 
-# 2. 🔴 CORE PRODUCT MODEL (DO NOT BREAK)
+---
 
-## 2.1 Action-first system
+# 2. Locked product principles
+
+## 2.1 Action-first
 
 Operon is:
 
-❌ NOT tab-driven
-❌ NOT form-driven
-❌ NOT navigation-driven
+- action-driven
+- flow-driven
+- context-driven
+- mobile-first
 
-Operon IS:
+Operon must not become:
 
-✅ action-driven
-✅ flow-driven
-✅ context-driven
+- tab-heavy
+- form-heavy
+- CRUD-first
+- dashboard-first
 
----
+## 2.2 Let’s Brew / Brassage
 
-## 2.2 Let’s Brew = system core
+The central brew action is the primary operational entry point.
 
-Let’s Brew is:
+It must remain:
 
-→ the **primary operating interface**
+- direct
+- low-friction
+- confirm-based
+- compatible with future AI routing
 
-It must:
+Do not demote it into a secondary feature.
 
-* be the main entry point
-* drive ALL operational flows
-* eventually host AI routing
+## 2.3 Batch as workspace
 
-Agents MUST NOT:
+A batch is not just a row in a list.
 
-* demote Let’s Brew to a feature
-* duplicate its role elsewhere
+A batch is a process-run workspace: a place to understand and act.
 
----
+When exposing batch context, reveal existing relationships around the batch instead of inventing new logic.
 
-## 2.3 Ops page = dashboard only
+## 2.4 No hidden logic
 
-Ops is:
+System behavior must be explicit at domain and data-model level.
 
-→ overview + preview + navigation entry
-
-It must:
-
-* show:
-
-  * active batches
-  * tasks
-  * agenda
-  * financials
-* link via “See more”
-
-It must NOT:
-
-* become an execution interface
+Avoid temporary heuristics, implicit rules, and UI-only computations that should live in a domain module.
 
 ---
 
-## 2.4 Navigation is secondary
+# 3. Current architecture
 
-Navigation must:
+The current production architecture is:
 
-* be minimal
-* not compete with Let’s Brew
-* not reintroduce tab-heavy UX
+```text
+Supabase = operational truth
+Notion = semantic/context truth
+GitHub = implementation truth
+Cloudflare Pages / Functions = API boundary and runtime middle layer
+React + Vite + TypeScript = frontend
+```
 
-Agents MUST NOT:
+Older references to Airtable, vanilla JS, or no build pipeline are obsolete.
 
-* add new top-level tabs
-* rebuild multi-tab paradigms
-
----
-
-# 3. 🧱 ARCHITECTURE (LOCKED)
-
-## 3.1 Three-layer system
-
-Airtable = operational truth
-Notion = semantic/workflow brain
-App = input + runtime + orchestration
-
-Agents MUST NOT:
-
-* move operational data to Notion
-* bypass Airtable for structured records
-* duplicate responsibilities across layers
+Do not reintroduce Airtable assumptions.
 
 ---
 
-## 3.2 Generic vs instance split
+# 4. Supabase architecture
 
-System must support:
+Supabase stores operational data.
 
-* generic templates (App Core)
-* brewery-specific instance (Ops Base)
+Primary project:
 
-Agents MUST:
+```text
+operon-prod
+project ref: curjxdjlrlenqlitdspd
+region: eu-west-3
+```
 
-* preserve this separation
-* never hardcode brewery-specific assumptions globally
+## 4.1 Core relational model
 
----
+The operational model is centered on:
 
-## 3.3 Data principles
+```text
+brewery_profiles → batches → lots / tasks / logs / movements
+```
 
-* Plan ≠ Actual (never overwrite recipes)
-* No blocking workflows
-* Partial input is allowed
-* All fields optional unless absolutely required
+Important tables:
 
----
+- `brewery_profiles`
+- `users`
+- `recipes`
+- `ingredients`
+- `ingredient_receipts`
+- `batches`
+- `batch_inputs`
+- `brew_logs`
+- `mash_steps`
+- `boil_additions`
+- `fermentation_checks`
+- `tanks`
+- `lots`
+- `inventory_movements`
+- `pending_movements`
+- `tasks`
+- `sales`
+- `declarations`
+- `issues`
+- `event_logs`
+- `demo_sessions`
+- `demo_overlay_records`
 
-## 3.4 Inventory rules (CRITICAL)
+## 4.2 Batch lifecycle
 
-* Inventory Movements = stock truth
-* No direct stock editing
-* Pending Movements = allowed temporary bypass
-* Lots are immutable
-* Packaging creates child lots
+Batch status enum:
 
-Agents MUST NEVER:
+```text
+planned → brewing → fermenting → conditioning → ready → packaged → closed
+```
 
-* mutate stock directly
-* bypass movement logic
+Do not replace this with free-form UI labels.
 
----
+## 4.3 Task types
 
-# 4. ⚙️ CODEBASE RULES
+Current task types:
 
-## 4.1 Current architecture
+```text
+assign_tank
+assign_inputs
+record_mash_volume
+record_transfer_volume
+take_gravity_reading
+create_output_lot
+```
 
-* Vanilla JS (modularized)
-* No framework
-* No build pipeline (yet)
-* Cloudflare Pages hosting
+Task rules live in code, not in UI components.
 
-Modules include:
+## 4.4 Ingredient classification
 
-* core/
-* domain/
-* ui/
-* airtable/
-* tasks/
-* agenda/
+Ingredients have explicit `ingredient_type` values:
 
----
+```text
+malt
+hops
+yeast
+adjunct
+sugar
+water_additive
+processing_aid
+packaging
+cleaning
+other
+```
 
-## 4.2 Structural rule (from Phase 8)
+Brew input selection should only expose relevant production ingredients, not packaging or cleaning items.
 
-Separation of concerns is mandatory:
+## 4.5 Demo mode
 
-* core = lifecycle / state / navigation / semantics
-* domain = business logic
-* ui = rendering only
-* data = Airtable interaction
+Demo mode uses Supabase baseline data plus overlay writes.
 
-Agents MUST NOT:
+Demo flow:
 
-* mix logic into UI files
-* duplicate ownership across files
-* reintroduce index.html monolith behavior
+```text
+demo session → overlay records → merged dashboard data
+```
 
----
+Important demo tables:
 
-## 4.3 Boot / load safety
+- `demo_sessions`
+- `demo_overlay_records`
 
-* No premature execution
-* Respect script load order
-* Do not call functions before definition
+Allowed overlay table names are explicitly whitelisted in the database.
 
-This caused real failures before (boot-order bug).
+UI must not branch into separate behavior for demo unless strictly necessary. Prefer shared hooks and shared view models.
 
----
+## 4.6 RLS / access pattern
 
-# 5. 🎨 UI / UX RULES
+RLS is enabled on public tables.
 
-## 5.1 Design language
+The current application pattern is:
 
-* calm
-* industrial
-* low-noise
-* mobile-first
-* soft spacing
-* no aggressive colors
+```text
+frontend → Cloudflare Function/API → Supabase
+```
 
----
+Do not assume direct frontend table access is available.
 
-## 5.2 Visual hierarchy (CRITICAL)
+## 4.7 Database change rule
 
-Must clearly separate:
+Do not change Supabase schema unless the phase explicitly asks for it.
 
-1. Shell (background)
-2. Operational content (primary)
-3. Guidance (secondary)
-
-Agents MUST:
-
-* avoid flat UI
-* avoid “washed-out grey soup”
-* ensure operational content dominates
-
----
-
-## 5.3 Shell rules (iOS critical)
-
-* Single layout owner (`.app`)
-* No multiple safe-area owners
-* No duplicated env() usage
-* Must work in:
-
-  * Safari
-  * iOS standalone (PWA)
-
-Past failures:
-→ grey band
-→ layout shift
-→ broken safe-area
-
-Agents MUST NOT reintroduce these.
+For UI/context phases, use existing dashboard data first.
 
 ---
 
-## 5.4 Bottom navigation
+# 5. Notion architecture
 
-Must:
+Notion is the semantic/context layer.
 
-* be anchored to safe-area bottom
-* feel native
-* not float unnaturally high
-* not compete with Let’s Brew
+It is not the operational database.
 
----
+Use Notion for:
 
-## 5.5 Action system
+- meaning
+- product vocabulary
+- semantic relationships
+- domain context
+- future explainability
 
-Primary pattern:
+Do not use Notion for:
 
-→ top-right circular actions
+- runtime writes
+- batch execution writes
+- task completion writes
+- operational state mutation
 
-FAB usage:
+## 5.1 Semantic model
 
-* only where justified
-* consistent across screens
+Notion contains an App Semantic Graph with canonical object types such as:
 
-Agents MUST NOT:
+- `process_run`
+- `input_material`
+- `measurement`
+- `output_lot`
+- `transaction`
+- `task`
+- `issue`
+- `state`
+- `system`
 
-* mix multiple action paradigms
-* duplicate entry points
+## 5.2 Batch semantic meaning
 
----
+Batch maps to:
 
-## 5.6 Guidance system
+```text
+Canonical Object Type: process_run
+App Role: object
+Entity Class: Operational Layer
+```
 
-* unified visual system
-* lighter than operational content
-* toggleable
+Therefore a batch screen should feel like a process-run workspace, not a database detail page.
 
-Must NOT:
+## 5.3 Brew Execution Domain
 
-* compete with real work
-* feel like primary content
+The Brew Execution Domain owns actual brew, fermentation, packaging, and batch execution reality.
 
----
-
-# 6. 🔄 FLOWS (CRITICAL PRODUCT LAYER)
-
-All flows must:
-
-* start from Let’s Brew
-* be guided (not forms)
-* allow partial input
-* be non-blocking
-
-Core flows:
-
-* Brew execution
-* Logging (gravity/temp/notes)
-* Packaging
-* Inventory movement
-* Task continuation
-
-Agents MUST:
-
-* keep flows simple
-* avoid form-heavy UX
-* avoid multi-step friction unless necessary
+Batch context work belongs to this domain.
 
 ---
 
-# 7. 🤖 AI LAYER (FUTURE BUT STRUCTURAL)
+# 6. GitHub / codebase architecture
 
-AI will:
+Main repository:
 
-* take user input (text/voice)
-* detect intent
-* map to structured actions
-* require confirmation
+```text
+larskristel-max/Operon
+```
 
-Agents MUST:
+Current stack:
 
-* design flows compatible with AI routing
-* avoid rigid UI that blocks AI integration
+- React
+- Vite
+- TypeScript
+- Supabase JS
+- Cloudflare Pages / Functions
+
+Commands:
+
+```bash
+npm run typecheck
+npm run build
+```
+
+Both must pass before a PR is considered ready.
+
+## 6.1 App entry
+
+`src/App.tsx` handles:
+
+- splash screen
+- first-launch language selection
+- auth gate
+- demo entry
+- protected shell
+
+Authenticated or demo users enter:
+
+```tsx
+<ProtectedShell />
+```
+
+## 6.2 Protected shell
+
+`src/ui/shell/ProtectedShell.tsx` currently composes much of the runtime UI:
+
+- dashboard
+- brew entry flow
+- task modal/sheet behavior
+- demo and real dashboard data
+- domain hooks for execution actions
+
+When adding lightweight navigation or screens, respect this existing structure unless a phase explicitly asks for routing refactor.
+
+## 6.3 Domain structure
+
+Domain code lives under:
+
+```text
+src/domains/
+```
+
+Examples:
+
+- `dashboard`
+- `demo`
+- `batches`
+- `tasks`
+- `tanks`
+- `brew_logs`
+- `batch_inputs`
+- `fermentation_checks`
+- `lots`
+
+UI should call domain hooks and mappers. UI should not own business rules.
+
+## 6.4 Dashboard data flow
+
+Real dashboard data comes from:
+
+```text
+/api/dashboard
+```
+
+through:
+
+```text
+src/domains/dashboard/api.ts
+src/domains/dashboard/hooks.ts
+```
+
+Real dashboard data is mapped into the same merged shape as demo data using:
+
+```text
+src/domains/dashboard/mappers.ts
+```
+
+When possible, screens should use the merged dashboard shape so demo and real mode behave identically.
+
+## 6.5 Task rules
+
+Task computation lives in:
+
+```text
+src/domains/tasks/rules.ts
+```
+
+Operational task summaries are built in:
+
+```text
+src/domains/dashboard/operational.ts
+```
+
+Do not duplicate task computation in UI.
+
+Filter existing computed tasks by context, for example:
+
+```ts
+task.batchId === selectedBatch.id
+```
 
 ---
 
-# 8. 🚫 WHAT AGENTS MUST NOT DO
+# 7. UI / UX rules
 
-* Add new top-level tabs
-* Rebuild tab-heavy navigation
-* Convert to React / TS prematurely
-* Introduce Tailwind globally
-* Modify Airtable structure without explicit phase
-* Expand Notion unnecessarily
-* Reintroduce blocking workflows
-* Break safe-area / shell system
-* Duplicate logic across modules
+Design direction:
+
+```text
+Apple + Industrial hybrid
+```
+
+The UI should feel:
+
+- calm
+- clean
+- mobile-native
+- low-friction
+- operational
+- industrial but not harsh
+
+Use:
+
+- rounded cards
+- generous spacing
+- large tap targets
+- subtle depth
+- minimal borders
+- clear state colors
+
+State colors:
+
+```text
+Green = OK
+Orange = Needs attention
+Red = Blocked
+Blue = Action / navigation
+```
+
+Do not introduce a new design system unless explicitly requested.
+
+Do not over-design operational screens.
 
 ---
 
-# 9. 🧭 DEVELOPMENT PHILOSOPHY
+# 8. Internationalization / copy
 
-Always follow:
+The app supports:
 
+- French
+- Dutch
+- English
+- German
+
+Copy should be:
+
+- short
+- operational
+- action-first
+- easy to localize
+
+Avoid decorative copy.
+
+French operational terms already used include:
+
+- `Brassage`
+- `À compléter`
+- `Voir le batch`
+
+When adding UI strings, place them in the existing i18n/copy system rather than hardcoding them throughout components.
+
+---
+
+# 9. Write-path rules
+
+Do not add new write logic unless explicitly requested.
+
+Do not bypass existing domain hooks.
+
+Current execution pattern:
+
+```text
+user taps task → existing domain hook writes → dashboard refetches → computed task disappears
+```
+
+This must be preserved.
+
+For demo:
+
+```text
+write to overlay → refetch merged demo dashboard
+```
+
+For real:
+
+```text
+write through API/DB → refetch real dashboard
+```
+
+UI must not know more than necessary about this difference.
+
+---
+
+# 10. Batch Execution Surface guidance
+
+For phases involving batch detail/context:
+
+Goal:
+
+```text
+Give each batch a home.
+```
+
+Build a lightweight batch workspace using existing dashboard data.
+
+Allowed sections:
+
+- header
+- status / overview
+- tank
+- ingredients / inputs
+- logs
+- tasks
+
+Data mapping:
+
+- batch header → `batches`
+- recipe → `recipes`
+- tank → `tanks.current_batch_id === batch.id`
+- inputs → `batch_inputs.batch_id === batch.id`
+- logs → `brew_logs.batch_id === batch.id`
+- tasks → `operational.openTasks.filter(task => task.batchId === batch.id)`
+
+Do not add:
+
+- new endpoints unless existing dashboard data is insufficient
+- new DB schema
+- new task rules
+- full timeline
+- editing complexity
+- Notion runtime queries
+
+The batch screen is a context projection, not a new subsystem.
+
+---
+
+# 11. Empty states and safety
+
+Every screen must handle:
+
+- missing data
+- empty arrays
+- missing fields
+- unknown IDs
+- batch not found
+- demo loading
+- real loading
+
+Use safe empty states such as:
+
+```text
+À compléter
+```
+
+Never crash because optional operational data is missing.
+
+---
+
+# 12. Testing expectations
+
+Before claiming completion, run:
+
+```bash
+npm run typecheck
+npm run build
+```
+
+For UI phases, validate manually:
+
+- app loads
+- demo mode works
+- real mode still works
+- no console errors
+- mobile layout fits one screen where expected
+- overlays close by intended gestures
+- dashboard refetches after writes
+- tasks disappear after completion
+
+For batch surface phases, validate:
+
+- open batch from dashboard
+- open batch after brew success
+- view status, tank, inputs, logs, tasks
+- execute a batch task
+- dashboard updates
+- task disappears
+- demo and real behavior match
+
+---
+
+# 13. Forbidden changes unless explicitly requested
+
+Do not:
+
+- redesign the whole UI system
+- add top-level tabs casually
+- add schema migrations casually
+- move operational truth into Notion
+- duplicate task logic in components
+- create separate demo-only UI flows
+- introduce fake data
+- hardcode brewery-specific behavior globally
+- bypass Cloudflare/API access patterns
+- add heavy navigation stacks
+- turn action flows into long forms
+
+---
+
+# 14. Development philosophy
+
+Follow:
+
+```text
 Stabilize → Structure → Then expand
+```
 
-NOT:
+Not:
 
+```text
 Expand → Fix later
+```
+
+Keep changes narrow.
+
+Prefer exposing what already exists over building new systems.
 
 ---
 
-# 10. 🧪 TESTING EXPECTATIONS
+# 15. Final rule
 
-After any change, agents must verify:
+Always ask:
 
-* App loads cleanly
-* No console errors
-* Navigation stable
-* Tasks / Agenda still work
-* No layout shifts
-* No safe-area issues
-* Works in iOS standalone context
+```text
+Does this help the brewer act faster, safer, and with less admin?
+```
 
----
-
-# 11. 📊 CURRENT PRIORITY ORDER
-
-1. Action system consolidation (Let’s Brew)
-2. Flow integration
-3. UI hierarchy refinement
-4. Onboarding system
-5. AI routing (MVP)
-6. Only later:
-
-   * TypeScript
-   * Tailwind
-   * build pipeline
-
----
-
-# 12. 🧠 FINAL RULE
-
-Operon is not a UI project.
-
-It is:
-→ an operational system
-
-Agents must always ask:
-
-“Does this help the brewer act faster, safer, and with less admin?”
-
-If not:
-→ it does not belong
-
----
-
-END
+If not, it probably does not belong.

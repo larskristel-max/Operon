@@ -38,6 +38,11 @@ function isBrewInputIngredient(ingredient: Record<string, unknown>): boolean {
   const type = typeof ingredient.ingredient_type === "string" ? ingredient.ingredient_type.trim().toLowerCase() : "";
   return ["malt", "hops", "yeast", "adjunct", "sugar", "water_additive", "processing_aid"].includes(type);
 }
+function isActiveBatchStatus(status: unknown): boolean {
+  if (typeof status !== "string") return false;
+  const normalized = status.trim().toLowerCase();
+  return ["planned", "brewing", "fermenting", "conditioning", "ready"].includes(normalized);
+}
 
 function Icon({ name, className }: { name: IconName; className?: string }) {
   switch (name) {
@@ -175,6 +180,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const [moreOpen, setMoreOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
+  const [taskScopeBatchId, setTaskScopeBatchId] = useState<string | null>(null);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [selectedTankId, setSelectedTankId] = useState<string>("");
   const [mashVolumeInput, setMashVolumeInput] = useState<string>("");
@@ -347,6 +353,9 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const quickActionIcons: IconName[] = ["brew", "fermentation", "inventory", "reports"];
   const merged = isDemoMode ? demoMergedData : realMergedData;
   const batches = (merged?.batches ?? []) as Array<Record<string, unknown>>;
+  const heroBatch =
+    batches.find((batch) => isActiveBatchStatus(batch.status ?? batch.stage ?? batch.batch_status)) ??
+    null;
   const selectedBatch = selectedBatchId ? batches.find((batch) => String(batch.id ?? "") === selectedBatchId) ?? null : null;
   const batchTank = selectedBatchId
     ? ((merged?.tanks ?? []) as Array<Record<string, unknown>>).find((tank) => String(tank.current_batch_id ?? "") === selectedBatchId) ?? null
@@ -371,6 +380,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
       task.type === "take_gravity_reading" ||
       task.type === "create_output_lot"
   );
+  const visibleTasks = taskScopeBatchId ? executableTasks.filter((task) => task.batchId === taskScopeBatchId) : executableTasks;
   const availableIngredients = ((merged?.ingredients ?? []) as Array<Record<string, unknown>>).filter((ing) => {
     const id = typeof ing.id === "string" ? ing.id : null;
     return id !== null && isBrewInputIngredient(ing);
@@ -438,14 +448,14 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
         role="button"
         tabIndex={0}
         onClick={() => {
-          const activeBatch = batches[0];
+          const activeBatch = heroBatch;
           if (!activeBatch) return;
           setSelectedBatchId(String(activeBatch.id ?? ""));
         }}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            const activeBatch = batches[0];
+            const activeBatch = heroBatch;
             if (!activeBatch) return;
             setSelectedBatchId(String(activeBatch.id ?? ""));
           }
@@ -491,8 +501,14 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                   ? firstTaskLabel
                   : `Active batches: ${operational.activeBatchCount}`;
               return (
-                <article key="needs-action" className="glance-card blue" role="button" tabIndex={0} onClick={() => setTasksOpen(true)} onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") setTasksOpen(true);
+                <article key="needs-action" className="glance-card blue" role="button" tabIndex={0} onClick={() => {
+                  setTaskScopeBatchId(null);
+                  setTasksOpen(true);
+                }} onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    setTaskScopeBatchId(null);
+                    setTasksOpen(true);
+                  }
                 }}>
                   <div className="glance-icon">
                     <Icon name="tasks" className="line-icon icon-md" />
@@ -847,7 +863,10 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                       <strong>{batchTasks.length} tasks</strong>
                       <span>{batchTasks[0]?.label ?? "À compléter"}</span>
                     </div>
-                    <button type="button" className="dark-btn" onClick={() => setTasksOpen(true)}>
+                    <button type="button" className="dark-btn" onClick={() => {
+                      setTaskScopeBatchId(selectedBatchId);
+                      setTasksOpen(true);
+                    }}>
                       Voir tâches
                     </button>
                   </article>
@@ -858,11 +877,11 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
         </section>
       )}
       {tasksOpen && (
-        <section className="brew-entry-backdrop" onClick={() => setTasksOpen(false)} aria-label="Tasks">
+        <section className="brew-entry-backdrop" onClick={() => { setTasksOpen(false); setTaskScopeBatchId(null); }} aria-label="Tasks">
           <div className="glass-panel brew-entry-sheet" onClick={(event) => event.stopPropagation()}>
-            <p className="eyebrow">NEEDS ACTION</p>
-            <button type="button" className="dark-btn ghost tasks-back-btn" onClick={() => setTasksOpen(false)}>Back</button>
-            {executableTasks.length === 0 ? (
+            <p className="eyebrow">{taskScopeBatchId ? "TÂCHES DU BATCH" : "NEEDS ACTION"}</p>
+            <button type="button" className="dark-btn ghost tasks-back-btn" onClick={() => { setTasksOpen(false); setTaskScopeBatchId(null); }}>Back</button>
+            {visibleTasks.length === 0 ? (
               <article className="task-empty-state" aria-live="polite">
                 <div className="task-empty-icon" aria-hidden="true">
                   <Icon name="tasks" className="line-icon icon-md" />
@@ -871,7 +890,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                 <p className="subtle">Remaining suggestions are not wired to actions yet.</p>
               </article>
             ) : null}
-            {executableTasks.map((task) => (
+            {visibleTasks.map((task) => (
               <div key={task.id} className="brew-confirm-summary task-item">
                 <div className="brew-confirm-row"><span className="brew-confirm-label">{task.batchLabel}</span><span className="brew-confirm-value">{task.label}</span></div>
                 <button type="button" className="dark-btn task-toggle-btn" onClick={() => { setActiveTaskId((prev) => (prev === task.id ? null : task.id)); setTaskError(null); }}>Start</button>

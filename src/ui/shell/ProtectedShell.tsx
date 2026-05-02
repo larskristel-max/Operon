@@ -34,27 +34,9 @@ type IconName =
   | "plus"
   | "package";
 
-const BREW_INPUT_ALLOWED_TERMS = ["malt", "grain", "hop", "yeast", "sugar", "adjunct", "brewing salt", "water treatment"];
-const BREW_INPUT_BLOCKED_TERMS = ["crown cap", "cap", "bottle", "label", "packaging", "carton", "cleaning", "cleaner", "chemical", "caustic", "sanitizer", "starsan", "detergent", "keg", "co2", "office", "sales"];
-
-function normalizeIngredientText(value: unknown): string {
-  return typeof value === "string" ? value.trim().toLowerCase() : "";
-}
-
-function containsAnyTerm(value: string, terms: string[]): boolean {
-  return terms.some((term) => value.includes(term));
-}
-
 function isBrewInputIngredient(ingredient: Record<string, unknown>): boolean {
-  const category = normalizeIngredientText(ingredient.category);
-  const name = normalizeIngredientText(ingredient.name);
-  if (!category && !name) return false;
-  if (category) {
-    if (containsAnyTerm(category, BREW_INPUT_BLOCKED_TERMS)) return false;
-    return containsAnyTerm(category, BREW_INPUT_ALLOWED_TERMS);
-  }
-  if (containsAnyTerm(name, BREW_INPUT_BLOCKED_TERMS)) return false;
-  return containsAnyTerm(name, BREW_INPUT_ALLOWED_TERMS);
+  const type = typeof ingredient.ingredient_type === "string" ? ingredient.ingredient_type.trim().toLowerCase() : "";
+  return ["malt", "hops", "yeast", "adjunct", "sugar", "water_additive", "processing_aid"].includes(type);
 }
 
 function Icon({ name, className }: { name: IconName; className?: string }) {
@@ -369,12 +351,12 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   });
   const executableTasks = operational.openTasks.filter(
     (task) =>
-      task.id.endsWith(":assign-tank") ||
-      task.id.endsWith(":record-mash-volume") ||
-      task.id.endsWith(":assign-input-lots") ||
-      task.id.endsWith(":record-transfer-volume") ||
-      task.id.endsWith(":take-gravity-reading") ||
-      task.id.endsWith(":create-output-lot")
+      task.type === "assign_tank" ||
+      task.type === "record_mash_volume" ||
+      task.type === "assign_inputs" ||
+      task.type === "record_transfer_volume" ||
+      task.type === "take_gravity_reading" ||
+      task.type === "create_output_lot"
   );
   const availableIngredients = ((merged?.ingredients ?? []) as Array<Record<string, unknown>>).filter((ing) => {
     const id = typeof ing.id === "string" ? ing.id : null;
@@ -759,7 +741,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
               <div key={task.id} className="brew-confirm-summary task-item">
                 <div className="brew-confirm-row"><span className="brew-confirm-label">{task.batchLabel}</span><span className="brew-confirm-value">{task.label}</span></div>
                 <button type="button" className="dark-btn task-toggle-btn" onClick={() => { setActiveTaskId((prev) => (prev === task.id ? null : task.id)); setTaskError(null); }}>Start</button>
-                {activeTaskId === task.id && task.id.endsWith(":assign-tank") && (
+                {activeTaskId === task.id && task.type === "assign_tank" && (
                   <div className="task-action-panel">
                     <div className="task-field-group"><label className="task-select-wrap"><span className="task-field-label">Tank</span><select className="task-select" value={selectedTankId} onChange={(event) => setSelectedTankId(event.target.value)}>
                       <option value="">Select tank</option>
@@ -773,7 +755,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                     }}>Confirm</button>
                   </div>
                 )}
-                {activeTaskId === task.id && task.id.endsWith(":record-mash-volume") && (
+                {activeTaskId === task.id && task.type === "record_mash_volume" && (
                   <div className="task-action-panel">
                     <div className="task-inline-row">
                       <input className="task-input" type="number" inputMode="decimal" min="0" step="0.1" value={mashVolumeInput} onChange={(event) => setMashVolumeInput(event.target.value)} placeholder="10" />
@@ -788,7 +770,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                     }}>Confirm</button>
                   </div>
                 )}
-                {activeTaskId === task.id && task.id.endsWith(":assign-input-lots") && (
+                {activeTaskId === task.id && task.type === "assign_inputs" && (
                   <div className="task-action-panel">
                     <div className="task-field-group"><label className="task-select-wrap"><span className="task-field-label">Ingredient</span><select className="task-select" value={ingredientIdInput} onChange={(event) => {
                       const id = event.target.value;
@@ -814,7 +796,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                     }}>Confirm</button>
                   </div>
                 )}
-                {activeTaskId === task.id && task.id.endsWith(":record-transfer-volume") && (
+                {activeTaskId === task.id && task.type === "record_transfer_volume" && (
                   <div className="task-action-panel">
                     <div className="task-inline-row">
                       <input className="task-input" type="number" inputMode="decimal" min="0" step="0.1" value={transferVolumeInput} onChange={(event) => setTransferVolumeInput(event.target.value)} placeholder="10" />
@@ -829,7 +811,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                     }}>Confirm</button>
                   </div>
                 )}
-                {activeTaskId === task.id && task.id.endsWith(":take-gravity-reading") && (
+                {activeTaskId === task.id && task.type === "take_gravity_reading" && (
                   <div className="task-action-panel">
                     <input className="task-input" type="number" inputMode="decimal" min="0" step="0.001" value={gravityInput} onChange={(event) => setGravityInput(event.target.value)} placeholder="Gravity (e.g. 1.050)" />
                     <input className="task-input" type="number" inputMode="decimal" step="0.1" value={tempInput} onChange={(event) => setTempInput(event.target.value)} placeholder="Temp °C (optional)" />
@@ -844,7 +826,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                     }}>Confirm</button>
                   </div>
                 )}
-                {activeTaskId === task.id && task.id.endsWith(":create-output-lot") && (
+                {activeTaskId === task.id && task.type === "create_output_lot" && (
                   <div className="task-action-panel">
                     <input className="task-input" type="text" value={lotNumberInput} onChange={(event) => setLotNumberInput(event.target.value)} placeholder="Lot number" />
                     <div className="task-inline-row"><input className="task-input" type="number" inputMode="decimal" min="0" step="0.1" value={lotVolumeInput} onChange={(event) => setLotVolumeInput(event.target.value)} placeholder="Volume (L, optional)" />

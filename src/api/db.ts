@@ -55,6 +55,7 @@ export interface DbIngredient {
   brewery_id: string;
   name: string;
   category: string | null;
+  ingredient_type: string;
   default_unit: string | null;
   is_active: boolean;
   created_at: string;
@@ -284,6 +285,7 @@ function mapIngredient(r: DbIngredient): Ingredient {
     breweryId: r.brewery_id,
     name: r.name,
     category: (r.category as Ingredient["category"]) ?? "other",
+    ingredientType: (r.ingredient_type as Ingredient["ingredientType"]) ?? "other",
     unit: r.default_unit ?? "kg",
     currentStockKg: null,
     notes: null,

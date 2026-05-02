@@ -25,7 +25,7 @@ export async function onRequestPost(context: { request: Request; env: BreweryEnv
   if (!tankRes.ok || !Array.isArray(tanks) || tanks.length === 0) return jsonResponse({ error: "Tank not found for brewery" }, 404);
   if (tanks[0].current_batch_id && tanks[0].current_batch_id !== body.batchId) return jsonResponse({ error: "Tank is not available" }, 409);
 
-  const patch = { current_batch_id: body.batchId, status: "fermenting", updated_at: new Date().toISOString() };
+  const patch = { current_batch_id: body.batchId, updated_at: new Date().toISOString() };
   const updateRes = await fetch(`${context.env.SUPABASE_URL}/rest/v1/tanks?id=eq.${encodeURIComponent(body.tankId)}`, { method: "PATCH", headers: adminHeaders(context.env), body: JSON.stringify(patch) });
   const updated = await updateRes.json();
   if (!updateRes.ok) return jsonResponse({ error: "Failed to assign tank", detail: updated }, 400);

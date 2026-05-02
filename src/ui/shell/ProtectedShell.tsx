@@ -321,8 +321,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const merged = isDemoMode ? demoMergedData : realMergedData;
   const availableTanks = ((merged?.tanks ?? []) as Array<Record<string, unknown>>).filter((tank) => {
     const currentBatchId = typeof tank.current_batch_id === "string" ? tank.current_batch_id : null;
-    const status = typeof tank.status === "string" ? tank.status.toLowerCase() : "";
-    return currentBatchId === null || status === "available";
+    return currentBatchId === null;
   });
   const executableTasks = operational.openTasks.filter(
     (task) => task.id.endsWith(":assign-tank") || task.id.endsWith(":record-mash-volume")
@@ -697,13 +696,14 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
             {executableTasks.map((task) => (
               <div key={task.id} className="brew-confirm-summary">
                 <div className="brew-confirm-row"><span className="brew-confirm-label">{task.batchLabel}</span><span className="brew-confirm-value">{task.label}</span></div>
-                <button type="button" className="dark-btn" onClick={() => { setActiveTaskId(task.id); setTaskError(null); }}>{activeTaskId === task.id ? "Close" : "Start"}</button>
+                <button type="button" className="dark-btn" onClick={() => { setActiveTaskId((prev) => (prev === task.id ? null : task.id)); setTaskError(null); }}>{activeTaskId === task.id ? "Close" : "Start"}</button>
                 {activeTaskId === task.id && task.id.endsWith(":assign-tank") && (
                   <div>
                     <select value={selectedTankId} onChange={(event) => setSelectedTankId(event.target.value)}>
                       <option value="">Select tank</option>
                       {availableTanks.map((tank) => <option key={String(tank.id ?? "")} value={String(tank.id ?? "")}>{String(tank.name ?? tank.id ?? "Tank")}</option>)}
                     </select>
+                    {availableTanks.length === 0 ? <p className="subtle">No available tanks.</p> : null}
                     <button type="button" className="dark-btn" disabled={taskBusy || !selectedTankId} onClick={async () => {
                       try { setTaskBusy(true); await assignTank({ tankId: selectedTankId, batchId: task.batchId }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setSelectedTankId(""); }
                       catch (error) { setTaskError(error instanceof Error ? error.message : "Failed to assign tank"); }

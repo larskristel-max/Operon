@@ -9,7 +9,7 @@ export function useAssignTank({ isDemoMode }: { isDemoMode: boolean }) {
         table_name: "tanks",
         operation: "update",
         record_id: input.tankId,
-        payload: { id: input.tankId, current_batch_id: input.batchId, status: "fermenting", updated_at: nowIso() },
+        payload: { id: input.tankId, current_batch_id: input.batchId, updated_at: nowIso() },
       });
       return;
     }

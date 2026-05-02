@@ -1,4 +1,4 @@
-import { computeTasks } from "@/domains/tasks/rules";
+import { computeTasks, isOperationallyActiveBatch } from "@/domains/tasks/rules";
 
 export interface OperationalTask {
   id: string;
@@ -15,17 +15,6 @@ export interface OperationalSummary {
   openTasks: OperationalTask[];
 }
 
-const ACTIVE_BATCH_STATUSES = new Set(["planned", "brewing", "fermenting", "conditioning", "ready", "packaged"]);
-
-function readString(record: Record<string, unknown> | null | undefined, keys: string[]): string | null {
-  if (!record) return null;
-  for (const key of keys) {
-    const value = record[key];
-    if (typeof value === "string" && value.trim().length > 0) return value.trim();
-  }
-  return null;
-}
-
 export function computeOperationalSummary(input: {
   batches: Array<Record<string, unknown>>;
   tanks: Array<Record<string, unknown>>;
@@ -36,10 +25,7 @@ export function computeOperationalSummary(input: {
   fermentationChecks?: Array<Record<string, unknown>>;
 }): OperationalSummary {
   try {
-    const activeBatchCount = input.batches.filter((batch) => {
-      const status = readString(batch, ["status", "stage", "batch_status"])?.toLowerCase();
-      return status ? ACTIVE_BATCH_STATUSES.has(status) : false;
-    }).length;
+    const activeBatchCount = input.batches.filter(isOperationallyActiveBatch).length;
 
     const computedTasks = computeTasks(input);
     const openTasks: OperationalTask[] = computedTasks.map((task) => ({

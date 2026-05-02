@@ -39,6 +39,15 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- enforce recipe ownership by brewery when recipe_id is present
+ALTER TABLE public.recipes DROP CONSTRAINT IF EXISTS recipes_id_brewery_id_unique;
+ALTER TABLE public.recipes ADD CONSTRAINT recipes_id_brewery_id_unique UNIQUE (id, brewery_id);
+ALTER TABLE public.batches DROP CONSTRAINT IF EXISTS batches_recipe_brewery_fk;
+ALTER TABLE public.batches
+  ADD CONSTRAINT batches_recipe_brewery_fk
+  FOREIGN KEY (recipe_id, brewery_id)
+  REFERENCES public.recipes (id, brewery_id);
+
 ALTER TABLE public.demo_overlay_records DROP CONSTRAINT IF EXISTS demo_overlay_records_table_name_check;
 ALTER TABLE public.demo_overlay_records ADD CONSTRAINT demo_overlay_records_table_name_check CHECK (
   table_name IN ('batches','batch_inputs','brew_logs','fermentation_checks','lots','tanks','inventory_movements','pending_movements','ingredients')

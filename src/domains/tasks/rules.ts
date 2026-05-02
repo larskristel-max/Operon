@@ -15,7 +15,8 @@ export interface Task {
   batch_label: string;
 }
 
-const ACTIVE_BATCH_STATUSES = new Set(["planned", "brewing", "fermenting", "conditioning", "ready", "packaged"]);
+const OPERATIONAL_ACTIVE_BATCH_STATUSES = new Set(["planned", "brewing", "fermenting", "conditioning", "ready"]);
+const TASK_ELIGIBLE_BATCH_STATUSES = new Set(["planned", "brewing", "fermenting", "conditioning", "ready", "packaged"]);
 
 function readString(record: Record<string, unknown> | null | undefined, keys: string[]): string | null {
   if (!record) return null;
@@ -24,6 +25,11 @@ function readString(record: Record<string, unknown> | null | undefined, keys: st
     if (typeof value === "string" && value.trim().length > 0) return value.trim();
   }
   return null;
+}
+
+export function isOperationallyActiveBatch(batch: Record<string, unknown>): boolean {
+  const status = readString(batch, ["status", "stage", "batch_status"])?.toLowerCase();
+  return status ? OPERATIONAL_ACTIVE_BATCH_STATUSES.has(status) : false;
 }
 
 function readNumber(record: Record<string, unknown> | null | undefined, keys: string[]): number | null {
@@ -65,12 +71,12 @@ export function computeTasks(input: {
   fermentationChecks?: Array<Record<string, unknown>>;
 }): Task[] {
   const tasks: Task[] = [];
-  const activeBatches = input.batches.filter((batch) => {
+  const taskEligibleBatches = input.batches.filter((batch) => {
     const status = readString(batch, ["status", "stage", "batch_status"])?.toLowerCase();
-    return status ? ACTIVE_BATCH_STATUSES.has(status) : false;
+    return status ? TASK_ELIGIBLE_BATCH_STATUSES.has(status) : false;
   });
 
-  for (const batch of activeBatches) {
+  for (const batch of taskEligibleBatches) {
     const batchId = readString(batch, ["id"]);
     if (!batchId) continue;
     const batchLabel = readString(batch, ["batch_number", "name", "batch_name"]) ?? batchId;

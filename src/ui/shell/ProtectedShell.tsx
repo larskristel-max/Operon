@@ -774,13 +774,26 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                         <Icon name="tank" className="line-icon icon-xl gold-icon" />
                       </div>
                       <div>
-                        <p className="eyebrow gold">EN BRASSAGE</p>
+                        <div className="batch-hero-top-row">
+                          <p className="eyebrow gold">EN BRASSAGE</p>
+                          <span
+                            className="see-all-link"
+                            role="link"
+                            tabIndex={0}
+                            onClick={() => window.location.assign("/batches")}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                window.location.assign("/batches");
+                              }
+                            }}
+                          >
+                            Voir tout
+                          </span>
+                        </div>
                         <h2 className="brew-card-title">{String(selectedBatch.name ?? dashboardData.brewCard.batchName ?? "—")}</h2>
                         <p className="subtle brew-card-lot">{String(selectedBatch.lot_number ?? selectedBatch.id ?? "—")}</p>
                       </div>
-                    </div>
-                    <div className="brew-side">
-                      <small className="batch-status">{String(selectedBatch.status ?? brewStatusLabel)}</small>
                     </div>
                   </div>
                 </section>

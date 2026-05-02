@@ -4,7 +4,7 @@ import type { DashboardCopy } from "@/ui/shell/dashboardI18n";
 
 const normalizeStatus = (status?: string): string | undefined => status?.toLowerCase().trim();
 
-const ACTIVE_STATUSES = ["brewing", "fermenting", "conditioning", "in_progress", "active"];
+const ACTIVE_STATUSES = ["planned", "brewing", "fermenting", "conditioning", "ready"];
 
 const isActiveStatus = (status?: string): boolean =>
   ACTIVE_STATUSES.includes(normalizeStatus(status) ?? "");

@@ -1,5 +1,7 @@
 import type { DemoDashboardMerged } from "@/domains/demo/types";
 
+import type { OperationalSummary } from "@/domains/dashboard/operational";
+
 export interface RealDashboardData {
   tanks: Array<Record<string, unknown>>;
   batches: Array<Record<string, unknown>>;
@@ -7,6 +9,11 @@ export interface RealDashboardData {
   inventory: Record<string, unknown>;
   inventory_movements: Array<Record<string, unknown>>;
   sales: Array<Record<string, unknown>>;
+  lots: Array<Record<string, unknown>>;
+  batch_inputs: Array<Record<string, unknown>>;
+  brew_logs: Array<Record<string, unknown>>;
+  pending_movements: Array<Record<string, unknown>>;
+  operational?: OperationalSummary;
 }
 
 export interface UseRealDashboardResult {

@@ -1,3 +1,5 @@
+import type { OperationalSummary } from "@/domains/dashboard/operational";
+
 export type OverlayOperation = "insert" | "update" | "delete";
 
 export interface DemoDashboardMerged {
@@ -11,6 +13,10 @@ export interface DemoDashboardMerged {
   lots: Array<Record<string, unknown>>;
   inventory_movements: Array<Record<string, unknown>>;
   sales: Array<Record<string, unknown>>;
+  batch_inputs: Array<Record<string, unknown>>;
+  brew_logs: Array<Record<string, unknown>>;
+  pending_movements: Array<Record<string, unknown>>;
+  operational?: OperationalSummary;
 }
 
 export interface DemoOverlayInput {

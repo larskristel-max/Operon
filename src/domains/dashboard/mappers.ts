@@ -1,3 +1,4 @@
+import { computeOperationalSummary } from "@/domains/dashboard/operational";
 import type { RealDashboardMerged, RealDashboardData } from "@/domains/dashboard/types";
 
 export function mapRealDashboardToMerged(data: RealDashboardData): RealDashboardMerged {
@@ -13,8 +14,21 @@ export function mapRealDashboardToMerged(data: RealDashboardData): RealDashboard
     ingredients: inventoryItems,
     recipes: [],
     packaging_formats: [],
-    lots: [],
+    lots: data.lots,
     inventory_movements: data.inventory_movements,
     sales: data.sales,
+    batch_inputs: data.batch_inputs,
+    brew_logs: data.brew_logs,
+    pending_movements: data.pending_movements,
+    operational:
+      data.operational ??
+      computeOperationalSummary({
+        batches: data.batches,
+        tanks: data.tanks,
+        tasks: data.tasks,
+        lots: data.lots,
+        batchInputs: data.batch_inputs,
+        brewLogs: data.brew_logs,
+      }),
   };
 }

@@ -188,10 +188,19 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     const recipes = isDemoMode ? demoMergedData?.recipes : realMergedData?.recipes;
 
     return (recipes ?? [])
-      .map((recipe) => ({
-        id: String((recipe as { id?: unknown }).id ?? ""),
-        name: String((recipe as { name?: unknown }).name ?? "").trim(),
-      }))
+      .map((r) => {
+        const rec = r as Record<string, unknown>;
+        const rawVolume = rec.postboilVolumeL ?? rec.target_post_boil_volume_liters ?? rec.default_batch_size_liters ?? null;
+        const rawOg = rec.targetOg ?? rec.target_og ?? null;
+        const rawYeast = rec.default_yeast_notes ?? null;
+        return {
+          id: String(rec.id ?? ""),
+          name: String(rec.name ?? "").trim(),
+          volumeL: rawVolume != null ? Number(rawVolume) : null,
+          targetOg: rawOg != null ? Number(rawOg) : null,
+          yeast: rawYeast != null && String(rawYeast).trim() ? String(rawYeast).trim() : null,
+        };
+      })
       .filter((recipe) => recipe.id && recipe.name);
   }, [isDemoMode, demoMergedData?.recipes, realMergedData?.recipes]);
 
@@ -201,8 +210,8 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     onConfirmed: isDemoMode ? refetchDemoDashboard : refetchRealDashboard,
   });
 
-  const selectedRecipeName =
-    existingRecipes.find((recipe) => recipe.id === brewEntryFlow.state.selectedRecipeId)?.name ?? copy.brewEntrySelectedRecipePrefix;
+  const selectedRecipe = existingRecipes.find((recipe) => recipe.id === brewEntryFlow.state.selectedRecipeId) ?? null;
+  const selectedRecipeName = selectedRecipe?.name ?? copy.brewEntrySelectedRecipePrefix;
 
   const dashboardData = useMemo<DashboardData>(() => {
     if (isDemoMode) {
@@ -555,7 +564,6 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
 
           {brewEntryFlow.state.step === "ready-to-confirm" && (
             <>
-              <p className="eyebrow">{copy.brewEntryReadyBoundary}</p>
               {!brewEntryFlow.state.draftPreview && isPreparingRecipeDraft && (
                 <div className="brew-entry-loading" role="status" aria-live="polite">
                   <span className="brew-entry-spinner" aria-hidden="true" />
@@ -577,35 +585,51 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                         {copy.brewEntryBack}
                       </button>
                     )}
-                    <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.close}>
-                      {copy.brewEntryClose}
-                    </button>
                   </div>
                 </>
               )}
 
               {brewEntryFlow.state.draftPreview && (
                 <>
-                  <p className="subtle">{copy.brewEntryDraftReadyDescription}</p>
-                  <p className="subtle">{copy.brewEntryConfirmationRequired}</p>
-                  <p className="subtle">
-                    {copy.brewEntryRecipeLabel}: {selectedRecipeName}
-                  </p>
+                  <p className="eyebrow">{copy.brewEntryReadyToBrew}</p>
+                  <p className="brew-confirm-title">{selectedRecipeName}</p>
+                  <p className="brew-confirm-status">{copy.brewEntryDraftReadyStatus}</p>
+                  <div className="brew-confirm-summary">
+                    <div className="brew-confirm-row">
+                      <span className="brew-confirm-label">{copy.brewEntryRecipeLabel}</span>
+                      <span className="brew-confirm-value">{selectedRecipeName}</span>
+                    </div>
+                    <div className="brew-confirm-row">
+                      <span className="brew-confirm-label">{copy.brewEntryVolumeLabel}</span>
+                      <span className="brew-confirm-value">
+                        {selectedRecipe?.volumeL != null ? `${selectedRecipe.volumeL} L` : copy.brewEntryMissingValue}
+                      </span>
+                    </div>
+                    <div className="brew-confirm-row">
+                      <span className="brew-confirm-label">{copy.brewEntryOgLabel}</span>
+                      <span className="brew-confirm-value">
+                        {selectedRecipe?.targetOg != null ? String(selectedRecipe.targetOg) : copy.brewEntryMissingValue}
+                      </span>
+                    </div>
+                    <div className="brew-confirm-row">
+                      <span className="brew-confirm-label">{copy.brewEntryYeastLabel}</span>
+                      <span className="brew-confirm-value">
+                        {selectedRecipe?.yeast ?? copy.brewEntryMissingValue}
+                      </span>
+                    </div>
+                  </div>
                   {brewEntryFlow.state.error && <p className="error">{brewEntryFlow.state.error}</p>}
-                  <div className="brew-entry-footer">
-                    <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.back}>
-                      {copy.brewEntryBack}
-                    </button>
-                    <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.close}>
-                      {copy.brewEntryClose}
-                    </button>
+                  <div className="brew-confirm-actions">
                     <button
                       type="button"
-                      className="dark-btn"
+                      className="dark-btn brew-confirm-primary"
                       onClick={() => void brewEntryFlow.confirmDraft()}
                       disabled={brewEntryFlow.state.isConfirming}
                     >
-                      {copy.brewEntryConfirm}
+                      {copy.brewEntryConfirmBrew}
+                    </button>
+                    <button type="button" className="dark-btn ghost" onClick={brewEntryFlow.back}>
+                      {copy.brewEntryBack}
                     </button>
                   </div>
                 </>

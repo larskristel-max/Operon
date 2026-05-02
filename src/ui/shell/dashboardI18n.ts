@@ -46,6 +46,13 @@ export type DashboardCopy = {
   brewEntrySelectedRecipePrefix: string;
   brewEntryNoRecipesConnected: string;
   brewEntryNewRecipeComingSoon: string;
+  brewEntryReadyToBrew: string;
+  brewEntryDraftReadyStatus: string;
+  brewEntryConfirmBrew: string;
+  brewEntryVolumeLabel: string;
+  brewEntryOgLabel: string;
+  brewEntryYeastLabel: string;
+  brewEntryMissingValue: string;
   navHome: string;
   navBrewery: string;
   navTasks: string;
@@ -111,6 +118,13 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     brewEntrySelectedRecipePrefix: "Selected recipe",
     brewEntryNoRecipesConnected: "No recipes connected yet",
     brewEntryNewRecipeComingSoon: "New recipe builder coming soon.",
+    brewEntryReadyToBrew: "READY TO BREW",
+    brewEntryDraftReadyStatus: "Draft ready",
+    brewEntryConfirmBrew: "Confirm brew",
+    brewEntryVolumeLabel: "Volume",
+    brewEntryOgLabel: "OG",
+    brewEntryYeastLabel: "Yeast",
+    brewEntryMissingValue: "To complete",
     navHome: "Home",
     navBrewery: "Brewery",
     navTasks: "Tasks",
@@ -175,6 +189,13 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     brewEntrySelectedRecipePrefix: "Recette sélectionnée",
     brewEntryNoRecipesConnected: "Aucune recette connectée pour le moment",
     brewEntryNewRecipeComingSoon: "Le builder de nouvelle recette arrive bientôt.",
+    brewEntryReadyToBrew: "PRÊT À BRASSER",
+    brewEntryDraftReadyStatus: "Brouillon prêt",
+    brewEntryConfirmBrew: "Confirmer le brassage",
+    brewEntryVolumeLabel: "Volume",
+    brewEntryOgLabel: "OG",
+    brewEntryYeastLabel: "Levure",
+    brewEntryMissingValue: "À compléter",
     navHome: "Accueil",
     navBrewery: "Brasserie",
     navTasks: "Tâches",
@@ -239,6 +260,13 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     brewEntrySelectedRecipePrefix: "Ausgewähltes Rezept",
     brewEntryNoRecipesConnected: "Noch keine Rezepte verbunden",
     brewEntryNewRecipeComingSoon: "Neuer Rezept-Builder kommt bald.",
+    brewEntryReadyToBrew: "BEREIT ZUM BRAUEN",
+    brewEntryDraftReadyStatus: "Entwurf bereit",
+    brewEntryConfirmBrew: "Sud bestätigen",
+    brewEntryVolumeLabel: "Volumen",
+    brewEntryOgLabel: "OG",
+    brewEntryYeastLabel: "Hefe",
+    brewEntryMissingValue: "Ausfüllen",
     navHome: "Start",
     navBrewery: "Brauerei",
     navTasks: "Aufgaben",
@@ -303,6 +331,13 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     brewEntrySelectedRecipePrefix: "Geselecteerd recept",
     brewEntryNoRecipesConnected: "Nog geen recepten gekoppeld",
     brewEntryNewRecipeComingSoon: "Nieuwe receptbouwer komt binnenkort.",
+    brewEntryReadyToBrew: "KLAAR OM TE BROUWEN",
+    brewEntryDraftReadyStatus: "Concept klaar",
+    brewEntryConfirmBrew: "Brouwsel bevestigen",
+    brewEntryVolumeLabel: "Volume",
+    brewEntryOgLabel: "OG",
+    brewEntryYeastLabel: "Gist",
+    brewEntryMissingValue: "Aan te vullen",
     navHome: "Home",
     navBrewery: "Brouwerij",
     navTasks: "Taken",

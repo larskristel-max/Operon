@@ -963,6 +963,87 @@ button, input { font: inherit; }
   opacity: 0.6;
 }
 
+.tasks-back-btn {
+  justify-self: start;
+  min-height: 36px;
+  padding: 8px 12px;
+  opacity: 0.75;
+}
+
+.task-item {
+  gap: 10px;
+  padding: 14px 0;
+}
+
+.task-toggle-btn {
+  justify-self: start;
+  min-width: 88px;
+}
+
+.task-action-panel {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(11, 16, 24, 0.58);
+  animation: task-expand 160ms ease;
+}
+
+.task-field-group { display: grid; gap: 8px; }
+.task-inline-row { display: grid; grid-template-columns: 1.5fr 0.8fr; gap: 8px; }
+
+.task-select-wrap {
+  position: relative;
+  display: grid;
+  gap: 6px;
+}
+
+.task-field-label {
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+  letter-spacing: 0.02em;
+}
+
+.task-select,
+.task-input {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 17px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(9, 14, 20, 0.78);
+  color: var(--text-primary);
+  padding: 12px 14px;
+  font-size: 0.92rem;
+}
+
+.task-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 34px;
+}
+
+.task-select-chevron {
+  position: absolute;
+  right: 14px;
+  bottom: 13px;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.task-input::placeholder { color: rgba(196, 206, 218, 0.62); }
+.task-input-unit { text-transform: lowercase; }
+
+.task-confirm-btn {
+  width: 100%;
+  min-height: 48px;
+}
+
+@keyframes task-expand {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .more-menu {
   position: fixed;
   left: clamp(10px, 3vw, 14px);

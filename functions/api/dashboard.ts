@@ -16,6 +16,7 @@ interface DashboardResponse {
   lots: JsonRecord[];
   batch_inputs: JsonRecord[];
   brew_logs: JsonRecord[];
+  fermentation_checks: JsonRecord[];
   pending_movements: JsonRecord[];
 }
 
@@ -29,6 +30,7 @@ const EMPTY_DASHBOARD: DashboardResponse = {
   lots: [],
   batch_inputs: [],
   brew_logs: [],
+  fermentation_checks: [],
   pending_movements: [],
 };
 
@@ -66,6 +68,23 @@ async function fetchRows(
   );
 
   return parseSupabaseResponse<JsonRecord[]>(res, `Failed to load ${tableName}`);
+}
+
+async function fetchFermentationChecksByBrewLogs(env: Env, brewLogs: JsonRecord[]): Promise<JsonRecord[]> {
+  const ids = brewLogs.map((l) => l.id).filter((id): id is string => typeof id === "string" && id.length > 0);
+  if (ids.length === 0) return [];
+  try {
+    const idList = ids.join(",");
+    const res = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/fermentation_checks?brew_log_id=in.(${encodeURIComponent(idList)})&select=*&order=created_at.desc`,
+      { headers: adminHeaders(env) }
+    );
+    return parseSupabaseResponse<JsonRecord[]>(res, "Failed to load fermentation_checks");
+  } catch (error) {
+    const message = error instanceof Error ? error.message.toLowerCase() : "";
+    if (message.includes("relation") || message.includes("does not exist") || message.includes("could not find")) return [];
+    throw error;
+  }
 }
 
 async function fetchOptionalRows(
@@ -166,6 +185,8 @@ export async function onRequestGet(context: { request: Request; env: Env }): Pro
       fetchOptionalRows(env, "pending_movements", breweryId, "created_at.desc"),
     ]);
 
+    const fermentationChecks = await fetchFermentationChecksByBrewLogs(env, brewLogs);
+
     return jsonResponse({
       tanks,
       batches,
@@ -176,6 +197,7 @@ export async function onRequestGet(context: { request: Request; env: Env }): Pro
       lots,
       batch_inputs: batchInputs,
       brew_logs: brewLogs,
+      fermentation_checks: fermentationChecks,
       pending_movements: pendingMovements,
     });
   } catch {

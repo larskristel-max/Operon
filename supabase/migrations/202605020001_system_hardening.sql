@@ -21,10 +21,23 @@ ALTER TABLE public.ingredients ALTER COLUMN ingredient_type SET NOT NULL;
 ALTER TABLE public.ingredients DROP CONSTRAINT IF EXISTS ingredients_ingredient_type_check;
 ALTER TABLE public.ingredients ADD CONSTRAINT ingredients_ingredient_type_check CHECK (ingredient_type IN ('malt','hops','yeast','adjunct','sugar','water_additive','processing_aid','packaging','cleaning','other'));
 
-ALTER TABLE public.batch_inputs ADD CONSTRAINT batch_inputs_quantity_positive CHECK (quantity > 0);
-ALTER TABLE public.batch_inputs ADD CONSTRAINT batch_inputs_unit_present CHECK (length(trim(unit)) > 0);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'batch_inputs_quantity_positive') THEN
+    ALTER TABLE public.batch_inputs ADD CONSTRAINT batch_inputs_quantity_positive CHECK (quantity > 0);
+  END IF;
+END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'batch_inputs_unit_present') THEN
+    ALTER TABLE public.batch_inputs ADD CONSTRAINT batch_inputs_unit_present CHECK (length(trim(unit)) > 0);
+  END IF;
+END $$;
 
 ALTER TABLE public.batches ALTER COLUMN brewery_id SET NOT NULL;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'batches_status_valid_check') THEN
+    ALTER TABLE public.batches ADD CONSTRAINT batches_status_valid_check CHECK (status IN ('planned','brewing','fermenting','conditioning','ready','packaged','archived'));
+  END IF;
+END $$;
 
 ALTER TABLE public.demo_overlay_records DROP CONSTRAINT IF EXISTS demo_overlay_records_table_name_check;
 ALTER TABLE public.demo_overlay_records ADD CONSTRAINT demo_overlay_records_table_name_check CHECK (

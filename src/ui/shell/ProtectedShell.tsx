@@ -13,6 +13,8 @@ import { mapRealDashboardToMerged } from "@/domains/dashboard/mappers";
 import { useBottomNavHeight } from "@/ui/shell/useBottomNavHeight";
 import { useBrewEntryFlow } from "@/domains/batches/hooks";
 import { computeOperationalSummary } from "@/domains/dashboard/operational";
+import { useAssignTank } from "@/domains/tanks/hooks";
+import { useRecordMashVolume } from "@/domains/brew_logs/hooks";
 
 type IconName =
   | "bell"
@@ -163,6 +165,12 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const { language } = useLanguage();
   const { me, profileError, refreshProfile, session, isDemoMode, exitDemoMode, signOut } = useApp();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [tasksOpen, setTasksOpen] = useState(false);
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+  const [selectedTankId, setSelectedTankId] = useState<string>("");
+  const [mashVolumeInput, setMashVolumeInput] = useState<string>("");
+  const [taskError, setTaskError] = useState<string | null>(null);
+  const [taskBusy, setTaskBusy] = useState(false);
   const touchStartY = useRef<number | null>(null);
   const touchStartX = useRef<number | null>(null);
   const touchDeltaY = useRef(0);
@@ -209,6 +217,14 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     existingRecipes,
     onConfirmed: isDemoMode ? refetchDemoDashboard : refetchRealDashboard,
   });
+  const assignTank = useAssignTank({ isDemoMode });
+  const activeBreweryId = useMemo(() => {
+    const data = isDemoMode ? demoMergedData : realMergedData;
+    const firstBatch = (data?.batches?.[0] ?? null) as Record<string, unknown> | null;
+    const raw = firstBatch?.brewery_id;
+    return typeof raw === "string" && raw.length > 0 ? raw : null;
+  }, [demoMergedData, isDemoMode, realMergedData]);
+  const recordMashVolume = useRecordMashVolume({ isDemoMode, breweryId: activeBreweryId ?? null });
 
   const selectedRecipe = existingRecipes.find((recipe) => recipe.id === brewEntryFlow.state.selectedRecipeId) ?? null;
   const selectedRecipeName = selectedRecipe?.name ?? copy.brewEntrySelectedRecipePrefix;
@@ -302,6 +318,15 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const brewStatusLabel = !isPlaceholderValue(batchStageValue) ? batchStageValue : copy.waitingForData;
   const glanceIcons: IconName[] = ["tank", "water", "package", "inventory"];
   const quickActionIcons: IconName[] = ["brew", "fermentation", "inventory", "reports"];
+  const merged = isDemoMode ? demoMergedData : realMergedData;
+  const availableTanks = ((merged?.tanks ?? []) as Array<Record<string, unknown>>).filter((tank) => {
+    const currentBatchId = typeof tank.current_batch_id === "string" ? tank.current_batch_id : null;
+    const status = typeof tank.status === "string" ? tank.status.toLowerCase() : "";
+    return currentBatchId === null || status === "available";
+  });
+  const executableTasks = operational.openTasks.filter(
+    (task) => task.id.endsWith(":assign-tank") || task.id.endsWith(":record-mash-volume")
+  );
   const isPreparingRecipeDraft = brewEntryFlow.state.isBusy && brewEntryFlow.state.step === "ready-to-confirm" && !brewEntryFlow.state.draftPreview;
   const canRetryRecipeDraft = Boolean(brewEntryFlow.state.selectedRecipeId);
 
@@ -401,7 +426,9 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                   ? firstTaskLabel
                   : `Active batches: ${operational.activeBatchCount}`;
               return (
-                <article key="needs-action" className="glance-card blue">
+                <article key="needs-action" className="glance-card blue" role="button" tabIndex={0} onClick={() => setTasksOpen(true)} onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") setTasksOpen(true);
+                }}>
                   <div className="glance-icon">
                     <Icon name="tasks" className="line-icon icon-md" />
                   </div>
@@ -658,6 +685,47 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
           {brewEntryFlow.state.error && brewEntryFlow.state.step !== "ready-to-confirm" && (
             <p className="error">{brewEntryFlow.state.error}</p>
           )}
+          </div>
+        </section>
+      )}
+      {tasksOpen && (
+        <section className="brew-entry-backdrop" onClick={() => setTasksOpen(false)} aria-label="Tasks">
+          <div className="glass-panel brew-entry-sheet" onClick={(event) => event.stopPropagation()}>
+            <p className="eyebrow">NEEDS ACTION</p>
+            <button type="button" className="dark-btn ghost" onClick={() => setTasksOpen(false)}>Back</button>
+            {executableTasks.length === 0 ? <p className="subtle">No executable tasks.</p> : null}
+            {executableTasks.map((task) => (
+              <div key={task.id} className="brew-confirm-summary">
+                <div className="brew-confirm-row"><span className="brew-confirm-label">{task.batchLabel}</span><span className="brew-confirm-value">{task.label}</span></div>
+                <button type="button" className="dark-btn" onClick={() => { setActiveTaskId(task.id); setTaskError(null); }}>{activeTaskId === task.id ? "Close" : "Start"}</button>
+                {activeTaskId === task.id && task.id.endsWith(":assign-tank") && (
+                  <div>
+                    <select value={selectedTankId} onChange={(event) => setSelectedTankId(event.target.value)}>
+                      <option value="">Select tank</option>
+                      {availableTanks.map((tank) => <option key={String(tank.id ?? "")} value={String(tank.id ?? "")}>{String(tank.name ?? tank.id ?? "Tank")}</option>)}
+                    </select>
+                    <button type="button" className="dark-btn" disabled={taskBusy || !selectedTankId} onClick={async () => {
+                      try { setTaskBusy(true); await assignTank({ tankId: selectedTankId, batchId: task.batchId }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setSelectedTankId(""); }
+                      catch (error) { setTaskError(error instanceof Error ? error.message : "Failed to assign tank"); }
+                      finally { setTaskBusy(false); }
+                    }}>Confirm</button>
+                  </div>
+                )}
+                {activeTaskId === task.id && task.id.endsWith(":record-mash-volume") && (
+                  <div>
+                    <input type="number" inputMode="decimal" min="0" step="0.1" value={mashVolumeInput} onChange={(event) => setMashVolumeInput(event.target.value)} placeholder="Liters" />
+                    <button type="button" className="dark-btn" disabled={taskBusy} onClick={async () => {
+                      const liters = Number(mashVolumeInput);
+                      if (!Number.isFinite(liters) || liters <= 0) { setTaskError("Enter a valid volume in liters."); return; }
+                      try { setTaskBusy(true); await recordMashVolume({ batchId: task.batchId, actualMashVolumeLiters: liters }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setMashVolumeInput(""); }
+                      catch (error) { setTaskError(error instanceof Error ? error.message : "Failed to record mash volume"); }
+                      finally { setTaskBusy(false); }
+                    }}>Confirm</button>
+                  </div>
+                )}
+              </div>
+            ))}
+            {taskError ? <p className="error">{taskError}</p> : null}
           </div>
         </section>
       )}

@@ -965,9 +965,40 @@ button, input { font: inherit; }
 
 .tasks-back-btn {
   justify-self: start;
-  min-height: 36px;
-  padding: 8px 12px;
-  opacity: 0.75;
+  min-height: 32px;
+  padding: 6px 10px;
+  opacity: 0.66;
+  font-size: 0.76rem;
+}
+
+.task-empty-state {
+  display: grid;
+  gap: 8px;
+  padding: 14px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(10, 14, 21, 0.55);
+}
+
+.task-empty-state h4 {
+  margin: 0;
+  font-size: 0.96rem;
+  font-weight: 580;
+  color: var(--text-primary);
+}
+
+.task-empty-state .subtle {
+  margin: 0;
+}
+
+.task-empty-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: rgba(150, 186, 255, 0.95);
+  background: rgba(58, 96, 176, 0.2);
 }
 
 .task-item {

@@ -26,7 +26,8 @@ type IconName =
   | "home"
   | "tasks"
   | "more"
-  | "plus";
+  | "plus"
+  | "package";
 
 function Icon({ name, className }: { name: IconName; className?: string }) {
   switch (name) {
@@ -120,6 +121,14 @@ function Icon({ name, className }: { name: IconName; className?: string }) {
           <circle cx="6" cy="12" r="1" />
           <circle cx="12" cy="12" r="1" />
           <circle cx="18" cy="12" r="1" />
+        </svg>
+      );
+    case "package":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+          <path d="M3.27 6.96 12 12.01 20.73 6.96" />
+          <path d="M12 22.08V12" />
         </svg>
       );
     default:
@@ -282,7 +291,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const brewDayLabel = !isPlaceholderValue(stageCountValue) ? `${copy.days} ${stageCountValue}` : null;
   const batchStageValue = String(dashboardData.brewCard.batchStageLabel ?? "").trim();
   const brewStatusLabel = !isPlaceholderValue(batchStageValue) ? batchStageValue : copy.waitingForData;
-  const glanceIcons: IconName[] = ["tank", "water", "orders", "inventory"];
+  const glanceIcons: IconName[] = ["tank", "water", "package", "inventory"];
   const quickActionIcons: IconName[] = ["brew", "fermentation", "inventory", "reports"];
   const isPreparingRecipeDraft = brewEntryFlow.state.isBusy && brewEntryFlow.state.step === "ready-to-confirm" && !brewEntryFlow.state.draftPreview;
   const canRetryRecipeDraft = Boolean(brewEntryFlow.state.selectedRecipeId);
@@ -376,15 +385,21 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
         <div className="glance-grid">
           {dashboardData.glanceCards.map((card, index) => {
             if (index === 1) {
+              const hasOpenTasks = operational.openTaskCount > 0;
+              const firstTaskLabel = operational.openTasks[0]?.label ?? null;
+              const secondaryText =
+                hasOpenTasks && firstTaskLabel && firstTaskLabel.length <= 22
+                  ? firstTaskLabel
+                  : `Active batches: ${operational.activeBatchCount}`;
               return (
-                <article key="needs-action" className="glance-card green">
+                <article key="needs-action" className="glance-card blue">
                   <div className="glance-icon">
                     <Icon name="tasks" className="line-icon icon-md" />
                   </div>
                   <div className="glance-copy">
-                    <p className="eyebrow">Needs action</p>
-                    <strong>Open tasks: {operational.openTaskCount}</strong>
-                    <span>Active batches: {operational.activeBatchCount}</span>
+                    <p className="eyebrow">{hasOpenTasks ? "NEEDS ACTION" : "ALL CLEAR"}</p>
+                    <strong>{operational.openTaskCount} tasks</strong>
+                    <span>{secondaryText}</span>
                   </div>
                 </article>
               );

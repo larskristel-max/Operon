@@ -106,7 +106,7 @@ export function computeOperationalSummary(input: {
       }
     }
 
-    return { activeBatchCount: activeBatches.length, openTaskCount: openTasks.length, openTasks: openTasks.slice(0, 3) };
+    return { activeBatchCount: activeBatches.length, openTaskCount: openTasks.length, openTasks };
   } catch {
     return { activeBatchCount: 0, openTaskCount: 0, openTasks: [] };
   }

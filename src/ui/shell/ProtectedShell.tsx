@@ -39,6 +39,32 @@ function isBrewInputIngredient(ingredient: Record<string, unknown>): boolean {
   return ["malt", "hops", "yeast", "adjunct", "sugar", "water_additive", "processing_aid"].includes(type);
 }
 
+const BATCH_ACTIVE_FILTER_STATUSES = new Set(["brewing", "fermenting", "conditioning", "ready"]);
+
+function getBatchStatusKey(batch: Record<string, unknown>): string {
+  for (const key of ["status", "stage", "batch_status"]) {
+    const v = batch[key];
+    if (typeof v === "string" && v.trim()) return v.trim().toLowerCase();
+  }
+  return "";
+}
+
+function getBatchDisplayName(batch: Record<string, unknown>): string {
+  for (const key of ["name", "batch_name", "recipe_name", "batch_number"]) {
+    const v = batch[key];
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  return "Batch";
+}
+
+function formatBatchStatus(status: string): string {
+  return status
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((p) => p[0].toUpperCase() + p.slice(1).toLowerCase())
+    .join(" ");
+}
+
 function Icon({ name, className }: { name: IconName; className?: string }) {
   switch (name) {
     case "bell":
@@ -173,6 +199,10 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const { language } = useLanguage();
   const { me, profileError, refreshProfile, session, isDemoMode, exitDemoMode, signOut } = useApp();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [batchesOpen, setBatchesOpen] = useState(false);
+  const [batchFilter, setBatchFilter] = useState<"active" | "planned" | "archived">("active");
+  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
+  const [taskScopeBatchId, setTaskScopeBatchId] = useState<string | null>(null);
   const [tasksOpen, setTasksOpen] = useState(false);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [selectedTankId, setSelectedTankId] = useState<string>("");
@@ -362,6 +392,32 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     const id = typeof ing.id === "string" ? ing.id : null;
     return id !== null && isBrewInputIngredient(ing);
   });
+  const allBatches = (merged?.batches ?? []) as Array<Record<string, unknown>>;
+  const filteredBatches = allBatches.filter((batch) => {
+    const s = getBatchStatusKey(batch);
+    if (batchFilter === "active") return BATCH_ACTIVE_FILTER_STATUSES.has(s);
+    if (batchFilter === "planned") return s === "planned";
+    return !BATCH_ACTIVE_FILTER_STATUSES.has(s) && s !== "planned";
+  });
+  const selectedBatch = selectedBatchId
+    ? allBatches.find((b) => String(b.id ?? "") === selectedBatchId) ?? null
+    : null;
+  const selectedBatchTank = selectedBatch
+    ? ((merged?.tanks ?? []) as Array<Record<string, unknown>>).find(
+        (t) => String(t.current_batch_id ?? "") === String(selectedBatch.id ?? "")
+      ) ?? null
+    : null;
+  const visibleTasks = taskScopeBatchId
+    ? executableTasks.filter((t) => t.batchId === taskScopeBatchId)
+    : executableTasks;
+  const closeBatchesOverlay = () => {
+    setBatchesOpen(false);
+    setSelectedBatchId(null);
+  };
+  const closeTasksOverlay = () => {
+    setTasksOpen(false);
+    setTaskScopeBatchId(null);
+  };
   const isPreparingRecipeDraft = brewEntryFlow.state.isBusy && brewEntryFlow.state.step === "ready-to-confirm" && !brewEntryFlow.state.draftPreview;
   const canRetryRecipeDraft = Boolean(brewEntryFlow.state.selectedRecipeId);
 
@@ -420,7 +476,16 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
         </div>
       </section>
 
-      <section className="glass-panel brewing-card">
+      <section
+        className="glass-panel brewing-card"
+        role="button"
+        tabIndex={0}
+        aria-label="Open batches overview"
+        onClick={() => setBatchesOpen(true)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") setBatchesOpen(true);
+        }}
+      >
         <div className="brewing-top">
           <div className="brew-main">
             <div className="brew-icon">
@@ -724,11 +789,11 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
         </section>
       )}
       {tasksOpen && (
-        <section className="brew-entry-backdrop" onClick={() => setTasksOpen(false)} aria-label="Tasks">
+        <section className="brew-entry-backdrop" onClick={closeTasksOverlay} aria-label="Tasks">
           <div className="glass-panel brew-entry-sheet" onClick={(event) => event.stopPropagation()}>
-            <p className="eyebrow">NEEDS ACTION</p>
-            <button type="button" className="dark-btn ghost tasks-back-btn" onClick={() => setTasksOpen(false)}>Back</button>
-            {executableTasks.length === 0 ? (
+            <p className="eyebrow">{taskScopeBatchId ? "BATCH TASKS" : "NEEDS ACTION"}</p>
+            <button type="button" className="dark-btn ghost tasks-back-btn" onClick={closeTasksOverlay}>Back</button>
+            {visibleTasks.length === 0 ? (
               <article className="task-empty-state" aria-live="polite">
                 <div className="task-empty-icon" aria-hidden="true">
                   <Icon name="tasks" className="line-icon icon-md" />
@@ -737,7 +802,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                 <p className="subtle">Remaining suggestions are not wired to actions yet.</p>
               </article>
             ) : null}
-            {executableTasks.map((task) => (
+            {visibleTasks.map((task) => (
               <div key={task.id} className="brew-confirm-summary task-item">
                 <div className="brew-confirm-row"><span className="brew-confirm-label">{task.batchLabel}</span><span className="brew-confirm-value">{task.label}</span></div>
                 <button type="button" className="dark-btn task-toggle-btn" onClick={() => { setActiveTaskId((prev) => (prev === task.id ? null : task.id)); setTaskError(null); }}>Start</button>
@@ -846,6 +911,120 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
               </div>
             ))}
             {taskError ? <p className="error">{taskError}</p> : null}
+          </div>
+        </section>
+      )}
+
+      {batchesOpen && (
+        <section className="brew-entry-backdrop" onClick={closeBatchesOverlay} aria-label="Batches overview">
+          <div className="glass-panel brew-entry-sheet" onClick={(event) => event.stopPropagation()}>
+            {selectedBatch ? (
+              <>
+                <p className="eyebrow">{formatBatchStatus(getBatchStatusKey(selectedBatch))}</p>
+                <button type="button" className="dark-btn ghost tasks-back-btn" onClick={() => setSelectedBatchId(null)}>All batches</button>
+                <h2 className="brew-confirm-title">{getBatchDisplayName(selectedBatch)}</h2>
+                {(() => {
+                  const batchId = String(selectedBatch.id ?? "");
+                  const tankName = selectedBatchTank
+                    ? String(selectedBatchTank.name ?? selectedBatchTank.id ?? "Tank")
+                    : "Not assigned";
+                  const batchTaskCount = executableTasks.filter((t) => t.batchId === batchId).length;
+                  let rawDays: number | null = null;
+                  for (const key of ["day_in_stage", "day", "days_in_stage", "days_elapsed"]) {
+                    const v = selectedBatch[key];
+                    if (typeof v === "number" && Number.isFinite(v)) { rawDays = Math.max(0, Math.floor(v)); break; }
+                    if (typeof v === "string" && v.trim()) { const n = Number(v); if (Number.isFinite(n)) { rawDays = Math.max(0, Math.floor(n)); break; } }
+                  }
+                  return (
+                    <div className="brew-confirm-summary task-item">
+                      {rawDays !== null && (
+                        <div className="brew-confirm-row">
+                          <span className="brew-confirm-label">Day</span>
+                          <span className="brew-confirm-value">{rawDays}</span>
+                        </div>
+                      )}
+                      <div className="brew-confirm-row">
+                        <span className="brew-confirm-label">Tank</span>
+                        <span className="brew-confirm-value">{tankName}</span>
+                      </div>
+                      <div className="brew-confirm-row">
+                        <span className="brew-confirm-label">Open tasks</span>
+                        <span className="brew-confirm-value">{batchTaskCount}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+                <div className="brew-confirm-actions">
+                  <button
+                    type="button"
+                    className="dark-btn brew-confirm-primary"
+                    onClick={() => {
+                      setTaskScopeBatchId(String(selectedBatch.id ?? ""));
+                      setTasksOpen(true);
+                      closeBatchesOverlay();
+                    }}
+                  >
+                    See tasks
+                  </button>
+                  <button type="button" className="dark-btn ghost" onClick={() => setSelectedBatchId(null)}>
+                    Back to list
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="eyebrow">BATCHES</p>
+                <button type="button" className="dark-btn ghost tasks-back-btn" onClick={closeBatchesOverlay}>Close</button>
+                <div className="batches-filter-tabs">
+                  {(["active", "planned", "archived"] as const).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      className={`batches-filter-tab${batchFilter === f ? " active" : ""}`}
+                      onClick={() => setBatchFilter(f)}
+                    >
+                      {f === "active" ? "Active" : f === "planned" ? "Planned" : "Archived"}
+                    </button>
+                  ))}
+                </div>
+                {filteredBatches.length === 0 ? (
+                  <article className="task-empty-state">
+                    <div className="task-empty-icon" aria-hidden="true">
+                      <Icon name="brew" className="line-icon icon-md" />
+                    </div>
+                    <h4>No {batchFilter} batches</h4>
+                    <p className="subtle">No batches match this filter.</p>
+                  </article>
+                ) : (
+                  <div className="batch-list">
+                    {filteredBatches.map((batch) => {
+                      const id = String(batch.id ?? "");
+                      const name = getBatchDisplayName(batch);
+                      const status = getBatchStatusKey(batch);
+                      const taskCount = executableTasks.filter((t) => t.batchId === id).length;
+                      return (
+                        <div
+                          key={id}
+                          className="batch-list-item"
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setSelectedBatchId(id)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") setSelectedBatchId(id);
+                          }}
+                        >
+                          <div>
+                            <strong className="batch-list-name">{name}</strong>
+                            <span className="batch-list-status subtle">{formatBatchStatus(status)}</span>
+                          </div>
+                          {taskCount > 0 && <span className="batch-list-badge">{taskCount}</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </section>
       )}

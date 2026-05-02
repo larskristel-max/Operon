@@ -216,6 +216,7 @@ export interface Ingredient {
   breweryId: string;
   name: string;
   category: "malt" | "hop" | "yeast" | "adjunct" | "finings" | "other";
+  ingredientType: "malt" | "hops" | "yeast" | "adjunct" | "sugar" | "water_additive" | "processing_aid" | "packaging" | "cleaning" | "other";
   unit: string;
   currentStockKg: number | null;
   notes: string | null;

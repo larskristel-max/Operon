@@ -13,7 +13,6 @@ const EMPTY_REAL_DASHBOARD: RealDashboardData = {
   batch_inputs: [],
   brew_logs: [],
   pending_movements: [],
-  operational: { activeBatchCount: 0, openTaskCount: 0, openTasks: [] },
 };
 
 export function useRealDashboard(enabled: boolean): UseRealDashboardResult {
@@ -34,6 +33,9 @@ export function useRealDashboard(enabled: boolean): UseRealDashboardResult {
 
     try {
       const payload = await loadRealDashboard();
+      const operational =
+        payload.operational && typeof payload.operational === "object" ? payload.operational : undefined;
+
       setData({
         tanks: Array.isArray(payload.tanks) ? payload.tanks : [],
         batches: Array.isArray(payload.batches) ? payload.batches : [],
@@ -45,10 +47,7 @@ export function useRealDashboard(enabled: boolean): UseRealDashboardResult {
         batch_inputs: Array.isArray(payload.batch_inputs) ? payload.batch_inputs : [],
         brew_logs: Array.isArray(payload.brew_logs) ? payload.brew_logs : [],
         pending_movements: Array.isArray(payload.pending_movements) ? payload.pending_movements : [],
-        operational:
-          payload.operational && typeof payload.operational === "object"
-            ? payload.operational
-            : { activeBatchCount: 0, openTaskCount: 0, openTasks: [] },
+        ...(operational ? { operational } : {}),
       });
     } catch (requestError) {
       setData(EMPTY_REAL_DASHBOARD);

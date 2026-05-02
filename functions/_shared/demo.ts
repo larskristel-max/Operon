@@ -38,6 +38,7 @@ export interface DemoDashboardData {
   sales: Array<Record<string, unknown>>;
   batch_inputs: Array<Record<string, unknown>>;
   brew_logs: Array<Record<string, unknown>>;
+  fermentation_checks: Array<Record<string, unknown>>;
   pending_movements: Array<Record<string, unknown>>;
 }
 
@@ -215,6 +216,39 @@ async function fetchTableRows(
   }
 }
 
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) chunks.push(arr.slice(i, i + size));
+  return chunks;
+}
+
+async function fetchFermentationCheckChunk(env: DemoEnv, chunk: string[]): Promise<Array<Record<string, unknown>>> {
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/fermentation_checks?brew_log_id=in.(${chunk.join(",")})&select=*&order=created_at.asc`,
+    { headers: adminHeaders(env) }
+  );
+  return await parseSupabaseResponse<Array<Record<string, unknown>>>(res, "Failed to load fermentation_checks");
+}
+
+async function fetchFermentationChecks(env: DemoEnv, brewLogIds: string[]): Promise<Array<Record<string, unknown>>> {
+  if (brewLogIds.length === 0) return [];
+  try {
+    const chunks = chunkArray(brewLogIds, 25);
+    const results = await Promise.all(chunks.map((chunk) => fetchFermentationCheckChunk(env, chunk)));
+    return results.flat();
+  } catch (error) {
+    if (error instanceof DemoHttpError) {
+      const normalizedMessage = error.message.toLowerCase();
+      const isSafeSkip =
+        normalizedMessage.includes("brewery_id") ||
+        normalizedMessage.includes("could not find the") ||
+        normalizedMessage.includes("relation");
+      if (isSafeSkip) return [];
+    }
+    return [];
+  }
+}
+
 export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string): Promise<DemoDashboardData> {
   const breweryRes = await fetch(
     `${env.SUPABASE_URL}/rest/v1/brewery_profiles?id=eq.${encodeURIComponent(
@@ -242,6 +276,9 @@ export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string
     fetchTableRows(env, "pending_movements", demoBreweryId, "*", "created_at.desc"),
   ]);
 
+  const brewLogIds = brewLogs.map((l) => l.id).filter((id): id is string => typeof id === "string" && id.length > 0);
+  const fermentationChecks = await fetchFermentationChecks(env, brewLogIds);
+
   return {
     brewery_profile: breweryRows[0] ?? null,
     tanks,
@@ -255,6 +292,7 @@ export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string
     sales,
     batch_inputs: batchInputs,
     brew_logs: brewLogs,
+    fermentation_checks: fermentationChecks,
     pending_movements: pendingMovements,
   };
 }
@@ -333,6 +371,7 @@ const DASHBOARD_OVERLAY_TABLES: ReadonlyArray<keyof DemoDashboardData> = [
   "sales",
   "batch_inputs",
   "brew_logs",
+  "fermentation_checks",
   "pending_movements",
 ];
 
@@ -350,6 +389,7 @@ export function applyDashboardOverlay(baseline: DemoDashboardData, overlays: Ove
     sales: [...baseline.sales],
     batch_inputs: [...baseline.batch_inputs],
     brew_logs: [...baseline.brew_logs],
+    fermentation_checks: [...baseline.fermentation_checks],
     pending_movements: [...baseline.pending_movements],
   };
 

@@ -49,6 +49,7 @@ export function computeOperationalSummary(input: {
   lots: Array<Record<string, unknown>>;
   batchInputs: Array<Record<string, unknown>>;
   brewLogs: Array<Record<string, unknown>>;
+  fermentationChecks?: Array<Record<string, unknown>>;
 }): OperationalSummary {
   try {
     const activeBatches = input.batches.filter((batch) => {
@@ -73,16 +74,31 @@ export function computeOperationalSummary(input: {
       const hasTransferVolume =
         readNumber(batch, ["actual_fermenter_volume_liters"]) !== null || batchLogs.some((log) => readNumber(log, ["actual_fermenter_volume_liters"]) !== null);
 
-      const hasRecentFermentationCheck = batchLogs.some((log) => {
-        const kind = readString(log, ["log_type", "entry_type", "type", "stage"]);
-        if (kind && !kind.toLowerCase().includes("ferment")) return false;
-        const gravity = readNumber(log, ["gravity", "specific_gravity", "actual_gravity"]);
-        if (gravity === null) return false;
-        const ts = readDateTimestamp(log, ["recorded_at", "logged_at", "created_at", "updated_at"]);
-        if (ts === null) return true;
-        const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-        return ts >= oneDayAgo;
+      const batchLogIds = new Set(batchLogs.map((log) => readString(log, ["id"])).filter((id): id is string => id !== null));
+      const batchFermentationChecks = (input.fermentationChecks ?? []).filter((fc) => {
+        const brewLogId = readString(fc, ["brew_log_id"]);
+        return brewLogId !== null && batchLogIds.has(brewLogId);
       });
+
+      const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+
+      const hasRecentGravityFromChecks = batchFermentationChecks.some((fc) => {
+        const gravity = readNumber(fc, ["gravity"]);
+        if (gravity === null) return false;
+        const ts = readDateTimestamp(fc, ["created_at", "check_date"]);
+        return ts === null || ts >= oneDayAgo;
+      });
+
+      const hasRecentFermentationCheck =
+        hasRecentGravityFromChecks ||
+        batchLogs.some((log) => {
+          const kind = readString(log, ["log_type", "entry_type", "type", "stage"]);
+          if (kind && !kind.toLowerCase().includes("ferment")) return false;
+          const gravity = readNumber(log, ["gravity", "specific_gravity", "actual_gravity"]);
+          if (gravity === null) return false;
+          const ts = readDateTimestamp(log, ["recorded_at", "logged_at", "created_at", "updated_at"]);
+          return ts === null || ts >= oneDayAgo;
+        });
 
       const hasTank = input.tanks.some((tank) => readString(tank, ["current_batch_id"]) === batchId);
 

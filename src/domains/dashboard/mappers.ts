@@ -19,6 +19,7 @@ export function mapRealDashboardToMerged(data: RealDashboardData): RealDashboard
     sales: data.sales,
     batch_inputs: data.batch_inputs,
     brew_logs: data.brew_logs,
+    fermentation_checks: data.fermentation_checks ?? [],
     pending_movements: data.pending_movements,
     operational:
       data.operational ??
@@ -29,6 +30,7 @@ export function mapRealDashboardToMerged(data: RealDashboardData): RealDashboard
         lots: data.lots,
         batchInputs: data.batch_inputs,
         brewLogs: data.brew_logs,
+        fermentationChecks: data.fermentation_checks ?? [],
       }),
   };
 }

@@ -37,6 +37,8 @@ const ALLOWED_TABLES = new Set([
   "packaging_formats",
   "sales",
   "brew_logs",
+  "batch_inputs",
+  "fermentation_checks",
 ]);
 
 export async function onRequestPost(context: { request: Request; env: Env }): Promise<Response> {

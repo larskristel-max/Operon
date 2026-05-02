@@ -14,7 +14,10 @@ import { useBottomNavHeight } from "@/ui/shell/useBottomNavHeight";
 import { useBrewEntryFlow } from "@/domains/batches/hooks";
 import { computeOperationalSummary } from "@/domains/dashboard/operational";
 import { useAssignTank } from "@/domains/tanks/hooks";
-import { useRecordMashVolume } from "@/domains/brew_logs/hooks";
+import { useRecordMashVolume, useRecordTransferVolume } from "@/domains/brew_logs/hooks";
+import { useAssignIngredientLots } from "@/domains/batch_inputs/hooks";
+import { useTakeGravityReading } from "@/domains/fermentation_checks/hooks";
+import { useCreateOutputLot } from "@/domains/lots/hooks";
 
 type IconName =
   | "bell"
@@ -169,6 +172,15 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [selectedTankId, setSelectedTankId] = useState<string>("");
   const [mashVolumeInput, setMashVolumeInput] = useState<string>("");
+  const [transferVolumeInput, setTransferVolumeInput] = useState<string>("");
+  const [ingredientIdInput, setIngredientIdInput] = useState<string>("");
+  const [ingredientQuantityInput, setIngredientQuantityInput] = useState<string>("");
+  const [ingredientUnitInput, setIngredientUnitInput] = useState<string>("");
+  const [gravityInput, setGravityInput] = useState<string>("");
+  const [tempInput, setTempInput] = useState<string>("");
+  const [lotNumberInput, setLotNumberInput] = useState<string>("");
+  const [lotVolumeInput, setLotVolumeInput] = useState<string>("");
+  const [lotUnitsInput, setLotUnitsInput] = useState<string>("");
   const [taskError, setTaskError] = useState<string | null>(null);
   const [taskBusy, setTaskBusy] = useState(false);
   const touchStartY = useRef<number | null>(null);
@@ -225,6 +237,14 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     return typeof raw === "string" && raw.length > 0 ? raw : null;
   }, [demoMergedData, isDemoMode, realMergedData]);
   const recordMashVolume = useRecordMashVolume({ isDemoMode, breweryId: activeBreweryId ?? null });
+  const recordTransferVolume = useRecordTransferVolume({ isDemoMode, breweryId: activeBreweryId ?? null });
+  const assignIngredientLots = useAssignIngredientLots({ isDemoMode, breweryId: activeBreweryId ?? null });
+  const currentBrewLogs = useMemo(
+    () => ((isDemoMode ? demoMergedData : realMergedData)?.brew_logs ?? []) as Array<Record<string, unknown>>,
+    [isDemoMode, demoMergedData, realMergedData]
+  );
+  const takeGravityReading = useTakeGravityReading({ isDemoMode, breweryId: activeBreweryId ?? null, brewLogs: currentBrewLogs });
+  const createOutputLot = useCreateOutputLot({ isDemoMode, breweryId: activeBreweryId ?? null });
 
   const selectedRecipe = existingRecipes.find((recipe) => recipe.id === brewEntryFlow.state.selectedRecipeId) ?? null;
   const selectedRecipeName = selectedRecipe?.name ?? copy.brewEntrySelectedRecipePrefix;
@@ -304,6 +324,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
       lots: merged.lots,
       batchInputs: merged.batch_inputs ?? [],
       brewLogs: merged.brew_logs ?? [],
+      fermentationChecks: merged.fermentation_checks ?? [],
     });
   }, [demoMergedData, isDemoMode, realMergedData]);
 
@@ -324,8 +345,18 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     return currentBatchId === null;
   });
   const executableTasks = operational.openTasks.filter(
-    (task) => task.id.endsWith(":assign-tank") || task.id.endsWith(":record-mash-volume")
+    (task) =>
+      task.id.endsWith(":assign-tank") ||
+      task.id.endsWith(":record-mash-volume") ||
+      task.id.endsWith(":assign-input-lots") ||
+      task.id.endsWith(":record-transfer-volume") ||
+      task.id.endsWith(":take-gravity-reading") ||
+      task.id.endsWith(":create-output-lot")
   );
+  const availableIngredients = ((merged?.ingredients ?? []) as Array<Record<string, unknown>>).filter((ing) => {
+    const id = typeof ing.id === "string" ? ing.id : null;
+    return id !== null;
+  });
   const isPreparingRecipeDraft = brewEntryFlow.state.isBusy && brewEntryFlow.state.step === "ready-to-confirm" && !brewEntryFlow.state.draftPreview;
   const canRetryRecipeDraft = Boolean(brewEntryFlow.state.selectedRecipeId);
 
@@ -719,6 +750,76 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                       if (!Number.isFinite(liters) || liters <= 0) { setTaskError("Enter a valid volume in liters."); return; }
                       try { setTaskBusy(true); await recordMashVolume({ batchId: task.batchId, actualMashVolumeLiters: liters }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setMashVolumeInput(""); }
                       catch (error) { setTaskError(error instanceof Error ? error.message : "Failed to record mash volume"); }
+                      finally { setTaskBusy(false); }
+                    }}>Confirm</button>
+                  </div>
+                )}
+                {activeTaskId === task.id && task.id.endsWith(":assign-input-lots") && (
+                  <div>
+                    <select value={ingredientIdInput} onChange={(event) => {
+                      const id = event.target.value;
+                      setIngredientIdInput(id);
+                      const ing = availableIngredients.find((i) => String(i.id ?? "") === id);
+                      const defaultUnit = ing && typeof ing.default_unit === "string" ? ing.default_unit : "";
+                      if (defaultUnit) setIngredientUnitInput(defaultUnit);
+                    }}>
+                      <option value="">Select ingredient</option>
+                      {availableIngredients.map((ing) => <option key={String(ing.id ?? "")} value={String(ing.id ?? "")}>{String(ing.name ?? ing.id ?? "Ingredient")}</option>)}
+                    </select>
+                    {availableIngredients.length === 0 ? <p className="subtle">No ingredients available.</p> : null}
+                    <input type="number" inputMode="decimal" min="0" step="0.01" value={ingredientQuantityInput} onChange={(event) => setIngredientQuantityInput(event.target.value)} placeholder="Quantity" />
+                    <input type="text" value={ingredientUnitInput} onChange={(event) => setIngredientUnitInput(event.target.value)} placeholder="Unit (e.g. kg, g, L)" />
+                    <button type="button" className="dark-btn" disabled={taskBusy || !ingredientIdInput} onClick={async () => {
+                      const qty = Number(ingredientQuantityInput);
+                      if (!ingredientIdInput) { setTaskError("Select an ingredient."); return; }
+                      if (!Number.isFinite(qty) || qty <= 0) { setTaskError("Enter a valid quantity."); return; }
+                      if (!ingredientUnitInput.trim()) { setTaskError("Enter a unit."); return; }
+                      try { setTaskBusy(true); await assignIngredientLots({ batchId: task.batchId, ingredientId: ingredientIdInput, quantity: qty, unit: ingredientUnitInput.trim() }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setIngredientIdInput(""); setIngredientQuantityInput(""); setIngredientUnitInput(""); }
+                      catch (error) { setTaskError(error instanceof Error ? error.message : "Failed to assign ingredient lots"); }
+                      finally { setTaskBusy(false); }
+                    }}>Confirm</button>
+                  </div>
+                )}
+                {activeTaskId === task.id && task.id.endsWith(":record-transfer-volume") && (
+                  <div>
+                    <input type="number" inputMode="decimal" min="0" step="0.1" value={transferVolumeInput} onChange={(event) => setTransferVolumeInput(event.target.value)} placeholder="Liters" />
+                    <button type="button" className="dark-btn" disabled={taskBusy} onClick={async () => {
+                      const liters = Number(transferVolumeInput);
+                      if (!Number.isFinite(liters) || liters <= 0) { setTaskError("Enter a valid volume in liters."); return; }
+                      try { setTaskBusy(true); await recordTransferVolume({ batchId: task.batchId, actualFermenterVolumeLiters: liters }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setTransferVolumeInput(""); }
+                      catch (error) { setTaskError(error instanceof Error ? error.message : "Failed to record transfer volume"); }
+                      finally { setTaskBusy(false); }
+                    }}>Confirm</button>
+                  </div>
+                )}
+                {activeTaskId === task.id && task.id.endsWith(":take-gravity-reading") && (
+                  <div>
+                    <input type="number" inputMode="decimal" min="0" step="0.001" value={gravityInput} onChange={(event) => setGravityInput(event.target.value)} placeholder="Gravity (e.g. 1.050)" />
+                    <input type="number" inputMode="decimal" step="0.1" value={tempInput} onChange={(event) => setTempInput(event.target.value)} placeholder="Temp °C (optional)" />
+                    <button type="button" className="dark-btn" disabled={taskBusy} onClick={async () => {
+                      const gravity = Number(gravityInput);
+                      if (!Number.isFinite(gravity) || gravity <= 0) { setTaskError("Enter a valid gravity value."); return; }
+                      const tempC = tempInput.trim() ? Number(tempInput) : null;
+                      if (tempC !== null && !Number.isFinite(tempC)) { setTaskError("Enter a valid temperature or leave blank."); return; }
+                      try { setTaskBusy(true); await takeGravityReading({ batchId: task.batchId, gravity, temperatureC: tempC }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setGravityInput(""); setTempInput(""); }
+                      catch (error) { setTaskError(error instanceof Error ? error.message : "Failed to record gravity reading"); }
+                      finally { setTaskBusy(false); }
+                    }}>Confirm</button>
+                  </div>
+                )}
+                {activeTaskId === task.id && task.id.endsWith(":create-output-lot") && (
+                  <div>
+                    <input type="text" value={lotNumberInput} onChange={(event) => setLotNumberInput(event.target.value)} placeholder="Lot number" />
+                    <input type="number" inputMode="decimal" min="0" step="0.1" value={lotVolumeInput} onChange={(event) => setLotVolumeInput(event.target.value)} placeholder="Volume (L, optional)" />
+                    <input type="number" inputMode="numeric" min="0" step="1" value={lotUnitsInput} onChange={(event) => setLotUnitsInput(event.target.value)} placeholder="Units count (optional)" />
+                    <button type="button" className="dark-btn" disabled={taskBusy || !lotNumberInput.trim()} onClick={async () => {
+                      if (!lotNumberInput.trim()) { setTaskError("Enter a lot number."); return; }
+                      const volumeLiters = lotVolumeInput.trim() ? Number(lotVolumeInput) : null;
+                      const unitsCount = lotUnitsInput.trim() ? Number(lotUnitsInput) : null;
+                      if (volumeLiters !== null && (!Number.isFinite(volumeLiters) || volumeLiters <= 0)) { setTaskError("Enter a valid volume or leave blank."); return; }
+                      if (unitsCount !== null && (!Number.isFinite(unitsCount) || unitsCount <= 0)) { setTaskError("Enter a valid units count or leave blank."); return; }
+                      try { setTaskBusy(true); await createOutputLot({ batchId: task.batchId, lotNumber: lotNumberInput.trim(), volumeLiters, unitsCount }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setLotNumberInput(""); setLotVolumeInput(""); setLotUnitsInput(""); }
+                      catch (error) { setTaskError(error instanceof Error ? error.message : "Failed to create output lot"); }
                       finally { setTaskBusy(false); }
                     }}>Confirm</button>
                   </div>

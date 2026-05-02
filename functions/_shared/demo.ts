@@ -216,25 +216,36 @@ async function fetchTableRows(
   }
 }
 
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) chunks.push(arr.slice(i, i + size));
+  return chunks;
+}
+
+async function fetchFermentationCheckChunk(env: DemoEnv, chunk: string[]): Promise<Array<Record<string, unknown>>> {
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/fermentation_checks?brew_log_id=in.(${chunk.join(",")})&select=*&order=created_at.asc`,
+    { headers: adminHeaders(env) }
+  );
+  return await parseSupabaseResponse<Array<Record<string, unknown>>>(res, "Failed to load fermentation_checks");
+}
+
 async function fetchFermentationChecks(env: DemoEnv, brewLogIds: string[]): Promise<Array<Record<string, unknown>>> {
   if (brewLogIds.length === 0) return [];
   try {
-    const idList = brewLogIds.join(",");
-    const res = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/fermentation_checks?brew_log_id=in.(${idList})&select=*&order=created_at.asc`,
-      { headers: adminHeaders(env) }
-    );
-    return await parseSupabaseResponse<Array<Record<string, unknown>>>(res, "Failed to load fermentation_checks");
+    const chunks = chunkArray(brewLogIds, 25);
+    const results = await Promise.all(chunks.map((chunk) => fetchFermentationCheckChunk(env, chunk)));
+    return results.flat();
   } catch (error) {
-    if (!(error instanceof DemoHttpError)) throw error;
-    const normalizedMessage = error.message.toLowerCase();
-    const isSafeSkip =
-      error.status === 400 &&
-      (normalizedMessage.includes("brewery_id") ||
+    if (error instanceof DemoHttpError) {
+      const normalizedMessage = error.message.toLowerCase();
+      const isSafeSkip =
+        normalizedMessage.includes("brewery_id") ||
         normalizedMessage.includes("could not find the") ||
-        normalizedMessage.includes("relation"));
-    if (isSafeSkip) return [];
-    throw error;
+        normalizedMessage.includes("relation");
+      if (isSafeSkip) return [];
+    }
+    return [];
   }
 }
 

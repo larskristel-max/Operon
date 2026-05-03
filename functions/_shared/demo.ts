@@ -38,6 +38,8 @@ export interface DemoDashboardData {
   sales: Array<Record<string, unknown>>;
   batch_inputs: Array<Record<string, unknown>>;
   brew_logs: Array<Record<string, unknown>>;
+  mash_steps: Array<Record<string, unknown>>;
+  boil_additions: Array<Record<string, unknown>>;
   fermentation_checks: Array<Record<string, unknown>>;
   pending_movements: Array<Record<string, unknown>>;
 }
@@ -261,7 +263,7 @@ export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string
     "Failed to load demo brewery profile"
   );
 
-  const [tanks, batches, tasks, ingredients, recipes, packagingFormats, lots, inventoryMovements, sales, batchInputs, brewLogs, pendingMovements] = await Promise.all([
+  const [tanks, batches, tasks, ingredients, recipes, packagingFormats, lots, inventoryMovements, sales, batchInputs, brewLogs, mashSteps, boilAdditions, pendingMovements] = await Promise.all([
     fetchTableRows(env, "tanks", demoBreweryId, "*", "name.asc"),
     fetchTableRows(env, "batches", demoBreweryId, "*", "created_at.desc"),
     fetchTableRows(env, "tasks", demoBreweryId, "*", "created_at.desc"),
@@ -273,6 +275,8 @@ export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string
     fetchTableRows(env, "sales", demoBreweryId, "*", "created_at.desc"),
     fetchTableRows(env, "batch_inputs", demoBreweryId, "*", "created_at.desc"),
     fetchTableRows(env, "brew_logs", demoBreweryId, "*", "created_at.desc"),
+    fetchTableRows(env, "mash_steps", demoBreweryId, "*", "created_at.desc"),
+    fetchTableRows(env, "boil_additions", demoBreweryId, "*", "created_at.desc"),
     fetchTableRows(env, "pending_movements", demoBreweryId, "*", "created_at.desc"),
   ]);
 
@@ -292,6 +296,8 @@ export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string
     sales,
     batch_inputs: batchInputs,
     brew_logs: brewLogs,
+    mash_steps: mashSteps,
+    boil_additions: boilAdditions,
     fermentation_checks: fermentationChecks,
     pending_movements: pendingMovements,
   };
@@ -371,6 +377,8 @@ const DASHBOARD_OVERLAY_TABLES: ReadonlyArray<keyof DemoDashboardData> = [
   "sales",
   "batch_inputs",
   "brew_logs",
+  "mash_steps",
+  "boil_additions",
   "fermentation_checks",
   "pending_movements",
 ];
@@ -389,6 +397,8 @@ export function applyDashboardOverlay(baseline: DemoDashboardData, overlays: Ove
     sales: [...baseline.sales],
     batch_inputs: [...baseline.batch_inputs],
     brew_logs: [...baseline.brew_logs],
+    mash_steps: [...baseline.mash_steps],
+    boil_additions: [...baseline.boil_additions],
     fermentation_checks: [...baseline.fermentation_checks],
     pending_movements: [...baseline.pending_movements],
   };

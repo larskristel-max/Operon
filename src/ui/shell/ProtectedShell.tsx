@@ -1161,6 +1161,34 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                       const keyBase = String(log.id ?? idx);
                       const mashVolume = typeof log.actual_mash_volume_liters === "number" ? log.actual_mash_volume_liters : null;
                       const fermenterVolume = typeof log.actual_fermenter_volume_liters === "number" ? log.actual_fermenter_volume_liters : null;
+                      const plannedMashWater = typeof log.planned_mash_water_liters === "number" ? log.planned_mash_water_liters : null;
+                      const actualMashWater = typeof log.actual_mash_water_liters === "number" ? log.actual_mash_water_liters : null;
+                      const originalGravity = typeof log.actual_original_gravity === "number" ? log.actual_original_gravity : null;
+                      const mashPh = typeof log.actual_mash_ph === "number" ? log.actual_mash_ph : null;
+                      if (plannedMashWater !== null || actualMashWater !== null) {
+                        rows.push(
+                          <div key={`${keyBase}-water`} className="brewsheet-row">
+                            <span className="brewsheet-row-label">Mash water</span>
+                            <span className="brewsheet-row-value">{plannedMashWater ?? copy.batchesToComplete} / {actualMashWater ?? copy.batchesToComplete} L</span>
+                          </div>
+                        );
+                      }
+                      if (originalGravity !== null) {
+                        rows.push(
+                          <div key={`${keyBase}-og`} className="brewsheet-row">
+                            <span className="brewsheet-row-label">Original gravity</span>
+                            <span className="brewsheet-row-value">{originalGravity}</span>
+                          </div>
+                        );
+                      }
+                      if (mashPh !== null) {
+                        rows.push(
+                          <div key={`${keyBase}-ph`} className="brewsheet-row">
+                            <span className="brewsheet-row-label">Mash pH</span>
+                            <span className="brewsheet-row-value">{mashPh}</span>
+                          </div>
+                        );
+                      }
                       if (mashVolume !== null) {
                         rows.push(
                           <div key={`${keyBase}-mash`} className="brewsheet-row">

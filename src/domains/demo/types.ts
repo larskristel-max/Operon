@@ -15,6 +15,8 @@ export interface DemoDashboardMerged {
   sales: Array<Record<string, unknown>>;
   batch_inputs: Array<Record<string, unknown>>;
   brew_logs: Array<Record<string, unknown>>;
+  mash_steps: Array<Record<string, unknown>>;
+  boil_additions: Array<Record<string, unknown>>;
   fermentation_checks: Array<Record<string, unknown>>;
   pending_movements: Array<Record<string, unknown>>;
   operational?: OperationalSummary;

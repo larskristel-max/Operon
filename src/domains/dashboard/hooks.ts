@@ -12,6 +12,8 @@ const EMPTY_REAL_DASHBOARD: RealDashboardData = {
   lots: [],
   batch_inputs: [],
   brew_logs: [],
+  mash_steps: [],
+  boil_additions: [],
   fermentation_checks: [],
   pending_movements: [],
 };
@@ -47,6 +49,8 @@ export function useRealDashboard(enabled: boolean): UseRealDashboardResult {
         lots: Array.isArray(payload.lots) ? payload.lots : [],
         batch_inputs: Array.isArray(payload.batch_inputs) ? payload.batch_inputs : [],
         brew_logs: Array.isArray(payload.brew_logs) ? payload.brew_logs : [],
+        mash_steps: Array.isArray(payload.mash_steps) ? payload.mash_steps : [],
+        boil_additions: Array.isArray(payload.boil_additions) ? payload.boil_additions : [],
         fermentation_checks: Array.isArray(payload.fermentation_checks) ? payload.fermentation_checks : [],
         pending_movements: Array.isArray(payload.pending_movements) ? payload.pending_movements : [],
         ...(operational ? { operational } : {}),

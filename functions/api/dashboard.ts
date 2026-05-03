@@ -16,6 +16,8 @@ interface DashboardResponse {
   lots: JsonRecord[];
   batch_inputs: JsonRecord[];
   brew_logs: JsonRecord[];
+  mash_steps: JsonRecord[];
+  boil_additions: JsonRecord[];
   fermentation_checks: JsonRecord[];
   pending_movements: JsonRecord[];
 }
@@ -30,6 +32,8 @@ const EMPTY_DASHBOARD: DashboardResponse = {
   lots: [],
   batch_inputs: [],
   brew_logs: [],
+  mash_steps: [],
+  boil_additions: [],
   fermentation_checks: [],
   pending_movements: [],
 };
@@ -183,7 +187,7 @@ export async function onRequestGet(context: { request: Request; env: Env }): Pro
       return jsonResponse(EMPTY_DASHBOARD);
     }
 
-    const [tanks, batches, tasks, ingredientRows, inventoryMovements, sales, lots, batchInputs, brewLogs, pendingMovements] = await Promise.all([
+    const [tanks, batches, tasks, ingredientRows, inventoryMovements, sales, lots, batchInputs, brewLogs, mashSteps, boilAdditions, pendingMovements] = await Promise.all([
       fetchOptionalRows(env, "tanks", breweryId, "name.asc"),
       fetchRows(env, "batches", breweryId, "created_at.desc"),
       fetchRows(env, "tasks", breweryId, "created_at.desc"),
@@ -193,6 +197,8 @@ export async function onRequestGet(context: { request: Request; env: Env }): Pro
       fetchOptionalRows(env, "lots", breweryId, "created_at.desc"),
       fetchOptionalRows(env, "batch_inputs", breweryId, "created_at.desc"),
       fetchOptionalRows(env, "brew_logs", breweryId, "created_at.desc"),
+      fetchOptionalRows(env, "mash_steps", breweryId, "created_at.desc"),
+      fetchOptionalRows(env, "boil_additions", breweryId, "created_at.desc"),
       fetchOptionalRows(env, "pending_movements", breweryId, "created_at.desc"),
     ]);
 
@@ -208,6 +214,8 @@ export async function onRequestGet(context: { request: Request; env: Env }): Pro
       lots,
       batch_inputs: batchInputs,
       brew_logs: brewLogs,
+      mash_steps: mashSteps,
+      boil_additions: boilAdditions,
       fermentation_checks: fermentationChecks,
       pending_movements: pendingMovements,
     });

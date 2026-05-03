@@ -783,6 +783,8 @@ button, input { font: inherit; }
   border-radius: 24px 24px 20px 20px;
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.48);
   animation: sheet-rise 220ms cubic-bezier(0.2, 0.95, 0.28, 1);
+  max-height: 80vh;
+  overflow-y: auto;
 }
 
 .brew-entry-backdrop {

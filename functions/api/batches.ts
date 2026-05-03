@@ -9,6 +9,21 @@ interface Body {
   recipeId?: string;
   uploadIntakeId?: string;
   draftId?: string;
+  batchNumber?: string;
+}
+async function nextBatchNumber(env: Env, breweryId: string): Promise<string> {
+  const yy = new Date().getUTCFullYear().toString().slice(-2);
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/batches?brewery_id=eq.${encodeURIComponent(breweryId)}&select=batch_number&limit=10000`, { headers: adminHeaders(env) });
+  const rows = (await parseResponseBody(res)) as Array<Record<string, unknown>>;
+  const re = new RegExp(`^${yy}-(\\d+)$`);
+  let max = 0;
+  for (const row of rows ?? []) {
+    const n = typeof row.batch_number === "string" ? row.batch_number : "";
+    const m = n.match(re);
+    if (m) max = Math.max(max, Number.parseInt(m[1], 10));
+  }
+  const next = max + 1;
+  return `${yy}-${String(next).padStart(3, "0")}`;
 }
 
 function adminHeaders(env: Env): Record<string, string> {
@@ -92,6 +107,7 @@ export async function onRequestPost(context: { request: Request; env: Env }): Pr
     recipe_id: body.recipeId ?? null,
     status: "planned",
     name: batchName,
+    batch_number: body.batchNumber?.trim() || (await nextBatchNumber(context.env, breweryId)),
   };
 
   const firstInsertRes = await postInsert(context.env, basePayload);

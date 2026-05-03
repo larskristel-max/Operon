@@ -339,7 +339,7 @@ export function useBrewEntryFlow({
     [prepareDraft],
   );
 
-  const confirmDraft = useCallback(async () => {
+  const confirmDraft = useCallback(async (batchNumber?: string) => {
     const current = state;
     if (!current.draftPreview || !current.selectedSource || current.selectedSource === "new-recipe") {
       setState((prev) => ({ ...prev, error: "Prepare a draft first" }));
@@ -374,6 +374,7 @@ export function useBrewEntryFlow({
           recipeId: current.selectedRecipeId,
           uploadIntakeId: current.uploadIntake?.intakeId ?? current.draftPreview.recipeDraft.uploadIntakeId,
           draftId: current.draftPreview.draftId,
+          batchNumber: batchNumber?.trim() ? batchNumber.trim() : undefined,
         });
       }
 

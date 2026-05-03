@@ -1,4 +1,5 @@
 export type TaskType =
+  | "start_brewing"
   | "assign_tank"
   | "assign_inputs"
   | "record_mash_volume"
@@ -135,6 +136,7 @@ export function computeTasks(input: {
 
     if (batchInputs.length === 0) tasks.push({ id: taskId(batchId, "assign_inputs", `${status || "unknown"}:no_batch_inputs`), type: "assign_inputs", batch_id: batchId, label: "Assign ingredient lots", actionable: true, batch_label: batchLabel });
     if (status === "planned" && !hasTank) tasks.push({ id: taskId(batchId, "assign_tank", "planned:no_tank"), type: "assign_tank", batch_id: batchId, label: "Assign tank", actionable: true, batch_label: batchLabel });
+    if (status === "planned" && hasTank && batchInputs.length > 0) tasks.push({ id: taskId(batchId, "start_brewing", "planned:ready_to_start"), type: "start_brewing", batch_id: batchId, label: "Start brewing", actionable: true, batch_label: batchLabel });
     if (status === "brewing" && !hasMashVolume) tasks.push({ id: taskId(batchId, "record_mash_volume", "brewing:no_mash_volume"), type: "record_mash_volume", batch_id: batchId, label: "Record mash volume", actionable: true, batch_label: batchLabel });
     if (status === "brewing" && !hasMashWater) tasks.push({ id: taskId(batchId, "record_mash_water", "brewing:no_mash_water"), type: "record_mash_water", batch_id: batchId, label: "Record mash water", actionable: true, batch_label: batchLabel });
     if (status === "brewing" && !hasStrikeTemp) tasks.push({ id: taskId(batchId, "record_strike_temp", "brewing:no_strike_temp"), type: "record_strike_temp", batch_id: batchId, label: "Record strike temp", actionable: true, batch_label: batchLabel });

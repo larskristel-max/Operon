@@ -1264,7 +1264,8 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                 <div className={`brewsheet-section ${(Boolean(brewLogsTask) || selectedBatchBrewLogs.length > 0) ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 2 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={(Boolean(brewLogsTask) || selectedBatchBrewLogs.length > 0) ? "button" : undefined} tabIndex={(Boolean(brewLogsTask) || selectedBatchBrewLogs.length > 0) ? 0 : undefined} onClick={() => setBrewLogsExpanded((prev) => !prev)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { if (!brewLogsTask && selectedBatchBrewLogs.length === 0) return; event.preventDefault(); setBrewLogsExpanded((prev) => !prev); } }}>
                   <p className="brewsheet-section-title">{copy.batchesBrewLogs}</p>
                   <div className="brewsheet-rows">
-                    {selectedBatchBrewLogs.length === 0 ? <p className="brewsheet-empty-hint">{copy.batchesToComplete}</p> : selectedBatchBrewLogs.slice(0, 3).flatMap((log, idx) => {
+                    {brewLogsTask ? <button type="button" className="dark-btn task-toggle-btn" onClick={(event) => { event.stopPropagation(); openBatchTaskList(String(selectedBatch.id ?? "")); }}>{copy.batchesSeeTasks}</button> : null}
+                    {!brewLogsExpanded ? <p className="brewsheet-empty-hint">{selectedBatchBrewLogs.length > 0 ? copy.viewAll : copy.batchesToComplete}</p> : selectedBatchBrewLogs.length === 0 ? <p className="brewsheet-empty-hint">{copy.batchesToComplete}</p> : selectedBatchBrewLogs.slice(0, 3).flatMap((log, idx) => {
                       const rows: ReactNode[] = [];
                       const keyBase = String(log.id ?? idx);
                       const mashVolume = typeof log.actual_mash_volume_liters === "number" ? log.actual_mash_volume_liters : null;

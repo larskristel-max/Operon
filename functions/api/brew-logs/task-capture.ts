@@ -20,7 +20,7 @@ export async function onRequestPost(context: { request: Request; env: BreweryEnv
   const brewLogPayload: Record<string, unknown> = { brewery_id: breweryId, batch_id: body.batchId, log_status: "in_progress", updated_at: now };
   let value = body.value == null ? null : Number(body.value);
   if (body.taskType !== "record_hop_addition" && (value === null || !Number.isFinite(value))) return jsonResponse({ error: "value is required" }, 400);
-  if (body.taskType === "record_boil" && value !== null) {
+  if ((body.taskType === "record_boil" || body.taskType === "record_original_gravity") && value !== null) {
     if (Number.isInteger(value) && value >= 980 && value <= 1200) value = value / 1000;
     if (value < 0.98 || value > 1.20) return jsonResponse({ error: "Original gravity must be between 0.98 and 1.20 (e.g. 1.050 or 1050)" }, 422);
   }

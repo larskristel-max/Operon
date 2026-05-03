@@ -310,9 +310,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const [taskScalarInput, setTaskScalarInput] = useState<string>("");
   const [hopNameInput, setHopNameInput] = useState<string>("");
   const [hopUnitInput, setHopUnitInput] = useState<string>("g");
-  const [ingredientIdInput, setIngredientIdInput] = useState<string>("");
-  const [ingredientQuantityInput, setIngredientQuantityInput] = useState<string>("");
-  const [ingredientUnitInput, setIngredientUnitInput] = useState<string>("");
+  const [ingredientLotSelections, setIngredientLotSelections] = useState<Record<string, string>>({});
   const [gravityInput, setGravityInput] = useState<string>("");
   const [tempInput, setTempInput] = useState<string>("");
   const [lotNumberInput, setLotNumberInput] = useState<string>("");
@@ -463,6 +461,8 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
       tasks: merged.tasks,
       lots: merged.lots,
       batchInputs: merged.batch_inputs ?? [],
+      recipeIngredients: merged.recipe_ingredients ?? [],
+      ingredients: merged.ingredients ?? [],
       brewLogs: merged.brew_logs ?? [],
       fermentationChecks: merged.fermentation_checks ?? [],
     });
@@ -506,6 +506,8 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     const id = typeof ing.id === "string" ? ing.id : null;
     return id !== null && isBrewInputIngredient(ing);
   });
+  const recipeIngredients = (merged?.recipe_ingredients ?? []) as Array<Record<string, unknown>>;
+  const ingredientReceipts = (merged?.ingredient_receipts ?? []) as Array<Record<string, unknown>>;
   const allBatches = (merged?.batches ?? []) as Array<Record<string, unknown>>;
   const suggestedBatchNumber = useMemo(() => {
     const yy = new Date().getUTCFullYear().toString().slice(-2);
@@ -565,6 +567,14 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
       (input) => String(input.batch_id ?? "") === batchId
     );
   }, [selectedBatch, merged?.batch_inputs]);
+  const selectedBatchRequiredIngredients = useMemo(() => {
+    if (!selectedBatch) return [];
+    const recipeId = String(selectedBatch.recipe_id ?? "");
+    return recipeIngredients.filter((ri) => String(ri.recipe_id ?? "") === recipeId).filter((ri) => {
+      const ing = availableIngredients.find((a) => String(a.id ?? "") === String(ri.ingredient_id ?? ""));
+      return Boolean(ing);
+    });
+  }, [selectedBatch, recipeIngredients, availableIngredients]);
 
   const selectedBatchBrewLogs = useMemo<Array<Record<string, unknown>>>(() => {
     if (!selectedBatch) return [];
@@ -1126,25 +1136,20 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                 )}
                 {activeTaskId === task.id && task.type === "assign_inputs" && (
                   <div className="task-action-panel">
-                    <div className="task-field-group"><label className="task-select-wrap"><span className="task-field-label">Ingredient</span><select className="task-select" value={ingredientIdInput} onChange={(event) => {
-                      const id = event.target.value;
-                      setIngredientIdInput(id);
-                      const ing = availableIngredients.find((i) => String(i.id ?? "") === id);
-                      const defaultUnit = ing && typeof ing.default_unit === "string" ? ing.default_unit : "";
-                      if (defaultUnit) setIngredientUnitInput(defaultUnit);
-                    }}>
-                      <option value="">Select ingredient</option>
-                      {availableIngredients.map((ing) => <option key={String(ing.id ?? "")} value={String(ing.id ?? "")}>{String(ing.name ?? ing.id ?? "Ingredient")}</option>)}
-                    </select><span className="task-select-chevron" aria-hidden="true">⌄</span></label></div>
-                    {availableIngredients.length === 0 ? <p className="subtle">No ingredients available.</p> : null}
-                    <div className="task-inline-row"><input className="task-input" type="number" inputMode="decimal" min="0" step="0.01" value={ingredientQuantityInput} onChange={(event) => setIngredientQuantityInput(event.target.value)} placeholder="10" />
-                    <input className="task-input task-input-unit" type="text" value={ingredientUnitInput} onChange={(event) => setIngredientUnitInput(event.target.value)} placeholder="kg" /></div>
-                    <button type="button" className="dark-btn brew-confirm-primary task-confirm-btn" disabled={taskBusy || !ingredientIdInput} onClick={async () => {
-                      const qty = Number(ingredientQuantityInput);
-                      if (!ingredientIdInput) { setTaskError("Select an ingredient."); return; }
-                      if (!Number.isFinite(qty) || qty <= 0) { setTaskError("Enter a valid quantity."); return; }
-                      if (!ingredientUnitInput.trim()) { setTaskError("Enter a unit."); return; }
-                      try { setTaskBusy(true); await assignIngredientLots({ batchId: task.batchId, ingredientId: ingredientIdInput, quantity: qty, unit: ingredientUnitInput.trim() }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setIngredientIdInput(""); setIngredientQuantityInput(""); setIngredientUnitInput(""); }
+                    {selectedBatchRequiredIngredients.length === 0 ? <p className="subtle">No recipe ingredients configured.</p> : selectedBatchRequiredIngredients.map((ri) => {
+                      const ingredientId = String(ri.ingredient_id ?? "");
+                      const ingredient = availableIngredients.find((ing) => String(ing.id ?? "") === ingredientId);
+                      const name = String((ingredient?.name ?? ri.ingredient_name ?? ingredientId) || "Ingredient");
+                      const unit = String(ri.unit ?? ingredient?.default_unit ?? "kg");
+                      const quantity = Number(ri.quantity ?? 0);
+                      const selectedReceiptId = ingredientLotSelections[ingredientId] ?? "";
+                      const receiptOptions = ingredientReceipts.filter((row) => String(row.ingredient_id ?? "") === ingredientId);
+                      return <div key={String(ri.id ?? ingredientId)} className="task-field-group"><label className="task-select-wrap"><span className="task-field-label">{name} • {Number.isFinite(quantity) && quantity > 0 ? `${quantity} ${unit}` : unit}</span><select className="task-select" value={selectedReceiptId} onChange={(event) => setIngredientLotSelections((prev) => ({ ...prev, [ingredientId]: event.target.value }))}><option value="">Select inventory lot</option>{receiptOptions.map((row) => <option key={String(row.id ?? "")} value={String(row.id ?? "")}>{String(row.lot_number ?? row.reference ?? row.id ?? "lot")} {row.quantity_remaining != null ? `(${String(row.quantity_remaining)} ${String(row.unit ?? unit)})` : ""}</option>)}</select><span className="task-select-chevron" aria-hidden="true">⌄</span></label></div>;
+                    })}
+                    <button type="button" className="dark-btn brew-confirm-primary task-confirm-btn" disabled={taskBusy || selectedBatchRequiredIngredients.length === 0} onClick={async () => {
+                      const missing = selectedBatchRequiredIngredients.find((ri) => !ingredientLotSelections[String(ri.ingredient_id ?? "")]);
+                      if (missing) { setTaskError("Assign a lot for every required recipe ingredient."); return; }
+                      try { setTaskBusy(true); for (const ri of selectedBatchRequiredIngredients) { const ingredientId = String(ri.ingredient_id ?? ""); await assignIngredientLots({ batchId: task.batchId, ingredientId, ingredientReceiptId: ingredientLotSelections[ingredientId], quantity: Number(ri.quantity ?? 0), unit: String(ri.unit ?? "kg") }); } await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setIngredientLotSelections({}); }
                       catch (error) { setTaskError(error instanceof Error ? error.message : "Failed to assign ingredient lots"); }
                       finally { setTaskBusy(false); }
                     }}>Confirm</button>

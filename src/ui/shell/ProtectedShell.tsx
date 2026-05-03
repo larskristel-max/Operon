@@ -409,6 +409,37 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
         (t) => String(t.current_batch_id ?? "") === String(selectedBatch.id ?? "")
       ) ?? null
     : null;
+  const selectedBatchRawDays = useMemo<number | null>(() => {
+    if (!selectedBatch) return null;
+    for (const key of ["day_in_stage", "day", "days_in_stage", "days_elapsed"]) {
+      const v = selectedBatch[key];
+      if (typeof v === "number" && Number.isFinite(v)) return Math.max(0, Math.floor(v));
+      if (typeof v === "string" && v.trim()) { const n = Number(v); if (Number.isFinite(n)) return Math.max(0, Math.floor(n)); }
+    }
+    return null;
+  }, [selectedBatch]);
+  const selectedBatchLot = useMemo<string | null>(() => {
+    if (!selectedBatch) return null;
+    for (const key of ["batch_number", "lot_number", "lot", "code"]) {
+      const v = selectedBatch[key];
+      if (typeof v === "string" && v.trim()) return v.trim();
+      if (typeof v === "number") return String(v);
+    }
+    return null;
+  }, [selectedBatch]);
+  const selectedBatchRecipeName = useMemo<string | null>(() => {
+    if (!selectedBatch) return null;
+    if (typeof selectedBatch.recipe_name === "string" && selectedBatch.recipe_name.trim()) return selectedBatch.recipe_name.trim();
+    const recipeId = String(selectedBatch.recipe_id ?? "");
+    return existingRecipes.find((r) => r.id === recipeId)?.name ?? null;
+  }, [selectedBatch, existingRecipes]);
+  const selectedBatchInputs = useMemo<Array<Record<string, unknown>>>(() => {
+    if (!selectedBatch) return [];
+    const batchId = String(selectedBatch.id ?? "");
+    return ((merged?.batch_inputs ?? []) as Array<Record<string, unknown>>).filter(
+      (input) => String(input.batch_id ?? "") === batchId
+    );
+  }, [selectedBatch, merged?.batch_inputs]);
   const visibleTasks = taskScopeBatchId
     ? executableTasks.filter((t) => t.batchId === taskScopeBatchId)
     : executableTasks;
@@ -505,8 +536,8 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
             </div>
           </div>
           <div className="brew-side">
+            <span className="brew-view-all">{copy.viewAll}</span>
             {brewDayLabel ? <strong>{brewDayLabel}</strong> : null}
-            <small className="batch-status">{brewStatusLabel}</small>
           </div>
         </div>
         <div className="fermentation-row">
@@ -798,8 +829,8 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
       {tasksOpen && (
         <section className="brew-entry-backdrop" onClick={closeTasksOverlay} aria-label="Tasks">
           <div className="glass-panel brew-entry-sheet" onClick={(event) => event.stopPropagation()}>
-            <p className="eyebrow">{taskScopeBatchId ? "BATCH TASKS" : "NEEDS ACTION"}</p>
-            <button type="button" className="dark-btn ghost tasks-back-btn" onClick={closeTasksOverlay}>Back</button>
+            <p className="eyebrow">{taskScopeBatchId ? copy.tasksBatchTitle : copy.tasksNeedsAction}</p>
+            <button type="button" className="dark-btn ghost tasks-back-btn" onClick={closeTasksOverlay}>{copy.brewEntryBack}</button>
             {visibleTasks.length === 0 ? (
               <article className="task-empty-state" aria-live="polite">
                 <div className="task-empty-icon" aria-hidden="true">
@@ -924,64 +955,123 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
 
       {batchesOpen && (
         <section className="brew-entry-backdrop" onClick={closeBatchesOverlay} aria-label="Batches overview">
-          <div className="glass-panel brew-entry-sheet" onClick={(event) => event.stopPropagation()}>
+          <div className="glass-panel brew-entry-sheet brewsheet-sheet" onClick={(event) => event.stopPropagation()}>
             {selectedBatch ? (
-              <>
-                <p className="eyebrow">{formatBatchStatus(getBatchStatusKey(selectedBatch))}</p>
-                <button type="button" className="dark-btn ghost tasks-back-btn" onClick={() => setSelectedBatchId(null)}>All batches</button>
-                <h2 className="brew-confirm-title">{getBatchDisplayName(selectedBatch)}</h2>
-                {(() => {
-                  const batchId = String(selectedBatch.id ?? "");
-                  const tankName = selectedBatchTank
-                    ? String(selectedBatchTank.name ?? selectedBatchTank.id ?? "Tank")
-                    : "Not assigned";
-                  const batchTaskCount = executableTasks.filter((t) => t.batchId === batchId).length;
-                  let rawDays: number | null = null;
-                  for (const key of ["day_in_stage", "day", "days_in_stage", "days_elapsed"]) {
-                    const v = selectedBatch[key];
-                    if (typeof v === "number" && Number.isFinite(v)) { rawDays = Math.max(0, Math.floor(v)); break; }
-                    if (typeof v === "string" && v.trim()) { const n = Number(v); if (Number.isFinite(n)) { rawDays = Math.max(0, Math.floor(n)); break; } }
-                  }
-                  return (
-                    <div className="brew-confirm-summary task-item">
-                      {rawDays !== null && (
-                        <div className="brew-confirm-row">
-                          <span className="brew-confirm-label">Day</span>
-                          <span className="brew-confirm-value">{rawDays}</span>
-                        </div>
-                      )}
-                      <div className="brew-confirm-row">
-                        <span className="brew-confirm-label">Tank</span>
-                        <span className="brew-confirm-value">{tankName}</span>
+              <div className="brewsheet">
+                {/* Brewsheet header */}
+                <div className="brewsheet-header">
+                  <button type="button" className="dark-btn ghost tasks-back-btn" onClick={() => setSelectedBatchId(null)}>
+                    {copy.batchesAllBatches}
+                  </button>
+                  <p className="eyebrow gold">{copy.currentlyBrewing}</p>
+                  <h2 className="brewsheet-batch-name">{getBatchDisplayName(selectedBatch)}</h2>
+                  {selectedBatchLot && (
+                    <p className="subtle brewsheet-lot">{copy.batchIdPrefix}{selectedBatchLot}</p>
+                  )}
+                </div>
+
+                {/* Section 1 — État */}
+                <div className="brewsheet-section">
+                  <p className="brewsheet-section-title">{copy.batchesEtat}</p>
+                  <div className="brewsheet-rows">
+                    <div className="brewsheet-row">
+                      <span className="brewsheet-row-label">{copy.batchesStatus}</span>
+                      <span className="brewsheet-row-value">{formatBatchStatus(getBatchStatusKey(selectedBatch))}</span>
+                    </div>
+                    {selectedBatchRawDays !== null && (
+                      <div className="brewsheet-row">
+                        <span className="brewsheet-row-label">{copy.batchesDayLabel}</span>
+                        <span className="brewsheet-row-value">{selectedBatchRawDays}</span>
                       </div>
-                      <div className="brew-confirm-row">
-                        <span className="brew-confirm-label">Open tasks</span>
-                        <span className="brew-confirm-value">{batchTaskCount}</span>
+                    )}
+                    {selectedBatchRecipeName && (
+                      <div className="brewsheet-row">
+                        <span className="brewsheet-row-label">{copy.brewEntryRecipeLabel}</span>
+                        <span className="brewsheet-row-value">{selectedBatchRecipeName}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Section 2 — Cuve */}
+                <div className="brewsheet-section">
+                  <p className="brewsheet-section-title">{copy.batchesCuve}</p>
+                  <div className="brewsheet-rows">
+                    <div className="brewsheet-row">
+                      <span className="brewsheet-row-label">{copy.batchesCuve}</span>
+                      <span className="brewsheet-row-value">
+                        {selectedBatchTank
+                          ? String(selectedBatchTank.name ?? selectedBatchTank.id ?? copy.batchesCuve)
+                          : copy.batchesNotAssigned}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 3 — Intrants */}
+                <div className="brewsheet-section">
+                  <p className="brewsheet-section-title">{copy.batchesIntrants}</p>
+                  <div className="brewsheet-rows">
+                    {selectedBatchInputs.length === 0 ? (
+                      <p className="brewsheet-empty-hint">{copy.batchesToComplete}</p>
+                    ) : (
+                      selectedBatchInputs.map((input, idx) => {
+                        const inputId = String(input.id ?? idx);
+                        const ingredientId = String(input.ingredient_id ?? "");
+                        const ingredient = ((merged?.ingredients ?? []) as Array<Record<string, unknown>>).find(
+                          (i) => String(i.id ?? "") === ingredientId
+                        );
+                        const ingredientName = ingredient
+                          ? String(ingredient.name ?? ingredientId)
+                          : String(input.ingredient_name ?? ingredientId || copy.batchesToComplete);
+                        const qty = input.quantity != null
+                          ? `${input.quantity}${input.unit ? ` ${String(input.unit)}` : ""}`
+                          : "";
+                        return (
+                          <div key={inputId} className="brewsheet-row">
+                            <span className="brewsheet-row-label">{ingredientName}</span>
+                            <span className="brewsheet-row-value">{qty || copy.batchesToComplete}</span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* Section 4 — Tâches */}
+                {(() => {
+                  const batchIdStr = String(selectedBatch.id ?? "");
+                  const batchTaskCount = executableTasks.filter((t) => t.batchId === batchIdStr).length;
+                  return (
+                    <div className="brewsheet-section brewsheet-section-tasks">
+                      <p className="brewsheet-section-title">{copy.navTasks}</p>
+                      <div className="brewsheet-rows">
+                        <div className="brewsheet-row">
+                          <span className="brewsheet-row-label">{copy.batchesOpenTasks}</span>
+                          <span className="brewsheet-row-value">{batchTaskCount}</span>
+                        </div>
+                      </div>
+                      <div className="brewsheet-actions">
+                        <button
+                          type="button"
+                          className="dark-btn brew-confirm-primary"
+                          onClick={() => {
+                            setTaskScopeBatchId(batchIdStr);
+                            setTasksOpen(true);
+                            closeBatchesOverlay();
+                          }}
+                        >
+                          {copy.batchesSeeTasks}
+                        </button>
                       </div>
                     </div>
                   );
                 })()}
-                <div className="brew-confirm-actions">
-                  <button
-                    type="button"
-                    className="dark-btn brew-confirm-primary"
-                    onClick={() => {
-                      setTaskScopeBatchId(String(selectedBatch.id ?? ""));
-                      setTasksOpen(true);
-                      closeBatchesOverlay();
-                    }}
-                  >
-                    See tasks
-                  </button>
-                  <button type="button" className="dark-btn ghost" onClick={() => setSelectedBatchId(null)}>
-                    Back to list
-                  </button>
-                </div>
-              </>
+              </div>
             ) : (
               <>
-                <p className="eyebrow">BATCHES</p>
-                <button type="button" className="dark-btn ghost tasks-back-btn" onClick={closeBatchesOverlay}>Close</button>
+                <p className="eyebrow">{copy.batches}</p>
+                <button type="button" className="dark-btn ghost tasks-back-btn" onClick={closeBatchesOverlay}>{copy.batchesClose}</button>
                 <div className="batches-filter-tabs">
                   {(["active", "planned", "archived"] as const).map((f) => (
                     <button
@@ -990,7 +1080,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                       className={`batches-filter-tab${batchFilter === f ? " active" : ""}`}
                       onClick={() => setBatchFilter(f)}
                     >
-                      {f === "active" ? "Active" : f === "planned" ? "Planned" : "Archived"}
+                      {f === "active" ? copy.batchesFilterActive : f === "planned" ? copy.batchesFilterPlanned : copy.batchesFilterArchived}
                     </button>
                   ))}
                 </div>
@@ -999,8 +1089,8 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                     <div className="task-empty-icon" aria-hidden="true">
                       <Icon name="brew" className="line-icon icon-md" />
                     </div>
-                    <h4>No {batchFilter} batches</h4>
-                    <p className="subtle">No batches match this filter.</p>
+                    <h4>{batchFilter === "active" ? copy.batchesNoneActive : batchFilter === "planned" ? copy.batchesNonePlanned : copy.batchesNoneArchived}</h4>
+                    <p className="subtle">{copy.batchesNoneMatchSub}</p>
                   </article>
                 ) : (
                   <div className="batch-list">

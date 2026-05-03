@@ -963,7 +963,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                   <button type="button" className="dark-btn ghost tasks-back-btn" onClick={() => setSelectedBatchId(null)}>
                     {copy.batchesAllBatches}
                   </button>
-                  <p className="eyebrow gold">{copy.currentlyBrewing}</p>
+                  <p className="eyebrow gold">{formatBatchStatus(getBatchStatusKey(selectedBatch))}</p>
                   <h2 className="brewsheet-batch-name">{getBatchDisplayName(selectedBatch)}</h2>
                   {selectedBatchLot && (
                     <p className="subtle brewsheet-lot">{copy.batchIdPrefix}{selectedBatchLot}</p>
@@ -1023,7 +1023,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                         );
                         const ingredientName = ingredient
                           ? String(ingredient.name ?? ingredientId)
-                          : String(input.ingredient_name ?? ingredientId || copy.batchesToComplete);
+                          : String(input.ingredient_name ?? (ingredientId || copy.batchesToComplete));
                         const qty = input.quantity != null
                           ? `${input.quantity}${input.unit ? ` ${String(input.unit)}` : ""}`
                           : "";

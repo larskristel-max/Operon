@@ -94,6 +94,76 @@ function formatRelativeReadingTime(value: unknown, locale: string): string | nul
   return sameDay ? `${locale === "fr" ? "aujourd’hui" : "today"} ${time}` : new Intl.DateTimeFormat(locale, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(date);
 }
 
+
+
+type BrewLogRow = { label: string; value: string };
+type BrewLogSection = { key: string; title: string; rows: BrewLogRow[] };
+
+function buildBrewLogSections(params: { language: string; brewLogs: Array<Record<string, unknown>>; boilAdditions: Array<Record<string, unknown>>; fermentationChecks: Array<Record<string, unknown>>; }): BrewLogSection[] {
+  const { language, brewLogs, boilAdditions, fermentationChecks } = params;
+  const isFr = language === "fr";
+  const fmtNum = (v: unknown, digits = 1) => {
+    const n = typeof v === 'number' ? v : Number(v);
+    if (!Number.isFinite(n)) return null;
+    return n.toFixed(digits).replace(/\.0+$/, '');
+  };
+  const rows: BrewLogSection[] = [];
+  const latest = [...brewLogs].sort((a,b)=>Date.parse(String(b.created_at??''))-Date.parse(String(a.created_at??'')))[0] ?? null;
+  if (latest) {
+    const mashRows: BrewLogRow[] = [];
+    const mashVolume = fmtNum(latest.actual_mash_volume_liters, 1); if (mashVolume) mashRows.push({ label: isFr ? "Volume empâtage" : "Mash volume", value: `${mashVolume} L` });
+    const mashWater = fmtNum(latest.actual_mash_water_liters, 1); if (mashWater) mashRows.push({ label: isFr ? "Eau d’empâtage" : "Mash water", value: `${mashWater} L` });
+    const strike = fmtNum(latest.actual_strike_water_temp_c, 1); if (strike) mashRows.push({ label: isFr ? "Température d’attaque" : "Strike temperature", value: `${strike} °C` });
+    const mashPh = fmtNum(latest.actual_mash_ph, 2); if (mashPh) mashRows.push({ label: isFr ? "pH empâtage" : "Mash pH", value: mashPh });
+    if (mashRows.length) rows.push({ key: 'mash', title: isFr ? 'Empâtage' : 'Mash', rows: mashRows });
+
+    const spargeRows: BrewLogRow[] = [];
+    const spargeWater = fmtNum(latest.actual_sparge_water_liters, 1); if (spargeWater) spargeRows.push({ label: isFr ? "Eau de rinçage" : "Sparge water", value: `${spargeWater} L` });
+    const spargeTemp = fmtNum(latest.actual_sparge_temp_c, 1); if (spargeTemp) spargeRows.push({ label: isFr ? "Température eau de rinçage" : "Sparge temperature", value: `${spargeTemp} °C` });
+    if (spargeRows.length) rows.push({ key: 'sparge', title: isFr ? 'Rinçage' : 'Sparge', rows: spargeRows });
+
+    const boilRows: BrewLogRow[] = [];
+    if (latest.actual_pre_boil_gravity != null) boilRows.push({ label: isFr ? "Densité avant ébullition" : "Pre-boil gravity", value: formatSpecificGravity(latest.actual_pre_boil_gravity) });
+    if (latest.actual_original_gravity != null) boilRows.push({ label: isFr ? "Densité initiale" : "Original gravity", value: formatSpecificGravity(latest.actual_original_gravity) });
+    if (boilRows.length) rows.push({ key: 'boil', title: isFr ? 'Ébullition' : 'Boil', rows: boilRows });
+
+    const transferRows: BrewLogRow[] = [];
+    const transferVol = fmtNum(latest.actual_fermenter_volume_liters ?? latest.actual_transfer_volume_liters, 1); if (transferVol) transferRows.push({ label: isFr ? "Volume transféré" : "Transfer volume", value: `${transferVol} L` });
+    const transferTemp = fmtNum(latest.actual_transfer_temp_c, 1); if (transferTemp) transferRows.push({ label: isFr ? "Température de transfert" : "Transfer temperature", value: `${transferTemp} °C` });
+    if (typeof latest.transfer_started_at === 'string') transferRows.push({ label: isFr ? "Transfert démarré" : "Transfer started", value: new Date(latest.transfer_started_at).toLocaleString(language) });
+    if (typeof latest.transfer_finished_at === 'string') transferRows.push({ label: isFr ? "Transfert terminé" : "Transfer finished", value: new Date(latest.transfer_finished_at).toLocaleString(language) });
+    if (transferRows.length) rows.push({ key: 'transfer', title: isFr ? 'Transfert' : 'Transfer', rows: transferRows });
+
+    const yeastRows: BrewLogRow[] = [];
+    const qty = fmtNum(latest.yeast_pitch_quantity, 2);
+    const unit = typeof latest.yeast_pitch_unit === 'string' ? latest.yeast_pitch_unit : '';
+    if (qty) yeastRows.push({ label: isFr ? 'Ensemencement levure' : 'Yeast pitch', value: `${qty}${unit ? ` ${unit}` : ''}` });
+    if (typeof latest.yeast_pitch_time === 'string') yeastRows.push({ label: isFr ? 'Heure' : 'Time', value: new Date(latest.yeast_pitch_time).toLocaleString(language) });
+    if (yeastRows.length) rows.push({ key: 'yeast', title: isFr ? 'Levure' : 'Yeast pitch', rows: yeastRows });
+  }
+
+  if (boilAdditions.length) {
+    const hopRows = boilAdditions.map((addition) => {
+      const name = String(addition.ingredient_name ?? addition.ingredient_id ?? 'Hop');
+      const qty = fmtNum(addition.quantity, 2) ?? '—';
+      const unit = typeof addition.unit === 'string' ? addition.unit : '';
+      const stage = typeof addition.addition_stage === 'string' ? addition.addition_stage : (typeof addition.stage === 'string' ? addition.stage : '');
+      return { label: name, value: `${qty}${unit ? ` ${unit}` : ''}${stage ? ` — ${stage}` : ''}` };
+    });
+    rows.push({ key: 'hop', title: isFr ? 'Houblonnage' : 'Hop additions', rows: hopRows });
+  }
+  if (fermentationChecks.length) {
+    const frRows = fermentationChecks.map((check) => {
+      const when = typeof check.measured_at === 'string' ? new Date(check.measured_at).toLocaleString(language) : '—';
+      const gravity = check.gravity != null ? formatSpecificGravity(check.gravity) : '—';
+      const temp = fmtNum(check.temperature_c, 1);
+      return { label: when, value: `${gravity}${temp ? ` — ${temp} °C` : ''}` };
+    });
+    rows.push({ key: 'ferm', title: isFr ? 'Relevés de fermentation' : 'Fermentation readings', rows: frRows });
+  }
+  return rows;
+}
+
 function Icon({ name, className }: { name: IconName; className?: string }) {
   switch (name) {
     case "bell":
@@ -251,7 +321,6 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const [taskError, setTaskError] = useState<string | null>(null);
   const [taskBusy, setTaskBusy] = useState(false);
   const [gravityActionOpen, setGravityActionOpen] = useState(false);
-  const [brewLogsExpanded, setBrewLogsExpanded] = useState(false);
   const touchStartY = useRef<number | null>(null);
   const touchStartX = useRef<number | null>(null);
   const touchDeltaY = useRef(0);
@@ -503,6 +572,11 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     const batchId = String(selectedBatch.id ?? "");
     return ((merged?.brew_logs ?? []) as Array<Record<string, unknown>>).filter((log) => String(log.batch_id ?? "") === batchId);
   }, [selectedBatch, merged?.brew_logs]);
+  const selectedBatchBoilAdditions = useMemo<Array<Record<string, unknown>>>(() => {
+    if (!selectedBatch) return [];
+    const batchId = String(selectedBatch.id ?? "");
+    return ((merged?.boil_additions ?? []) as Array<Record<string, unknown>>).filter((row) => String(row.batch_id ?? "") === batchId || String(row.brew_log_id ?? "").length > 0 && selectedBatchBrewLogs.some((log) => String(log.id ?? "") === String(row.brew_log_id ?? "")));
+  }, [merged?.boil_additions, selectedBatch, selectedBatchBrewLogs]);
   const selectedBatchFermentationChecks = useMemo<Array<Record<string, unknown>>>(() => {
     if (!selectedBatch) return [];
     const batchId = String(selectedBatch.id ?? "");
@@ -542,6 +616,12 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     setActiveTaskId(null);
     closeBatchesOverlay();
   };
+  const brewLogSections = useMemo(() => buildBrewLogSections({
+    language,
+    brewLogs: selectedBatchBrewLogs,
+    boilAdditions: selectedBatchBoilAdditions,
+    fermentationChecks: selectedBatchFermentationChecks,
+  }), [language, selectedBatchBrewLogs, selectedBatchBoilAdditions, selectedBatchFermentationChecks, selectedBatchInputs]);
   const latestFermentationCheck = useMemo<Record<string, unknown> | null>(() => {
     if (selectedBatchFermentationChecks.length === 0) return null;
     const sorted = [...selectedBatchFermentationChecks].sort((a, b) => {
@@ -1261,69 +1341,16 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                   </div>
                 </div>
 
-                <div className={`brewsheet-section ${(Boolean(brewLogsTask) || selectedBatchBrewLogs.length > 0) ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 2 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={(Boolean(brewLogsTask) || selectedBatchBrewLogs.length > 0) ? "button" : undefined} tabIndex={(Boolean(brewLogsTask) || selectedBatchBrewLogs.length > 0) ? 0 : undefined} onClick={() => setBrewLogsExpanded((prev) => !prev)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { if (!brewLogsTask && selectedBatchBrewLogs.length === 0) return; event.preventDefault(); setBrewLogsExpanded((prev) => !prev); } }}>
+                <div className={`brewsheet-section ${(brewLogSections.length > 0) ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 2 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`}>
                   <p className="brewsheet-section-title">{copy.batchesBrewLogs}</p>
                   <div className="brewsheet-rows">
-                    {brewLogsTask ? <button type="button" className="dark-btn task-toggle-btn" onClick={(event) => { event.stopPropagation(); openBatchTaskList(String(selectedBatch.id ?? "")); }}>{copy.batchesSeeTasks}</button> : null}
-                    {!brewLogsExpanded ? <p className="brewsheet-empty-hint">{selectedBatchBrewLogs.length > 0 ? copy.viewAll : copy.batchesToComplete}</p> : selectedBatchBrewLogs.length === 0 ? <p className="brewsheet-empty-hint">{copy.batchesToComplete}</p> : selectedBatchBrewLogs.slice(0, 3).flatMap((log, idx) => {
-                      const rows: ReactNode[] = [];
-                      const keyBase = String(log.id ?? idx);
-                      const mashVolume = typeof log.actual_mash_volume_liters === "number" ? log.actual_mash_volume_liters : null;
-                      const fermenterVolume = typeof log.actual_fermenter_volume_liters === "number" ? log.actual_fermenter_volume_liters : null;
-                      const plannedMashWater = typeof log.planned_mash_water_liters === "number" ? log.planned_mash_water_liters : null;
-                      const actualMashWater = typeof log.actual_mash_water_liters === "number" ? log.actual_mash_water_liters : null;
-                      const originalGravity = typeof log.actual_original_gravity === "number" ? log.actual_original_gravity : null;
-                      const mashPh = typeof log.actual_mash_ph === "number" ? log.actual_mash_ph : null;
-                      if (plannedMashWater !== null || actualMashWater !== null) {
-                        rows.push(
-                          <div key={`${keyBase}-water`} className="brewsheet-row">
-                            <span className="brewsheet-row-label">Mash water</span>
-                            <span className="brewsheet-row-value">{plannedMashWater ?? copy.batchesToComplete} / {actualMashWater ?? copy.batchesToComplete} L</span>
-                          </div>
-                        );
-                      }
-                      if (originalGravity !== null) {
-                        rows.push(
-                          <div key={`${keyBase}-og`} className="brewsheet-row">
-                            <span className="brewsheet-row-label">Original gravity</span>
-                            <span className="brewsheet-row-value">{originalGravity}</span>
-                          </div>
-                        );
-                      }
-                      if (mashPh !== null) {
-                        rows.push(
-                          <div key={`${keyBase}-ph`} className="brewsheet-row">
-                            <span className="brewsheet-row-label">Mash pH</span>
-                            <span className="brewsheet-row-value">{mashPh}</span>
-                          </div>
-                        );
-                      }
-                      if (mashVolume !== null) {
-                        rows.push(
-                          <div key={`${keyBase}-mash`} className="brewsheet-row">
-                            <span className="brewsheet-row-label">Mash volume</span>
-                            <span className="brewsheet-row-value">{mashVolume} L</span>
-                          </div>
-                        );
-                      }
-                      if (fermenterVolume !== null) {
-                        rows.push(
-                          <div key={`${keyBase}-transfer`} className="brewsheet-row">
-                            <span className="brewsheet-row-label">Transfer volume</span>
-                            <span className="brewsheet-row-value">{fermenterVolume} L</span>
-                          </div>
-                        );
-                      }
-                      if (rows.length === 0) {
-                        rows.push(
-                          <div key={`${keyBase}-fallback`} className="brewsheet-row">
-                            <span className="brewsheet-row-label">{String(log.log_type ?? "Log")}</span>
-                            <span className="brewsheet-row-value">{copy.batchesToComplete}</span>
-                          </div>
-                        );
-                      }
-                      return rows;
-                    })}
+                    {brewLogSections.length === 0 ? <p className="brewsheet-empty-hint">{copy.batchesToComplete}</p> : brewLogSections.flatMap((section) => section.rows.map((row, idx) => (
+                      <div key={`${section.key}-${idx}`} className="brewsheet-row">
+                        <span className="brewsheet-row-label">{section.title}: {row.label}</span>
+                        <span className="brewsheet-row-value">{row.value}</span>
+                      </div>
+                    )))}
+                    {brewLogsTask ? <button type="button" className="dark-btn task-toggle-btn" onClick={(event) => { event.stopPropagation(); openBatchTaskList(String(selectedBatch.id ?? "")); }}>Needs action</button> : null}
                   </div>
                 </div>
                 <div className={`brewsheet-section ${(Boolean(gravityTask) || selectedBatchFermentationChecks.length > 0) ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 3 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={(Boolean(gravityTask) || selectedBatchFermentationChecks.length > 0) ? "button" : undefined} tabIndex={(Boolean(gravityTask) || selectedBatchFermentationChecks.length > 0) ? 0 : undefined} onClick={() => { if (gravityTask) openBatchTask(gravityTask); else if (selectedBatchFermentationChecks.length > 0) openBatchTaskList(String(selectedBatch.id ?? "")); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { if (!gravityTask && selectedBatchFermentationChecks.length === 0) return; event.preventDefault(); if (gravityTask) openBatchTask(gravityTask); else openBatchTaskList(String(selectedBatch.id ?? "")); } }}>

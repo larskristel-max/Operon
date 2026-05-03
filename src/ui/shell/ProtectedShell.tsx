@@ -517,7 +517,29 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     return sorted[0] ?? null;
   }, [selectedBatchFermentationChecks]);
   const visibleTasks = taskScopeBatchId
-    ? executableTasks.filter((t) => t.batchId === taskScopeBatchId)
+    ? (() => {
+      const scopedTasks = executableTasks.filter((t) => t.batchId === taskScopeBatchId);
+      const scopedBatch = allBatches.find((batch) => String(batch.id ?? "") === taskScopeBatchId);
+      const scopedBatchLabel = scopedBatch ? getBatchDisplayName(scopedBatch) : "Batch";
+      const scopedInputs = ((merged?.batch_inputs ?? []) as Array<Record<string, unknown>>).filter((row) => String(row.batch_id ?? "") === taskScopeBatchId);
+      const scopedLogs = ((merged?.brew_logs ?? []) as Array<Record<string, unknown>>).filter((row) => String(row.batch_id ?? "") === taskScopeBatchId);
+      const scopedFermentation = ((merged?.fermentation_checks ?? []) as Array<Record<string, unknown>>).filter((row) => String(row.batch_id ?? "") === taskScopeBatchId);
+      const scopedLots = ((merged?.lots ?? []) as Array<Record<string, unknown>>).filter((row) => String(row.batch_id ?? "") === taskScopeBatchId);
+      const supplementalTasks = [];
+      if (scopedInputs.length > 0 && !scopedTasks.some((task) => task.type === "assign_inputs")) {
+        supplementalTasks.push({ id: `manual:${taskScopeBatchId}:assign_inputs`, type: "assign_inputs", batchId: taskScopeBatchId, label: "Add ingredient input", batchLabel: scopedBatchLabel });
+      }
+      if (scopedLogs.length > 0 && !scopedTasks.some((task) => task.type === "record_transfer_volume" || task.type === "record_mash_volume")) {
+        supplementalTasks.push({ id: `manual:${taskScopeBatchId}:record_transfer_volume`, type: "record_transfer_volume", batchId: taskScopeBatchId, label: "Add brew log volume", batchLabel: scopedBatchLabel });
+      }
+      if (scopedFermentation.length > 0 && !scopedTasks.some((task) => task.type === "take_gravity_reading")) {
+        supplementalTasks.push({ id: `manual:${taskScopeBatchId}:take_gravity_reading`, type: "take_gravity_reading", batchId: taskScopeBatchId, label: "Add gravity reading", batchLabel: scopedBatchLabel });
+      }
+      if (scopedLots.length > 0 && !scopedTasks.some((task) => task.type === "create_output_lot")) {
+        supplementalTasks.push({ id: `manual:${taskScopeBatchId}:create_output_lot`, type: "create_output_lot", batchId: taskScopeBatchId, label: "Add output lot", batchLabel: scopedBatchLabel });
+      }
+      return [...scopedTasks, ...supplementalTasks];
+    })()
     : executableTasks;
   const closeBatchesOverlay = () => {
     setBatchesOpen(false);

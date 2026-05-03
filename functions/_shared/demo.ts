@@ -251,6 +251,37 @@ async function fetchFermentationChecks(env: DemoEnv, brewLogIds: string[]): Prom
   }
 }
 
+async function fetchRowsByBrewLogIds(
+  env: DemoEnv,
+  tableName: "mash_steps" | "boil_additions",
+  brewLogIds: string[]
+): Promise<Array<Record<string, unknown>>> {
+  if (brewLogIds.length === 0) return [];
+  try {
+    const chunks = chunkArray(brewLogIds, 25);
+    const results = await Promise.all(
+      chunks.map(async (chunk) => {
+        const res = await fetch(
+          `${env.SUPABASE_URL}/rest/v1/${tableName}?brew_log_id=in.(${chunk.join(",")})&select=*&order=created_at.desc`,
+          { headers: adminHeaders(env) }
+        );
+        return parseSupabaseResponse<Array<Record<string, unknown>>>(res, `Failed to load ${tableName}`);
+      })
+    );
+    return results.flat();
+  } catch (error) {
+    if (error instanceof DemoHttpError) {
+      const normalizedMessage = error.message.toLowerCase();
+      const isSafeSkip =
+        normalizedMessage.includes("could not find the") ||
+        normalizedMessage.includes("relation") ||
+        normalizedMessage.includes("does not exist");
+      if (isSafeSkip) return [];
+    }
+    return [];
+  }
+}
+
 export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string): Promise<DemoDashboardData> {
   const breweryRes = await fetch(
     `${env.SUPABASE_URL}/rest/v1/brewery_profiles?id=eq.${encodeURIComponent(
@@ -263,7 +294,7 @@ export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string
     "Failed to load demo brewery profile"
   );
 
-  const [tanks, batches, tasks, ingredients, recipes, packagingFormats, lots, inventoryMovements, sales, batchInputs, brewLogs, mashSteps, boilAdditions, pendingMovements] = await Promise.all([
+  const [tanks, batches, tasks, ingredients, recipes, packagingFormats, lots, inventoryMovements, sales, batchInputs, brewLogs, pendingMovements] = await Promise.all([
     fetchTableRows(env, "tanks", demoBreweryId, "*", "name.asc"),
     fetchTableRows(env, "batches", demoBreweryId, "*", "created_at.desc"),
     fetchTableRows(env, "tasks", demoBreweryId, "*", "created_at.desc"),
@@ -275,13 +306,15 @@ export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string
     fetchTableRows(env, "sales", demoBreweryId, "*", "created_at.desc"),
     fetchTableRows(env, "batch_inputs", demoBreweryId, "*", "created_at.desc"),
     fetchTableRows(env, "brew_logs", demoBreweryId, "*", "created_at.desc"),
-    fetchTableRows(env, "mash_steps", demoBreweryId, "*", "created_at.desc"),
-    fetchTableRows(env, "boil_additions", demoBreweryId, "*", "created_at.desc"),
     fetchTableRows(env, "pending_movements", demoBreweryId, "*", "created_at.desc"),
   ]);
 
   const brewLogIds = brewLogs.map((l) => l.id).filter((id): id is string => typeof id === "string" && id.length > 0);
-  const fermentationChecks = await fetchFermentationChecks(env, brewLogIds);
+  const [fermentationChecks, mashSteps, boilAdditions] = await Promise.all([
+    fetchFermentationChecks(env, brewLogIds),
+    fetchRowsByBrewLogIds(env, "mash_steps", brewLogIds),
+    fetchRowsByBrewLogIds(env, "boil_additions", brewLogIds),
+  ]);
 
   return {
     brewery_profile: breweryRows[0] ?? null,

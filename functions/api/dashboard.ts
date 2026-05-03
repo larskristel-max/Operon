@@ -102,6 +102,32 @@ async function fetchFermentationChecksByBrewLogs(env: Env, brewLogs: JsonRecord[
   }
 }
 
+async function fetchTableRowsByBrewLogs(
+  env: Env,
+  tableName: "mash_steps" | "boil_additions",
+  brewLogs: JsonRecord[]
+): Promise<JsonRecord[]> {
+  const ids = brewLogs.map((l) => l.id).filter((id): id is string => typeof id === "string" && id.length > 0);
+  if (ids.length === 0) return [];
+  try {
+    const chunks = chunkArray(ids, 25);
+    const results = await Promise.all(
+      chunks.map(async (chunk) => {
+        const res = await fetch(
+          `${env.SUPABASE_URL}/rest/v1/${tableName}?brew_log_id=in.(${encodeURIComponent(chunk.join(","))})&select=*&order=${encodeURIComponent("created_at.desc")}`,
+          { headers: adminHeaders(env) }
+        );
+        return parseSupabaseResponse<JsonRecord[]>(res, `Failed to load ${tableName}`);
+      })
+    );
+    return results.flat();
+  } catch (error) {
+    const message = error instanceof Error ? error.message.toLowerCase() : "";
+    if (message.includes("relation") || message.includes("does not exist") || message.includes("could not find")) return [];
+    throw error;
+  }
+}
+
 async function fetchOptionalRows(
   env: Env,
   tableName: string,
@@ -187,7 +213,7 @@ export async function onRequestGet(context: { request: Request; env: Env }): Pro
       return jsonResponse(EMPTY_DASHBOARD);
     }
 
-    const [tanks, batches, tasks, ingredientRows, inventoryMovements, sales, lots, batchInputs, brewLogs, mashSteps, boilAdditions, pendingMovements] = await Promise.all([
+    const [tanks, batches, tasks, ingredientRows, inventoryMovements, sales, lots, batchInputs, brewLogs, pendingMovements] = await Promise.all([
       fetchOptionalRows(env, "tanks", breweryId, "name.asc"),
       fetchRows(env, "batches", breweryId, "created_at.desc"),
       fetchRows(env, "tasks", breweryId, "created_at.desc"),
@@ -197,12 +223,14 @@ export async function onRequestGet(context: { request: Request; env: Env }): Pro
       fetchOptionalRows(env, "lots", breweryId, "created_at.desc"),
       fetchOptionalRows(env, "batch_inputs", breweryId, "created_at.desc"),
       fetchOptionalRows(env, "brew_logs", breweryId, "created_at.desc"),
-      fetchOptionalRows(env, "mash_steps", breweryId, "created_at.desc"),
-      fetchOptionalRows(env, "boil_additions", breweryId, "created_at.desc"),
       fetchOptionalRows(env, "pending_movements", breweryId, "created_at.desc"),
     ]);
 
-    const fermentationChecks = await fetchFermentationChecksByBrewLogs(env, brewLogs);
+    const [fermentationChecks, mashSteps, boilAdditions] = await Promise.all([
+      fetchFermentationChecksByBrewLogs(env, brewLogs),
+      fetchTableRowsByBrewLogs(env, "mash_steps", brewLogs),
+      fetchTableRowsByBrewLogs(env, "boil_additions", brewLogs),
+    ]);
 
     return jsonResponse({
       tanks,

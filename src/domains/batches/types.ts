@@ -75,4 +75,5 @@ export interface ConfirmBrewDraftInput {
   recipeId?: string | null;
   uploadIntakeId?: string | null;
   draftId?: string | null;
+  batchNumber?: string | null;
 }

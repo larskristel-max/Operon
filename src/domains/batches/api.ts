@@ -34,3 +34,10 @@ export async function createBatchAfterConfirmation(payload: ConfirmBrewDraftInpu
     body: JSON.stringify(payload),
   });
 }
+
+export async function updateBatchStatus(input: { batchId: string; status: "brewing" }): Promise<Record<string, unknown>> {
+  return apiFetch<Record<string, unknown>>("/api/batches/status", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}

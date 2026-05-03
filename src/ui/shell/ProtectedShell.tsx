@@ -12,12 +12,14 @@ import { useRealDashboard } from "@/hooks/useRealDashboard";
 import { mapRealDashboardToMerged } from "@/domains/dashboard/mappers";
 import { useBottomNavHeight } from "@/ui/shell/useBottomNavHeight";
 import { useBrewEntryFlow } from "@/domains/batches/hooks";
+import { updateBatchStatus } from "@/domains/batches/api";
 import { computeOperationalSummary } from "@/domains/dashboard/operational";
 import { useAssignTank } from "@/domains/tanks/hooks";
 import { useCaptureBrewTask, useRecordMashVolume, useRecordTransferVolume } from "@/domains/brew_logs/hooks";
 import { useAssignIngredientLots } from "@/domains/batch_inputs/hooks";
 import { useTakeGravityReading } from "@/domains/fermentation_checks/hooks";
 import { useCreateOutputLot } from "@/domains/lots/hooks";
+import { writeDemoOverlay } from "@/domains/demo/api";
 
 type IconName =
   | "bell"
@@ -39,7 +41,7 @@ function isBrewInputIngredient(ingredient: Record<string, unknown>): boolean {
   return ["malt", "hops", "yeast", "adjunct", "sugar", "water_additive", "processing_aid"].includes(type);
 }
 
-const BATCH_ACTIVE_FILTER_STATUSES = new Set(["brewing", "fermenting", "conditioning", "ready"]);
+const BATCH_ACTIVE_FILTER_STATUSES = new Set(["planned", "brewing", "fermenting", "conditioning", "ready"]);
 const BATCH_ARCHIVED_FILTER_STATUSES = new Set(["packaged", "closed", "cancelled"]);
 
 function getBatchStatusKey(batch: Record<string, unknown>): string {
@@ -89,7 +91,7 @@ function formatRelativeReadingTime(value: unknown, locale: string): string | nul
   const today = new Date();
   const sameDay = date.toDateString() === today.toDateString();
   const time = new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(date);
-  return sameDay ? `today ${time}` : new Intl.DateTimeFormat(locale, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(date);
+  return sameDay ? `${locale === "fr" ? "aujourd’hui" : "today"} ${time}` : new Intl.DateTimeFormat(locale, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(date);
 }
 
 function Icon({ name, className }: { name: IconName; className?: string }) {
@@ -311,6 +313,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const createOutputLot = useCreateOutputLot({ isDemoMode, breweryId: activeBreweryId ?? null });
 
   const selectedRecipe = existingRecipes.find((recipe) => recipe.id === brewEntryFlow.state.selectedRecipeId) ?? null;
+  const [brewBatchNumber, setBrewBatchNumber] = useState("");
   const selectedRecipeName = selectedRecipe?.name ?? copy.brewEntrySelectedRecipePrefix;
 
   const dashboardData = useMemo<DashboardData>(() => {
@@ -411,6 +414,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const executableTasks = operational.openTasks.filter(
     (task) =>
       task.type === "assign_tank" ||
+      task.type === "start_brewing" ||
       task.type === "record_mash_volume" ||
       task.type === "assign_inputs" ||
       task.type === "record_transfer_volume" ||
@@ -431,6 +435,17 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     return id !== null && isBrewInputIngredient(ing);
   });
   const allBatches = (merged?.batches ?? []) as Array<Record<string, unknown>>;
+  const suggestedBatchNumber = useMemo(() => {
+    const yy = new Date().getUTCFullYear().toString().slice(-2);
+    const re = new RegExp(`(?:^|[^\\d])${yy}-(\\d{3})$`);
+    let max = 0;
+    for (const batch of allBatches) {
+      const raw = typeof batch.batch_number === "string" ? batch.batch_number : "";
+      const match = raw.match(re);
+      if (match) max = Math.max(max, Number.parseInt(match[1], 10));
+    }
+    return `${yy}-${String(max + 1).padStart(3, "0")}`;
+  }, [allBatches]);
   const filteredBatches = allBatches.filter((batch) => {
     const s = getBatchStatusKey(batch);
     if (batchFilter === "active") return BATCH_ACTIVE_FILTER_STATUSES.has(s);
@@ -501,13 +516,13 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const sectionTaskTypes = [
     ["assign_tank"],
     ["assign_inputs"],
-    ["record_mash_volume", "record_transfer_volume"],
+    ["start_brewing", "record_mash_volume", "record_mash_water", "record_strike_temp", "record_sparge_water", "record_mash_ph", "record_pre_boil_gravity", "record_boil", "record_hop_addition", "record_transfer", "record_transfer_volume", "pitch_yeast"],
     ["take_gravity_reading"],
     ["create_output_lot"],
   ] as const;
   const firstIncompleteSectionIndex = sectionTaskTypes.findIndex((types) => selectedBatchTasks.some((task) => types.includes(task.type as never)));
   const assignInputsTask = selectedBatchTasks.find((t) => t.type === "assign_inputs");
-  const brewLogsTask = selectedBatchTasks.find((t) => t.type === "record_mash_volume" || t.type === "record_transfer_volume");
+  const brewLogsTask = selectedBatchTasks.find((t) => ["start_brewing","record_mash_volume","record_mash_water","record_strike_temp","record_sparge_water","record_mash_ph","record_pre_boil_gravity","record_boil","record_hop_addition","record_transfer","record_transfer_volume","pitch_yeast"].includes(t.type));
   const gravityTask = selectedBatchTasks.find((t) => t.type === "take_gravity_reading");
   const outputLotTask = selectedBatchTasks.find((t) => t.type === "create_output_lot");
   const openBatchTask = (task: { id: string; batchId: string }) => {
@@ -902,6 +917,10 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                       </span>
                     </div>
                     <div className="brew-confirm-row">
+                      <span className="brew-confirm-label">{language === "fr" ? "Numéro de lot" : language === "nl" ? "Lotnummer" : language === "de" ? "Chargennummer" : "Lot number"}</span>
+                      <input className="task-input" type="text" value={brewBatchNumber} onChange={(event) => setBrewBatchNumber(event.target.value)} placeholder={suggestedBatchNumber} />
+                    </div>
+                    <div className="brew-confirm-row">
                       <span className="brew-confirm-label">{copy.brewEntryYeastLabel}</span>
                       <span className="brew-confirm-value">
                         {selectedRecipe?.yeast ?? copy.brewEntryMissingValue}
@@ -913,7 +932,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                     <button
                       type="button"
                       className="dark-btn brew-confirm-primary"
-                      onClick={() => void brewEntryFlow.confirmDraft()}
+                      onClick={() => void brewEntryFlow.confirmDraft(brewBatchNumber || suggestedBatchNumber)}
                       disabled={brewEntryFlow.state.isConfirming}
                     >
                       {copy.brewEntryConfirmBrew}
@@ -1020,6 +1039,28 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                       if (!ingredientUnitInput.trim()) { setTaskError("Enter a unit."); return; }
                       try { setTaskBusy(true); await assignIngredientLots({ batchId: task.batchId, ingredientId: ingredientIdInput, quantity: qty, unit: ingredientUnitInput.trim() }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setIngredientIdInput(""); setIngredientQuantityInput(""); setIngredientUnitInput(""); }
                       catch (error) { setTaskError(error instanceof Error ? error.message : "Failed to assign ingredient lots"); }
+                      finally { setTaskBusy(false); }
+                    }}>Confirm</button>
+                  </div>
+                )}
+                {activeTaskId === task.id && task.type === "start_brewing" && (
+                  <div className="task-action-panel">
+                    <button type="button" className="dark-btn brew-confirm-primary task-confirm-btn" disabled={taskBusy} onClick={async () => {
+                      try {
+                        setTaskBusy(true);
+                        if (isDemoMode) {
+                          await writeDemoOverlay({
+                            table_name: "batches",
+                            operation: "update",
+                            record_id: task.batchId,
+                            payload: { status: "brewing", updated_at: new Date().toISOString() },
+                          });
+                        } else {
+                          await updateBatchStatus({ batchId: task.batchId, status: "brewing" });
+                        }
+                        await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard());
+                        setActiveTaskId(null);
+                      } catch (error) { setTaskError(error instanceof Error ? error.message : "Failed to start brewing"); }
                       finally { setTaskBusy(false); }
                     }}>Confirm</button>
                   </div>

@@ -57,7 +57,7 @@ export function useRecordTransferVolume({ isDemoMode, breweryId }: { isDemoMode:
 }
 
 export function useCaptureBrewTask({ isDemoMode, breweryId, brewLogs }: { isDemoMode: boolean; breweryId: string | null; brewLogs?: Array<Record<string, unknown>> }) {
-  return async (input: { taskType: string; batchId: string; value?: number | null; value2?: number | null; timestamp?: string | null }) => {
+  return async (input: { taskType: string; batchId: string; value?: number | null; value2?: number | null; valueText?: string | null; unit?: string | null; timestamp?: string | null }) => {
     if (isDemoMode) {
       if (!breweryId) throw new Error("Demo brewery not available");
       const existingLog = (brewLogs ?? []).find((log) => String(log.batch_id ?? "") === input.batchId) ?? null;
@@ -69,7 +69,7 @@ export function useCaptureBrewTask({ isDemoMode, breweryId, brewLogs }: { isDemo
           table_name: "boil_additions",
           operation: "insert",
           record_id: additionId,
-          payload: { id: additionId, brew_log_id: brewLogId, addition_stage: "boil", duration_min: input.value ?? 60, ingredient_id: input.value2 ?? null, created_at: ts },
+          payload: { id: additionId, brew_log_id: brewLogId, addition_stage: "boil", duration_min: input.value ?? 60, ingredient_id: input.value2 ?? null, ingredient_name: input.valueText ?? null, quantity: input.value ?? null, unit: input.unit ?? "g", created_at: ts },
         });
         return;
       }
@@ -79,7 +79,7 @@ export function useCaptureBrewTask({ isDemoMode, breweryId, brewLogs }: { isDemo
       if (input.taskType === "record_sparge_water") payload.actual_sparge_water_liters = input.value;
       if (input.taskType === "record_mash_ph") payload.actual_mash_ph = input.value;
       if (input.taskType === "record_pre_boil_gravity") payload.actual_pre_boil_gravity = input.value;
-      if (input.taskType === "record_boil") payload.actual_original_gravity = input.value;
+      if (input.taskType === "record_boil" || input.taskType === "record_original_gravity") payload.actual_original_gravity = input.value;
       if (input.taskType === "record_transfer") { payload.actual_transfer_temp_c = input.value; payload.transfer_started_at = ts; payload.transfer_finished_at = input.timestamp ?? ts; }
       if (input.taskType === "pitch_yeast") { payload.yeast_pitch_quantity = input.value; payload.yeast_pitch_time = input.timestamp ?? ts; }
       if (existingLog && brewLogId) {

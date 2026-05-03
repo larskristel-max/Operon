@@ -1,7 +1,7 @@
 import { jsonResponse, unauthorizedResponse, verifySupabaseJwt } from "../../_shared/auth";
 import { resolveBreweryId, type BreweryEnv } from "../../_shared/brewery";
 
-interface Body { taskType?: string; batchId?: string; value?: number | null; value2?: number | null; timestamp?: string | null }
+interface Body { taskType?: string; batchId?: string; value?: number | null; value2?: number | null; valueText?: string | null; unit?: string | null; timestamp?: string | null }
 
 function adminHeaders(env: BreweryEnv): Record<string, string> {
   return { Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`, apikey: env.SUPABASE_SERVICE_ROLE_KEY, "Content-Type": "application/json", Prefer: "return=representation" };
@@ -30,7 +30,7 @@ export async function onRequestPost(context: { request: Request; env: BreweryEnv
   else if (body.taskType === "record_sparge_water") brewLogPayload.actual_sparge_water_liters = value;
   else if (body.taskType === "record_mash_ph") brewLogPayload.actual_mash_ph = value;
   else if (body.taskType === "record_pre_boil_gravity") brewLogPayload.actual_pre_boil_gravity = value;
-  else if (body.taskType === "record_boil") brewLogPayload.actual_original_gravity = value;
+  else if (body.taskType === "record_boil" || body.taskType === "record_original_gravity") brewLogPayload.actual_original_gravity = value;
   else if (body.taskType === "record_transfer") { brewLogPayload.actual_transfer_temp_c = value; brewLogPayload.transfer_started_at = now; brewLogPayload.transfer_finished_at = body.timestamp ?? now; }
   else if (body.taskType === "pitch_yeast") { brewLogPayload.yeast_pitch_quantity = value; brewLogPayload.yeast_pitch_time = body.timestamp ?? now; }
 
@@ -50,7 +50,7 @@ export async function onRequestPost(context: { request: Request; env: BreweryEnv
       brewLogId = createLogRes.ok && Array.isArray(createdLog) ? createdLog[0]?.id ?? null : null;
       if (!brewLogId) return jsonResponse({ error: "Failed to create brew log for hop addition", detail: createdLog }, 400);
     }
-    const res = await fetch(`${context.env.SUPABASE_URL}/rest/v1/boil_additions`, { method: "POST", headers: adminHeaders(context.env), body: JSON.stringify({ brew_log_id: brewLogId, addition_stage: "boil", duration_min: durationMin, ingredient_id: body.value2 ?? null, created_at: now }) });
+    const res = await fetch(`${context.env.SUPABASE_URL}/rest/v1/boil_additions`, { method: "POST", headers: adminHeaders(context.env), body: JSON.stringify({ brew_log_id: brewLogId, addition_stage: "boil", duration_min: durationMin, ingredient_id: body.value2 ?? null, ingredient_name: body.valueText ?? null, quantity: value ?? null, unit: body.unit ?? "g", created_at: now }) });
     const inserted = await res.json();
     if (!res.ok) return jsonResponse({ error: "Failed to record hop addition", detail: inserted }, 400);
     return jsonResponse({ boil_addition: Array.isArray(inserted) ? inserted[0] : inserted }, 201);

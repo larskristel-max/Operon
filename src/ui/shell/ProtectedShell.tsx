@@ -237,6 +237,9 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const [selectedTankId, setSelectedTankId] = useState<string>("");
   const [mashVolumeInput, setMashVolumeInput] = useState<string>("");
   const [transferVolumeInput, setTransferVolumeInput] = useState<string>("");
+  const [taskScalarInput, setTaskScalarInput] = useState<string>("");
+  const [hopNameInput, setHopNameInput] = useState<string>("");
+  const [hopUnitInput, setHopUnitInput] = useState<string>("g");
   const [ingredientIdInput, setIngredientIdInput] = useState<string>("");
   const [ingredientQuantityInput, setIngredientQuantityInput] = useState<string>("");
   const [ingredientUnitInput, setIngredientUnitInput] = useState<string>("");
@@ -248,6 +251,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const [taskError, setTaskError] = useState<string | null>(null);
   const [taskBusy, setTaskBusy] = useState(false);
   const [gravityActionOpen, setGravityActionOpen] = useState(false);
+  const [brewLogsExpanded, setBrewLogsExpanded] = useState(false);
   const touchStartY = useRef<number | null>(null);
   const touchStartX = useRef<number | null>(null);
   const touchDeltaY = useRef(0);
@@ -1027,6 +1031,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                 )}
                 {activeTaskId === task.id && task.type === "record_mash_volume" && (
                   <div className="task-action-panel">
+                    <span className="task-field-label">Mash volume</span>
                     <div className="task-inline-row">
                       <input className="task-input" type="number" inputMode="decimal" min="0" step="0.1" value={mashVolumeInput} onChange={(event) => setMashVolumeInput(event.target.value)} placeholder="10" />
                       <input type="text" className="task-input task-input-unit" value="L" readOnly aria-label="Unit liters" />
@@ -1090,6 +1095,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                 )}
                 {activeTaskId === task.id && task.type === "record_transfer_volume" && (
                   <div className="task-action-panel">
+                    <span className="task-field-label">Transfer volume</span>
                     <div className="task-inline-row">
                       <input className="task-input" type="number" inputMode="decimal" min="0" step="0.1" value={transferVolumeInput} onChange={(event) => setTransferVolumeInput(event.target.value)} placeholder="10" />
                       <input type="text" className="task-input task-input-unit" value="L" readOnly aria-label="Unit liters" />
@@ -1118,13 +1124,16 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                 {activeTaskId === task.id && ["record_mash_water","record_strike_temp","record_sparge_water","record_mash_ph","record_pre_boil_gravity","record_hop_addition","record_transfer","pitch_yeast"].includes(task.type) && (
                   <form className="task-inline-form" onSubmit={async (event) => {
                     event.preventDefault();
-                    const value = Number(mashVolumeInput);
-                    if (task.type !== "record_hop_addition" && (!Number.isFinite(value) || value <= 0)) { setTaskError("Enter a valid value."); return; }
-                    try { setTaskBusy(true); await captureBrewTask({ taskType: task.type, batchId: task.batchId, value: Number.isFinite(value) ? value : 60 }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setMashVolumeInput(""); }
+                    const value = Number(taskScalarInput);
+                    if (!Number.isFinite(value) || value <= 0) { setTaskError("Enter a valid value."); return; }
+                    if (task.type === "record_hop_addition" && !hopNameInput.trim()) { setTaskError("Enter hop name."); return; }
+                    try { setTaskBusy(true); await captureBrewTask({ taskType: task.type, batchId: task.batchId, value, valueText: hopNameInput.trim() || null, unit: hopUnitInput }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setTaskScalarInput(""); setHopNameInput(""); }
                     catch (error) { setTaskError(error instanceof Error ? error.message : "Failed to record brew data"); }
                     finally { setTaskBusy(false); }
                   }}>
-                    <input className="task-input" type="number" step="any" min={task.type === "record_mash_ph" ? "0" : "0.01"} placeholder={task.type === "record_hop_addition" ? "Duration (min)" : "Value"} value={mashVolumeInput} onChange={(event) => setMashVolumeInput(event.target.value)} />
+                    {task.type === "record_hop_addition" ? <input className="task-input" type="text" placeholder="Hop name" value={hopNameInput} onChange={(event) => setHopNameInput(event.target.value)} /> : null}
+                    <input className="task-input" type="number" step="any" min={task.type === "record_mash_ph" ? "0" : "0.01"} placeholder={task.type === "record_hop_addition" ? "Amount" : "Value"} value={taskScalarInput} onChange={(event) => setTaskScalarInput(event.target.value)} />
+                    {task.type === "record_hop_addition" ? <input className="task-input task-input-unit" type="text" value={hopUnitInput} onChange={(event) => setHopUnitInput(event.target.value)} placeholder="g" /> : null}
                     <button type="submit" className="dark-btn solid" disabled={taskBusy}>{taskBusy ? "Saving…" : "Confirm"}</button>
                   </form>
                 )}
@@ -1252,7 +1261,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                   </div>
                 </div>
 
-                <div className={`brewsheet-section ${(Boolean(brewLogsTask) || selectedBatchBrewLogs.length > 0) ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 2 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={(Boolean(brewLogsTask) || selectedBatchBrewLogs.length > 0) ? "button" : undefined} tabIndex={(Boolean(brewLogsTask) || selectedBatchBrewLogs.length > 0) ? 0 : undefined} onClick={() => { if (brewLogsTask) openBatchTaskList(String(selectedBatch.id ?? "")); else if (selectedBatchBrewLogs.length > 0) openBatchTaskList(String(selectedBatch.id ?? "")); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { if (!brewLogsTask && selectedBatchBrewLogs.length === 0) return; event.preventDefault(); if (brewLogsTask) openBatchTaskList(String(selectedBatch.id ?? "")); else openBatchTaskList(String(selectedBatch.id ?? "")); } }}>
+                <div className={`brewsheet-section ${(Boolean(brewLogsTask) || selectedBatchBrewLogs.length > 0) ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 2 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={(Boolean(brewLogsTask) || selectedBatchBrewLogs.length > 0) ? "button" : undefined} tabIndex={(Boolean(brewLogsTask) || selectedBatchBrewLogs.length > 0) ? 0 : undefined} onClick={() => setBrewLogsExpanded((prev) => !prev)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { if (!brewLogsTask && selectedBatchBrewLogs.length === 0) return; event.preventDefault(); setBrewLogsExpanded((prev) => !prev); } }}>
                   <p className="brewsheet-section-title">{copy.batchesBrewLogs}</p>
                   <div className="brewsheet-rows">
                     {selectedBatchBrewLogs.length === 0 ? <p className="brewsheet-empty-hint">{copy.batchesToComplete}</p> : selectedBatchBrewLogs.slice(0, 3).flatMap((log, idx) => {

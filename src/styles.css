@@ -1204,6 +1204,24 @@ button, input { font: inherit; }
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
+.brewsheet-section-actionable {
+  cursor: pointer;
+}
+
+.brewsheet-section-actionable .brewsheet-section-title {
+  color: rgba(150, 186, 255, 0.86);
+}
+
+.brewsheet-section-secondary {
+  border-color: rgba(90, 146, 255, 0.35);
+}
+
+.brewsheet-section-primary {
+  border-color: rgba(90, 146, 255, 0.8);
+  box-shadow: 0 8px 18px rgba(35, 116, 255, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, rgba(35, 74, 138, 0.62), rgba(20, 42, 79, 0.72));
+}
+
 .brewsheet-section-title {
   margin: 0;
   text-transform: uppercase;

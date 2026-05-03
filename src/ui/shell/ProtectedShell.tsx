@@ -469,6 +469,12 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     ["create_output_lot"],
   ] as const;
   const firstIncompleteSectionIndex = sectionTaskTypes.findIndex((types) => selectedBatchTasks.some((task) => types.includes(task.type as never)));
+  const openBatchTask = (task: { id: string; batchId: string }) => {
+    setTasksOpen(true);
+    setTaskScopeBatchId(task.batchId);
+    setActiveTaskId(task.id);
+    closeBatchesOverlay();
+  };
   const latestFermentationCheck = useMemo<Record<string, unknown> | null>(() => {
     if (selectedBatchFermentationChecks.length === 0) return null;
     const sorted = [...selectedBatchFermentationChecks].sort((a, b) => {
@@ -1037,7 +1043,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                 </div>
 
                 {/* Section 2 — Cuve */}
-                <div className="brewsheet-section">
+                <div className={`brewsheet-section ${selectedBatchTasks.some((t) => t.type === "assign_tank") ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 0 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={selectedBatchTasks.some((t) => t.type === "assign_tank") ? "button" : undefined} tabIndex={selectedBatchTasks.some((t) => t.type === "assign_tank") ? 0 : undefined} onClick={() => { const task = selectedBatchTasks.find((t) => t.type === "assign_tank"); if (task) openBatchTask(task); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { const task = selectedBatchTasks.find((t) => t.type === "assign_tank"); if (!task) return; event.preventDefault(); openBatchTask(task); } }}>
                   <p className="brewsheet-section-title">{copy.batchesCuve}</p>
                   <div className="brewsheet-rows">
                     <div className="brewsheet-row">
@@ -1049,22 +1055,10 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                       </span>
                     </div>
                   </div>
-                  {(() => {
-                    const task = selectedBatchTasks.find((t) => t.type === "assign_tank");
-                    if (!task) return null;
-                    const isPrimary = firstIncompleteSectionIndex === 0;
-                    return (
-                      <div className="brewsheet-actions">
-                        <button type="button" className={`dark-btn ${isPrimary ? "brew-confirm-primary" : "ghost"}`} onClick={() => { setTasksOpen(true); setTaskScopeBatchId(task.batchId); setActiveTaskId(task.id); closeBatchesOverlay(); }}>
-                          Assign tank
-                        </button>
-                      </div>
-                    );
-                  })()}
                 </div>
 
                 {/* Section 3 — Intrants */}
-                <div className="brewsheet-section">
+                <div className={`brewsheet-section ${selectedBatchTasks.some((t) => t.type === "assign_inputs") ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 1 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={selectedBatchTasks.some((t) => t.type === "assign_inputs") ? "button" : undefined} tabIndex={selectedBatchTasks.some((t) => t.type === "assign_inputs") ? 0 : undefined} onClick={() => { const task = selectedBatchTasks.find((t) => t.type === "assign_inputs"); if (task) openBatchTask(task); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { const task = selectedBatchTasks.find((t) => t.type === "assign_inputs"); if (!task) return; event.preventDefault(); openBatchTask(task); } }}>
                   <p className="brewsheet-section-title">{copy.batchesIntrants}</p>
                   <div className="brewsheet-rows">
                     {selectedBatchInputs.length === 0 ? (
@@ -1091,22 +1085,10 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                       })
                     )}
                   </div>
-                  {(() => {
-                    const task = selectedBatchTasks.find((t) => t.type === "assign_inputs");
-                    if (!task) return null;
-                    const isPrimary = firstIncompleteSectionIndex === 1;
-                    return (
-                      <div className="brewsheet-actions">
-                        <button type="button" className={`dark-btn ${isPrimary ? "brew-confirm-primary" : "ghost"}`} onClick={() => { setTasksOpen(true); setTaskScopeBatchId(task.batchId); setActiveTaskId(task.id); closeBatchesOverlay(); }}>
-                          Add ingredients
-                        </button>
-                      </div>
-                    );
-                  })()}
                 </div>
 
-                <div className="brewsheet-section">
-                  <p className="brewsheet-section-title">Brew logs</p>
+                <div className={`brewsheet-section ${selectedBatchTasks.some((t) => t.type === "record_mash_volume" || t.type === "record_transfer_volume") ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 2 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={selectedBatchTasks.some((t) => t.type === "record_mash_volume" || t.type === "record_transfer_volume") ? "button" : undefined} tabIndex={selectedBatchTasks.some((t) => t.type === "record_mash_volume" || t.type === "record_transfer_volume") ? 0 : undefined} onClick={() => { const task = selectedBatchTasks.find((t) => t.type === "record_mash_volume" || t.type === "record_transfer_volume"); if (task) openBatchTask(task); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { const task = selectedBatchTasks.find((t) => t.type === "record_mash_volume" || t.type === "record_transfer_volume"); if (!task) return; event.preventDefault(); openBatchTask(task); } }}>
+                  <p className="brewsheet-section-title">{copy.batchesBrewLogs}</p>
                   <div className="brewsheet-rows">
                     {selectedBatchBrewLogs.length === 0 ? <p className="brewsheet-empty-hint">{copy.batchesToComplete}</p> : selectedBatchBrewLogs.slice(0, 3).flatMap((log, idx) => {
                       const rows: ReactNode[] = [];
@@ -1140,43 +1122,25 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                       return rows;
                     })}
                   </div>
-                  {(() => {
-                    const task = selectedBatchTasks.find((t) => t.type === "record_mash_volume" || t.type === "record_transfer_volume");
-                    if (!task) return null;
-                    const isPrimary = firstIncompleteSectionIndex === 2;
-                    return <div className="brewsheet-actions"><button type="button" className={`dark-btn ${isPrimary ? "brew-confirm-primary" : "ghost"}`} onClick={() => { setTasksOpen(true); setTaskScopeBatchId(task.batchId); setActiveTaskId(task.id); closeBatchesOverlay(); }}>Add brew log</button></div>;
-                  })()}
                 </div>
-                <div className="brewsheet-section">
-                  <p className="brewsheet-section-title">Fermentation</p>
+                <div className={`brewsheet-section ${selectedBatchTasks.some((t) => t.type === "take_gravity_reading") ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 3 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={selectedBatchTasks.some((t) => t.type === "take_gravity_reading") ? "button" : undefined} tabIndex={selectedBatchTasks.some((t) => t.type === "take_gravity_reading") ? 0 : undefined} onClick={() => { const task = selectedBatchTasks.find((t) => t.type === "take_gravity_reading"); if (task) openBatchTask(task); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { const task = selectedBatchTasks.find((t) => t.type === "take_gravity_reading"); if (!task) return; event.preventDefault(); openBatchTask(task); } }}>
+                  <p className="brewsheet-section-title">{copy.batchesFermentation}</p>
                   <div className="brewsheet-rows">
                     {selectedBatchFermentationChecks.length === 0 ? <p className="brewsheet-empty-hint">{copy.batchesToComplete}</p> : (
                       <>
-                        <div className="brewsheet-row"><span className="brewsheet-row-label">Latest gravity</span><span className="brewsheet-row-value">{String(latestFermentationCheck?.gravity ?? copy.batchesToComplete)}</span></div>
-                        <div className="brewsheet-row"><span className="brewsheet-row-label">Readings</span><span className="brewsheet-row-value">{selectedBatchFermentationChecks.length}</span></div>
+                        <div className="brewsheet-row"><span className="brewsheet-row-label">{copy.batchesLatestGravity}</span><span className="brewsheet-row-value">{String(latestFermentationCheck?.gravity ?? copy.batchesToComplete)}</span></div>
+                        <div className="brewsheet-row"><span className="brewsheet-row-label">{copy.batchesReadings}</span><span className="brewsheet-row-value">{selectedBatchFermentationChecks.length}</span></div>
                       </>
                     )}
                   </div>
-                  {(() => {
-                    const task = selectedBatchTasks.find((t) => t.type === "take_gravity_reading");
-                    if (!task) return null;
-                    const isPrimary = firstIncompleteSectionIndex === 3;
-                    return <div className="brewsheet-actions"><button type="button" className={`dark-btn ${isPrimary ? "brew-confirm-primary" : "ghost"}`} onClick={() => { setTasksOpen(true); setTaskScopeBatchId(task.batchId); setActiveTaskId(task.id); closeBatchesOverlay(); }}>Add gravity</button></div>;
-                  })()}
                 </div>
-                <div className="brewsheet-section">
-                  <p className="brewsheet-section-title">Outputs / Lots</p>
+                <div className={`brewsheet-section ${selectedBatchTasks.some((t) => t.type === "create_output_lot") ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 4 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={selectedBatchTasks.some((t) => t.type === "create_output_lot") ? "button" : undefined} tabIndex={selectedBatchTasks.some((t) => t.type === "create_output_lot") ? 0 : undefined} onClick={() => { const task = selectedBatchTasks.find((t) => t.type === "create_output_lot"); if (task) openBatchTask(task); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { const task = selectedBatchTasks.find((t) => t.type === "create_output_lot"); if (!task) return; event.preventDefault(); openBatchTask(task); } }}>
+                  <p className="brewsheet-section-title">{copy.batchesOutputsLots}</p>
                   <div className="brewsheet-rows">
                     {selectedBatchLots.length === 0 ? <p className="brewsheet-empty-hint">{copy.batchesToComplete}</p> : selectedBatchLots.slice(0, 3).map((lot, idx) => (
                       <div key={String(lot.id ?? idx)} className="brewsheet-row"><span className="brewsheet-row-label">{String(lot.lot_number ?? "Lot")}</span><span className="brewsheet-row-value">{lot.volume_liters != null ? `${String(lot.volume_liters)} L` : copy.batchesToComplete}</span></div>
                     ))}
                   </div>
-                  {(() => {
-                    const task = selectedBatchTasks.find((t) => t.type === "create_output_lot");
-                    if (!task) return null;
-                    const isPrimary = firstIncompleteSectionIndex === 4;
-                    return <div className="brewsheet-actions"><button type="button" className={`dark-btn ${isPrimary ? "brew-confirm-primary" : "ghost"}`} onClick={() => { setTasksOpen(true); setTaskScopeBatchId(task.batchId); setActiveTaskId(task.id); closeBatchesOverlay(); }}>Create output lot</button></div>;
-                  })()}
                 </div>
               </div>
             ) : (

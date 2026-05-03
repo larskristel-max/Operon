@@ -437,7 +437,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const allBatches = (merged?.batches ?? []) as Array<Record<string, unknown>>;
   const suggestedBatchNumber = useMemo(() => {
     const yy = new Date().getUTCFullYear().toString().slice(-2);
-    const re = new RegExp(`(?:^|[^\\d])${yy}-(\\d{3})$`);
+    const re = new RegExp(`^${yy}-(\\d{3})$`);
     let max = 0;
     for (const batch of allBatches) {
       const raw = typeof batch.batch_number === "string" ? batch.batch_number : "";

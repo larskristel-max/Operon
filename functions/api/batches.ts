@@ -15,7 +15,7 @@ async function nextBatchNumber(env: Env, breweryId: string): Promise<string> {
   const yy = new Date().getUTCFullYear().toString().slice(-2);
   const res = await fetch(`${env.SUPABASE_URL}/rest/v1/batches?brewery_id=eq.${encodeURIComponent(breweryId)}&select=batch_number&limit=10000`, { headers: adminHeaders(env) });
   const rows = (await parseResponseBody(res)) as Array<Record<string, unknown>>;
-  const re = new RegExp(`(?:^|[^\\d])${yy}-(\\d{3})$`);
+  const re = new RegExp(`^${yy}-(\\d{3})$`);
   let max = 0;
   for (const row of rows ?? []) {
     const n = typeof row.batch_number === "string" ? row.batch_number : "";

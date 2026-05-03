@@ -66,6 +66,23 @@ function formatBatchStatus(status: string): string {
     .join(" ");
 }
 
+function parseGravityInput(raw: string): number | null {
+  const value = raw.trim().replace(",", ".");
+  if (!value) return null;
+  if (/^\d{4}$/.test(value)) {
+    const points = Number(value);
+    return Number.isFinite(points) ? points / 1000 : null;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatSpecificGravity(value: unknown): string {
+  const gravity = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(gravity) || gravity <= 0) return "—";
+  return gravity.toFixed(3);
+}
+
 function Icon({ name, className }: { name: IconName; className?: string }) {
   switch (name) {
     case "bell":
@@ -469,10 +486,20 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     ["create_output_lot"],
   ] as const;
   const firstIncompleteSectionIndex = sectionTaskTypes.findIndex((types) => selectedBatchTasks.some((task) => types.includes(task.type as never)));
+  const assignInputsTask = selectedBatchTasks.find((t) => t.type === "assign_inputs");
+  const brewLogsTask = selectedBatchTasks.find((t) => t.type === "record_mash_volume" || t.type === "record_transfer_volume");
+  const gravityTask = selectedBatchTasks.find((t) => t.type === "take_gravity_reading");
+  const outputLotTask = selectedBatchTasks.find((t) => t.type === "create_output_lot");
   const openBatchTask = (task: { id: string; batchId: string }) => {
     setTasksOpen(true);
     setTaskScopeBatchId(task.batchId);
     setActiveTaskId(task.id);
+    closeBatchesOverlay();
+  };
+  const openBatchTaskList = (batchId: string) => {
+    setTasksOpen(true);
+    setTaskScopeBatchId(batchId);
+    setActiveTaskId(null);
     closeBatchesOverlay();
   };
   const latestFermentationCheck = useMemo<Record<string, unknown> | null>(() => {
@@ -490,7 +517,29 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     return sorted[0] ?? null;
   }, [selectedBatchFermentationChecks]);
   const visibleTasks = taskScopeBatchId
-    ? executableTasks.filter((t) => t.batchId === taskScopeBatchId)
+    ? (() => {
+      const scopedTasks = executableTasks.filter((t) => t.batchId === taskScopeBatchId);
+      const scopedBatch = allBatches.find((batch) => String(batch.id ?? "") === taskScopeBatchId);
+      const scopedBatchLabel = scopedBatch ? getBatchDisplayName(scopedBatch) : "Batch";
+      const scopedInputs = ((merged?.batch_inputs ?? []) as Array<Record<string, unknown>>).filter((row) => String(row.batch_id ?? "") === taskScopeBatchId);
+      const scopedLogs = ((merged?.brew_logs ?? []) as Array<Record<string, unknown>>).filter((row) => String(row.batch_id ?? "") === taskScopeBatchId);
+      const scopedFermentation = ((merged?.fermentation_checks ?? []) as Array<Record<string, unknown>>).filter((row) => String(row.batch_id ?? "") === taskScopeBatchId);
+      const scopedLots = ((merged?.lots ?? []) as Array<Record<string, unknown>>).filter((row) => String(row.batch_id ?? "") === taskScopeBatchId);
+      const supplementalTasks = [];
+      if (scopedInputs.length > 0 && !scopedTasks.some((task) => task.type === "assign_inputs")) {
+        supplementalTasks.push({ id: `manual:${taskScopeBatchId}:assign_inputs`, type: "assign_inputs", batchId: taskScopeBatchId, label: "Add ingredient input", batchLabel: scopedBatchLabel });
+      }
+      if (scopedLogs.length > 0 && !scopedTasks.some((task) => task.type === "record_transfer_volume" || task.type === "record_mash_volume")) {
+        supplementalTasks.push({ id: `manual:${taskScopeBatchId}:record_transfer_volume`, type: "record_transfer_volume", batchId: taskScopeBatchId, label: "Add brew log volume", batchLabel: scopedBatchLabel });
+      }
+      if (scopedFermentation.length > 0 && !scopedTasks.some((task) => task.type === "take_gravity_reading")) {
+        supplementalTasks.push({ id: `manual:${taskScopeBatchId}:take_gravity_reading`, type: "take_gravity_reading", batchId: taskScopeBatchId, label: "Add gravity reading", batchLabel: scopedBatchLabel });
+      }
+      if (scopedLots.length > 0 && !scopedTasks.some((task) => task.type === "create_output_lot")) {
+        supplementalTasks.push({ id: `manual:${taskScopeBatchId}:create_output_lot`, type: "create_output_lot", batchId: taskScopeBatchId, label: "Add output lot", batchLabel: scopedBatchLabel });
+      }
+      return [...scopedTasks, ...supplementalTasks];
+    })()
     : executableTasks;
   const closeBatchesOverlay = () => {
     setBatchesOpen(false);
@@ -965,11 +1014,11 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                 )}
                 {activeTaskId === task.id && task.type === "take_gravity_reading" && (
                   <div className="task-action-panel">
-                    <input className="task-input" type="number" inputMode="decimal" min="0" step="0.001" value={gravityInput} onChange={(event) => setGravityInput(event.target.value)} placeholder="Gravity (e.g. 1.050)" />
+                    <input className="task-input" type="text" inputMode="decimal" value={gravityInput} onChange={(event) => setGravityInput(event.target.value)} placeholder="Gravity (e.g. 1.050 or 1050)" />
                     <input className="task-input" type="number" inputMode="decimal" step="0.1" value={tempInput} onChange={(event) => setTempInput(event.target.value)} placeholder="Temp °C (optional)" />
                     <button type="button" className="dark-btn brew-confirm-primary task-confirm-btn" disabled={taskBusy} onClick={async () => {
-                      const gravity = Number(gravityInput);
-                      if (!Number.isFinite(gravity) || gravity <= 0) { setTaskError("Enter a valid gravity value."); return; }
+                      const gravity = parseGravityInput(gravityInput);
+                      if (gravity === null || gravity < 0.98 || gravity > 1.2) { setTaskError("Enter a valid gravity value (e.g. 1.020 or 1020)."); return; }
                       const tempC = tempInput.trim() ? Number(tempInput) : null;
                       if (tempC !== null && !Number.isFinite(tempC)) { setTaskError("Enter a valid temperature or leave blank."); return; }
                       try { setTaskBusy(true); await takeGravityReading({ batchId: task.batchId, gravity, temperatureC: tempC }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setGravityInput(""); setTempInput(""); }
@@ -1058,7 +1107,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                 </div>
 
                 {/* Section 3 — Intrants */}
-                <div className={`brewsheet-section ${selectedBatchTasks.some((t) => t.type === "assign_inputs") ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 1 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={selectedBatchTasks.some((t) => t.type === "assign_inputs") ? "button" : undefined} tabIndex={selectedBatchTasks.some((t) => t.type === "assign_inputs") ? 0 : undefined} onClick={() => { const task = selectedBatchTasks.find((t) => t.type === "assign_inputs"); if (task) openBatchTask(task); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { const task = selectedBatchTasks.find((t) => t.type === "assign_inputs"); if (!task) return; event.preventDefault(); openBatchTask(task); } }}>
+                <div className={`brewsheet-section ${(Boolean(assignInputsTask) || selectedBatchInputs.length > 0) ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 1 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={(Boolean(assignInputsTask) || selectedBatchInputs.length > 0) ? "button" : undefined} tabIndex={(Boolean(assignInputsTask) || selectedBatchInputs.length > 0) ? 0 : undefined} onClick={() => { if (assignInputsTask) openBatchTask(assignInputsTask); else if (selectedBatchInputs.length > 0) openBatchTaskList(String(selectedBatch.id ?? "")); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { if (!assignInputsTask && selectedBatchInputs.length === 0) return; event.preventDefault(); if (assignInputsTask) openBatchTask(assignInputsTask); else openBatchTaskList(String(selectedBatch.id ?? "")); } }}>
                   <p className="brewsheet-section-title">{copy.batchesIntrants}</p>
                   <div className="brewsheet-rows">
                     {selectedBatchInputs.length === 0 ? (
@@ -1087,7 +1136,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                   </div>
                 </div>
 
-                <div className={`brewsheet-section ${selectedBatchTasks.some((t) => t.type === "record_mash_volume" || t.type === "record_transfer_volume") ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 2 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={selectedBatchTasks.some((t) => t.type === "record_mash_volume" || t.type === "record_transfer_volume") ? "button" : undefined} tabIndex={selectedBatchTasks.some((t) => t.type === "record_mash_volume" || t.type === "record_transfer_volume") ? 0 : undefined} onClick={() => { const task = selectedBatchTasks.find((t) => t.type === "record_mash_volume" || t.type === "record_transfer_volume"); if (task) openBatchTask(task); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { const task = selectedBatchTasks.find((t) => t.type === "record_mash_volume" || t.type === "record_transfer_volume"); if (!task) return; event.preventDefault(); openBatchTask(task); } }}>
+                <div className={`brewsheet-section ${(Boolean(brewLogsTask) || selectedBatchBrewLogs.length > 0) ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 2 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={(Boolean(brewLogsTask) || selectedBatchBrewLogs.length > 0) ? "button" : undefined} tabIndex={(Boolean(brewLogsTask) || selectedBatchBrewLogs.length > 0) ? 0 : undefined} onClick={() => { if (brewLogsTask) openBatchTask(brewLogsTask); else if (selectedBatchBrewLogs.length > 0) openBatchTaskList(String(selectedBatch.id ?? "")); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { if (!brewLogsTask && selectedBatchBrewLogs.length === 0) return; event.preventDefault(); if (brewLogsTask) openBatchTask(brewLogsTask); else openBatchTaskList(String(selectedBatch.id ?? "")); } }}>
                   <p className="brewsheet-section-title">{copy.batchesBrewLogs}</p>
                   <div className="brewsheet-rows">
                     {selectedBatchBrewLogs.length === 0 ? <p className="brewsheet-empty-hint">{copy.batchesToComplete}</p> : selectedBatchBrewLogs.slice(0, 3).flatMap((log, idx) => {
@@ -1123,18 +1172,18 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                     })}
                   </div>
                 </div>
-                <div className={`brewsheet-section ${selectedBatchTasks.some((t) => t.type === "take_gravity_reading") ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 3 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={selectedBatchTasks.some((t) => t.type === "take_gravity_reading") ? "button" : undefined} tabIndex={selectedBatchTasks.some((t) => t.type === "take_gravity_reading") ? 0 : undefined} onClick={() => { const task = selectedBatchTasks.find((t) => t.type === "take_gravity_reading"); if (task) openBatchTask(task); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { const task = selectedBatchTasks.find((t) => t.type === "take_gravity_reading"); if (!task) return; event.preventDefault(); openBatchTask(task); } }}>
+                <div className={`brewsheet-section ${(Boolean(gravityTask) || selectedBatchFermentationChecks.length > 0) ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 3 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={(Boolean(gravityTask) || selectedBatchFermentationChecks.length > 0) ? "button" : undefined} tabIndex={(Boolean(gravityTask) || selectedBatchFermentationChecks.length > 0) ? 0 : undefined} onClick={() => { if (gravityTask) openBatchTask(gravityTask); else if (selectedBatchFermentationChecks.length > 0) openBatchTaskList(String(selectedBatch.id ?? "")); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { if (!gravityTask && selectedBatchFermentationChecks.length === 0) return; event.preventDefault(); if (gravityTask) openBatchTask(gravityTask); else openBatchTaskList(String(selectedBatch.id ?? "")); } }}>
                   <p className="brewsheet-section-title">{copy.batchesFermentation}</p>
                   <div className="brewsheet-rows">
                     {selectedBatchFermentationChecks.length === 0 ? <p className="brewsheet-empty-hint">{copy.batchesToComplete}</p> : (
                       <>
-                        <div className="brewsheet-row"><span className="brewsheet-row-label">{copy.batchesLatestGravity}</span><span className="brewsheet-row-value">{String(latestFermentationCheck?.gravity ?? copy.batchesToComplete)}</span></div>
+                        <div className="brewsheet-row"><span className="brewsheet-row-label">{copy.batchesLatestGravity}</span><span className="brewsheet-row-value">{latestFermentationCheck?.gravity != null ? formatSpecificGravity(latestFermentationCheck.gravity) : copy.batchesToComplete}</span></div>
                         <div className="brewsheet-row"><span className="brewsheet-row-label">{copy.batchesReadings}</span><span className="brewsheet-row-value">{selectedBatchFermentationChecks.length}</span></div>
                       </>
                     )}
                   </div>
                 </div>
-                <div className={`brewsheet-section ${selectedBatchTasks.some((t) => t.type === "create_output_lot") ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 4 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={selectedBatchTasks.some((t) => t.type === "create_output_lot") ? "button" : undefined} tabIndex={selectedBatchTasks.some((t) => t.type === "create_output_lot") ? 0 : undefined} onClick={() => { const task = selectedBatchTasks.find((t) => t.type === "create_output_lot"); if (task) openBatchTask(task); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { const task = selectedBatchTasks.find((t) => t.type === "create_output_lot"); if (!task) return; event.preventDefault(); openBatchTask(task); } }}>
+                <div className={`brewsheet-section ${(Boolean(outputLotTask) || selectedBatchLots.length > 0) ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 4 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={(Boolean(outputLotTask) || selectedBatchLots.length > 0) ? "button" : undefined} tabIndex={(Boolean(outputLotTask) || selectedBatchLots.length > 0) ? 0 : undefined} onClick={() => { if (outputLotTask) openBatchTask(outputLotTask); else if (selectedBatchLots.length > 0) openBatchTaskList(String(selectedBatch.id ?? "")); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { if (!outputLotTask && selectedBatchLots.length === 0) return; event.preventDefault(); if (outputLotTask) openBatchTask(outputLotTask); else openBatchTaskList(String(selectedBatch.id ?? "")); } }}>
                   <p className="brewsheet-section-title">{copy.batchesOutputsLots}</p>
                   <div className="brewsheet-rows">
                     {selectedBatchLots.length === 0 ? <p className="brewsheet-empty-hint">{copy.batchesToComplete}</p> : selectedBatchLots.slice(0, 3).map((lot, idx) => (

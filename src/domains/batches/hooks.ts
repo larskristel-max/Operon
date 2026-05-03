@@ -30,6 +30,7 @@ const initialBrewEntryState: BrewEntryState = {
   isConfirming: false,
   error: null,
   confirmedBatchName: null,
+  confirmedBatchNumber: null,
 };
 
 function detectUploadSourceType(file: File): UploadSourceType {
@@ -349,37 +350,45 @@ export function useBrewEntryFlow({
     const selectedRecipeName = existingRecipeOptions.find((recipe) => recipe.id === current.selectedRecipeId)?.name ?? null;
     const fallbackName = current.selectedSource === "upload-recipe" ? "Uploaded Recipe Batch" : "New Batch";
     const batchName = selectedRecipeName ?? fallbackName;
+    const resolvedBatchNumber = batchNumber?.trim() || null;
 
     setState((prev) => ({ ...prev, isConfirming: true, step: "confirming", error: null }));
 
     try {
+      let finalBatchNumber: string | null = resolvedBatchNumber;
+
       if (isDemoMode) {
         const recordId = crypto.randomUUID();
+        const payload: Record<string, unknown> = {
+          id: recordId,
+          brewery_id: "00000000-0000-4000-8000-0000000d3110",
+          recipe_id: current.selectedRecipeId,
+          name: batchName,
+          status: "planned",
+          created_at: new Date().toISOString(),
+        };
+        if (resolvedBatchNumber) payload.batch_number = resolvedBatchNumber;
         await writeDemoOverlay({
           table_name: "batches",
           record_id: recordId,
           operation: "insert",
-          payload: {
-            id: recordId,
-            brewery_id: "00000000-0000-4000-8000-0000000d3110",
-            recipe_id: current.selectedRecipeId,
-            name: batchName,
-            status: "planned",
-            created_at: new Date().toISOString(),
-          },
+          payload,
         });
       } else {
-        await createBatchAfterConfirmation({
+        const result = await createBatchAfterConfirmation({
           source: current.selectedSource,
           recipeId: current.selectedRecipeId,
           uploadIntakeId: current.uploadIntake?.intakeId ?? current.draftPreview.recipeDraft.uploadIntakeId,
           draftId: current.draftPreview.draftId,
-          batchNumber: batchNumber?.trim() ? batchNumber.trim() : undefined,
+          batchNumber: resolvedBatchNumber ?? undefined,
         });
+        const batchRow = result?.batch as Record<string, unknown> | undefined;
+        const returned = typeof batchRow?.batch_number === "string" ? batchRow.batch_number.trim() : null;
+        finalBatchNumber = returned || resolvedBatchNumber;
       }
 
       await onConfirmed();
-      setState((prev) => ({ ...prev, isConfirming: false, step: "confirmed", confirmedBatchName: batchName }));
+      setState((prev) => ({ ...prev, isConfirming: false, step: "confirmed", confirmedBatchName: batchName, confirmedBatchNumber: finalBatchNumber }));
     } catch (error) {
       setState((prev) => ({
         ...prev,

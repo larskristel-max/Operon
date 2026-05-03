@@ -12,6 +12,7 @@ export function mapRealDashboardToMerged(data: RealDashboardData): RealDashboard
     batches: data.batches,
     tasks: data.tasks,
     ingredients: inventoryItems,
+    ingredient_receipts: data.ingredient_receipts ?? [],
     recipes: [],
     packaging_formats: [],
     lots: data.lots,

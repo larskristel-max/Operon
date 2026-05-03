@@ -36,9 +36,16 @@ type IconName =
   | "plus"
   | "package";
 
+const BREW_INGREDIENT_TYPES = new Set(["malt", "grain", "hops", "hop", "yeast", "adjunct", "sugar", "spice", "water_additive", "brewing_salt", "nutrient", "processing_aid"]);
+const EXCLUDED_INGREDIENT_TYPES = new Set(["packaging", "cleaning", "finished_good", "finished_goods", "sales", "bottle", "bottles", "cap", "caps", "label", "labels", "chemical"]);
+
 function isBrewInputIngredient(ingredient: Record<string, unknown>): boolean {
-  const type = typeof ingredient.ingredient_type === "string" ? ingredient.ingredient_type.trim().toLowerCase() : "";
-  return ["malt", "hops", "yeast", "adjunct", "sugar", "water_additive", "processing_aid"].includes(type);
+  const rawType = typeof ingredient.ingredient_type === "string" ? ingredient.ingredient_type.trim().toLowerCase() : "";
+  const rawCategory = typeof ingredient.category === "string" ? ingredient.category.trim().toLowerCase() : "";
+  const effective = rawType || rawCategory;
+  if (!effective) return true; // include uncategorised ingredients by default
+  if (EXCLUDED_INGREDIENT_TYPES.has(effective) || Array.from(EXCLUDED_INGREDIENT_TYPES).some((ex) => effective.includes(ex))) return false;
+  return BREW_INGREDIENT_TYPES.has(effective) || Array.from(BREW_INGREDIENT_TYPES).some((inc) => effective.includes(inc));
 }
 
 const BATCH_ACTIVE_FILTER_STATUSES = new Set(["planned", "brewing", "fermenting", "conditioning", "ready"]);
@@ -318,6 +325,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const [lotNumberInput, setLotNumberInput] = useState<string>("");
   const [lotVolumeInput, setLotVolumeInput] = useState<string>("");
   const [lotUnitsInput, setLotUnitsInput] = useState<string>("");
+  const [selectedReceiptId, setSelectedReceiptId] = useState<string>("");
   const [taskError, setTaskError] = useState<string | null>(null);
   const [taskBusy, setTaskBusy] = useState(false);
   const [gravityActionOpen, setGravityActionOpen] = useState(false);
@@ -506,6 +514,17 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     const id = typeof ing.id === "string" ? ing.id : null;
     return id !== null && isBrewInputIngredient(ing);
   });
+  const allIngredientReceipts = ((merged?.ingredient_receipts ?? []) as Array<Record<string, unknown>>);
+  const availableIngredientReceipts = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return allIngredientReceipts.filter((r) => {
+      const status = typeof r.quality_status === "string" ? r.quality_status.toLowerCase() : "approved";
+      if (status !== "approved") return false;
+      const bestBefore = typeof r.best_before_date === "string" ? r.best_before_date : null;
+      if (bestBefore && bestBefore < today) return false;
+      return true;
+    });
+  }, [allIngredientReceipts]);
   const allBatches = (merged?.batches ?? []) as Array<Record<string, unknown>>;
   const suggestedBatchNumber = useMemo(() => {
     const yy = new Date().getUTCFullYear().toString().slice(-2);
@@ -1031,7 +1050,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                       className="dark-btn brew-confirm-primary"
                       onClick={() => {
                         const manualBatchNumber = brewBatchNumber.trim();
-                        void brewEntryFlow.confirmDraft(manualBatchNumber ? manualBatchNumber : undefined);
+                        void brewEntryFlow.confirmDraft(manualBatchNumber || suggestedBatchNumber);
                       }}
                       disabled={brewEntryFlow.state.isConfirming}
                     >
@@ -1052,6 +1071,9 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
             <>
               <p className="eyebrow">{copy.brewEntryLaunchedTitle}</p>
               <p className="brew-confirm-title">{brewEntryFlow.state.confirmedBatchName}</p>
+              {brewEntryFlow.state.confirmedBatchNumber && (
+                <p className="brew-confirm-status">{copy.batchIdPrefix}{brewEntryFlow.state.confirmedBatchNumber}</p>
+              )}
               <p className="brew-confirm-status">{copy.brewEntryBatchCreated}</p>
               <div className="brew-confirm-actions">
                 <button type="button" className="dark-btn brew-confirm-primary" onClick={brewEntryFlow.close}>
@@ -1129,6 +1151,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                     <div className="task-field-group"><label className="task-select-wrap"><span className="task-field-label">Ingredient</span><select className="task-select" value={ingredientIdInput} onChange={(event) => {
                       const id = event.target.value;
                       setIngredientIdInput(id);
+                      setSelectedReceiptId("");
                       const ing = availableIngredients.find((i) => String(i.id ?? "") === id);
                       const defaultUnit = ing && typeof ing.default_unit === "string" ? ing.default_unit : "";
                       if (defaultUnit) setIngredientUnitInput(defaultUnit);
@@ -1137,14 +1160,35 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                       {availableIngredients.map((ing) => <option key={String(ing.id ?? "")} value={String(ing.id ?? "")}>{String(ing.name ?? ing.id ?? "Ingredient")}</option>)}
                     </select><span className="task-select-chevron" aria-hidden="true">⌄</span></label></div>
                     {availableIngredients.length === 0 ? <p className="subtle">No ingredients available.</p> : null}
+                    {ingredientIdInput && (() => {
+                      const receiptsForIngredient = availableIngredientReceipts.filter((r) => String(r.ingredient_id ?? "") === ingredientIdInput);
+                      if (receiptsForIngredient.length === 0) return <p className="subtle">No inventory lots found for this ingredient.</p>;
+                      return (
+                        <div className="task-field-group"><label className="task-select-wrap"><span className="task-field-label">Inventory lot</span><select className="task-select" value={selectedReceiptId} onChange={(event) => {
+                          const rid = event.target.value;
+                          setSelectedReceiptId(rid);
+                          const receipt = receiptsForIngredient.find((r) => String(r.id ?? "") === rid);
+                          if (receipt && !ingredientUnitInput && typeof receipt.unit === "string") setIngredientUnitInput(receipt.unit);
+                        }}>
+                          <option value="">Select lot</option>
+                          {receiptsForIngredient.map((r) => {
+                            const lotLabel = String(r.internal_lot_code ?? r.supplier_lot_number ?? r.id ?? "");
+                            const qtyLabel = r.quantity_received != null ? ` — ${String(r.quantity_received)} ${String(r.unit ?? "")}`.trim() : "";
+                            const supplierLabel = r.supplier_name ? ` (${String(r.supplier_name)})` : "";
+                            return <option key={String(r.id ?? "")} value={String(r.id ?? "")}>{`${lotLabel}${qtyLabel}${supplierLabel}`}</option>;
+                          })}
+                        </select><span className="task-select-chevron" aria-hidden="true">⌄</span></label></div>
+                      );
+                    })()}
                     <div className="task-inline-row"><input className="task-input" type="number" inputMode="decimal" min="0" step="0.01" value={ingredientQuantityInput} onChange={(event) => setIngredientQuantityInput(event.target.value)} placeholder="10" />
                     <input className="task-input task-input-unit" type="text" value={ingredientUnitInput} onChange={(event) => setIngredientUnitInput(event.target.value)} placeholder="kg" /></div>
-                    <button type="button" className="dark-btn brew-confirm-primary task-confirm-btn" disabled={taskBusy || !ingredientIdInput} onClick={async () => {
+                    <button type="button" className="dark-btn brew-confirm-primary task-confirm-btn" disabled={taskBusy || !ingredientIdInput || !selectedReceiptId} onClick={async () => {
                       const qty = Number(ingredientQuantityInput);
                       if (!ingredientIdInput) { setTaskError("Select an ingredient."); return; }
+                      if (!selectedReceiptId) { setTaskError("Select an inventory lot."); return; }
                       if (!Number.isFinite(qty) || qty <= 0) { setTaskError("Enter a valid quantity."); return; }
                       if (!ingredientUnitInput.trim()) { setTaskError("Enter a unit."); return; }
-                      try { setTaskBusy(true); await assignIngredientLots({ batchId: task.batchId, ingredientId: ingredientIdInput, quantity: qty, unit: ingredientUnitInput.trim() }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setIngredientIdInput(""); setIngredientQuantityInput(""); setIngredientUnitInput(""); }
+                      try { setTaskBusy(true); await assignIngredientLots({ batchId: task.batchId, ingredientId: ingredientIdInput, inventoryLotId: selectedReceiptId, quantity: qty, unit: ingredientUnitInput.trim() }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setIngredientIdInput(""); setIngredientQuantityInput(""); setIngredientUnitInput(""); setSelectedReceiptId(""); }
                       catch (error) { setTaskError(error instanceof Error ? error.message : "Failed to assign ingredient lots"); }
                       finally { setTaskBusy(false); }
                     }}>Confirm</button>
@@ -1329,9 +1373,16 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                         const qty = input.quantity != null
                           ? `${input.quantity}${input.unit ? ` ${String(input.unit)}` : ""}`
                           : "";
+                        const receiptId = String(input.ingredient_receipt_id ?? "");
+                        const receipt = receiptId
+                          ? allIngredientReceipts.find((r) => String(r.id ?? "") === receiptId) ?? null
+                          : null;
+                        const lotLabel = receipt
+                          ? String(receipt.internal_lot_code ?? receipt.supplier_lot_number ?? "")
+                          : null;
                         return (
                           <div key={inputId} className="brewsheet-row">
-                            <span className="brewsheet-row-label">{ingredientName}</span>
+                            <span className="brewsheet-row-label">{ingredientName}{lotLabel ? ` — Lot ${lotLabel}` : ""}</span>
                             <span className="brewsheet-row-value">{qty || copy.batchesToComplete}</span>
                           </div>
                         );

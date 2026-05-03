@@ -31,6 +31,7 @@ export interface DemoDashboardData {
   batches: Array<Record<string, unknown>>;
   tasks: Array<Record<string, unknown>>;
   ingredients: Array<Record<string, unknown>>;
+  ingredient_receipts: Array<Record<string, unknown>>;
   recipes: Array<Record<string, unknown>>;
   packaging_formats: Array<Record<string, unknown>>;
   lots: Array<Record<string, unknown>>;
@@ -294,11 +295,12 @@ export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string
     "Failed to load demo brewery profile"
   );
 
-  const [tanks, batches, tasks, ingredients, recipes, packagingFormats, lots, inventoryMovements, sales, batchInputs, brewLogs, pendingMovements] = await Promise.all([
+  const [tanks, batches, tasks, ingredients, ingredientReceipts, recipes, packagingFormats, lots, inventoryMovements, sales, batchInputs, brewLogs, pendingMovements] = await Promise.all([
     fetchTableRows(env, "tanks", demoBreweryId, "*", "name.asc"),
     fetchTableRows(env, "batches", demoBreweryId, "*", "created_at.desc"),
     fetchTableRows(env, "tasks", demoBreweryId, "*", "created_at.desc"),
     fetchTableRows(env, "ingredients", demoBreweryId, "*", "name.asc"),
+    fetchTableRows(env, "ingredient_receipts", demoBreweryId, "*", "received_date.desc"),
     fetchTableRows(env, "recipes", demoBreweryId, "*", "name.asc"),
     fetchTableRows(env, "packaging_formats", demoBreweryId, "*", "name.asc"),
     fetchTableRows(env, "lots", demoBreweryId, "*", "created_at.desc"),
@@ -322,6 +324,7 @@ export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string
     batches,
     tasks,
     ingredients,
+    ingredient_receipts: ingredientReceipts,
     recipes,
     packaging_formats: packagingFormats,
     lots,
@@ -404,6 +407,7 @@ const DASHBOARD_OVERLAY_TABLES: ReadonlyArray<keyof DemoDashboardData> = [
   "tasks",
   "lots",
   "ingredients",
+  "ingredient_receipts",
   "inventory_movements",
   "recipes",
   "packaging_formats",
@@ -423,6 +427,7 @@ export function applyDashboardOverlay(baseline: DemoDashboardData, overlays: Ove
     batches: [...baseline.batches],
     tasks: [...baseline.tasks],
     ingredients: [...baseline.ingredients],
+    ingredient_receipts: [...baseline.ingredient_receipts],
     recipes: [...baseline.recipes],
     packaging_formats: [...baseline.packaging_formats],
     lots: [...baseline.lots],

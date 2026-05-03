@@ -17,7 +17,7 @@ export async function onRequestPost(context: { request: Request; env: BreweryEnv
   if (!body.batchId || !body.taskType) return jsonResponse({ error: "batchId and taskType are required" }, 400);
 
   const now = new Date().toISOString();
-  const brewLogPayload: Record<string, unknown> = { brewery_id: breweryId, batch_id: body.batchId, log_status: "in_progress", created_at: now, updated_at: now };
+  const brewLogPayload: Record<string, unknown> = { brewery_id: breweryId, batch_id: body.batchId, log_status: "in_progress", updated_at: now };
   const value = body.value == null ? null : Number(body.value);
   if (body.taskType !== "record_hop_addition" && (value === null || !Number.isFinite(value))) return jsonResponse({ error: "value is required" }, 400);
 
@@ -30,15 +30,36 @@ export async function onRequestPost(context: { request: Request; env: BreweryEnv
   else if (body.taskType === "record_transfer") { brewLogPayload.actual_transfer_temp_c = value; brewLogPayload.transfer_started_at = now; brewLogPayload.transfer_finished_at = body.timestamp ?? now; }
   else if (body.taskType === "pitch_yeast") { brewLogPayload.yeast_pitch_quantity = value; brewLogPayload.yeast_pitch_time = body.timestamp ?? now; }
 
+  const existingLogRes = await fetch(
+    `${context.env.SUPABASE_URL}/rest/v1/brew_logs?batch_id=eq.${encodeURIComponent(body.batchId)}&brewery_id=eq.${encodeURIComponent(breweryId)}&select=id&order=created_at.asc&limit=1`,
+    { headers: adminHeaders(context.env) }
+  );
+  const existingLogRows = await existingLogRes.json() as Array<{ id?: string }>;
+  const existingBrewLogId = existingLogRes.ok && Array.isArray(existingLogRows) ? existingLogRows[0]?.id ?? null : null;
+
   if (body.taskType === "record_hop_addition") {
     const durationMin = value == null || !Number.isFinite(value) ? 60 : value;
-    const res = await fetch(`${context.env.SUPABASE_URL}/rest/v1/boil_additions`, { method: "POST", headers: adminHeaders(context.env), body: JSON.stringify({ batch_id: body.batchId, stage: "boil", duration_min: durationMin, ingredient_id: body.value2 ?? null, created_at: now, updated_at: now }) });
+    let brewLogId = existingBrewLogId;
+    if (!brewLogId) {
+      const createLogRes = await fetch(`${context.env.SUPABASE_URL}/rest/v1/brew_logs`, { method: "POST", headers: adminHeaders(context.env), body: JSON.stringify({ ...brewLogPayload, created_at: now }) });
+      const createdLog = await createLogRes.json() as Array<{ id?: string }>;
+      brewLogId = createLogRes.ok && Array.isArray(createdLog) ? createdLog[0]?.id ?? null : null;
+      if (!brewLogId) return jsonResponse({ error: "Failed to create brew log for hop addition", detail: createdLog }, 400);
+    }
+    const res = await fetch(`${context.env.SUPABASE_URL}/rest/v1/boil_additions`, { method: "POST", headers: adminHeaders(context.env), body: JSON.stringify({ brew_log_id: brewLogId, addition_stage: "boil", duration_min: durationMin, ingredient_id: body.value2 ?? null, created_at: now }) });
     const inserted = await res.json();
     if (!res.ok) return jsonResponse({ error: "Failed to record hop addition", detail: inserted }, 400);
     return jsonResponse({ boil_addition: Array.isArray(inserted) ? inserted[0] : inserted }, 201);
   }
 
-  const insertRes = await fetch(`${context.env.SUPABASE_URL}/rest/v1/brew_logs`, { method: "POST", headers: adminHeaders(context.env), body: JSON.stringify(brewLogPayload) });
+  if (existingBrewLogId) {
+    const patchRes = await fetch(`${context.env.SUPABASE_URL}/rest/v1/brew_logs?id=eq.${encodeURIComponent(existingBrewLogId)}`, { method: "PATCH", headers: adminHeaders(context.env), body: JSON.stringify(brewLogPayload) });
+    const patched = await patchRes.json();
+    if (!patchRes.ok) return jsonResponse({ error: "Failed to update brew task", detail: patched }, 400);
+    return jsonResponse({ brew_log: Array.isArray(patched) ? patched[0] : patched }, 200);
+  }
+
+  const insertRes = await fetch(`${context.env.SUPABASE_URL}/rest/v1/brew_logs`, { method: "POST", headers: adminHeaders(context.env), body: JSON.stringify({ ...brewLogPayload, created_at: now }) });
   const inserted = await insertRes.json();
   if (!insertRes.ok) return jsonResponse({ error: "Failed to record brew task", detail: inserted }, 400);
   return jsonResponse({ brew_log: Array.isArray(inserted) ? inserted[0] : inserted }, 201);

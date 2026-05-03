@@ -301,12 +301,12 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   }, [demoMergedData, isDemoMode, realMergedData]);
   const recordMashVolume = useRecordMashVolume({ isDemoMode, breweryId: activeBreweryId ?? null });
   const recordTransferVolume = useRecordTransferVolume({ isDemoMode, breweryId: activeBreweryId ?? null });
-  const captureBrewTask = useCaptureBrewTask({ isDemoMode, breweryId: activeBreweryId ?? null });
   const assignIngredientLots = useAssignIngredientLots({ isDemoMode, breweryId: activeBreweryId ?? null });
   const currentBrewLogs = useMemo(
     () => ((isDemoMode ? demoMergedData : realMergedData)?.brew_logs ?? []) as Array<Record<string, unknown>>,
     [isDemoMode, demoMergedData, realMergedData]
   );
+  const captureBrewTask = useCaptureBrewTask({ isDemoMode, breweryId: activeBreweryId ?? null, brewLogs: currentBrewLogs });
   const takeGravityReading = useTakeGravityReading({ isDemoMode, breweryId: activeBreweryId ?? null, brewLogs: currentBrewLogs });
   const createOutputLot = useCreateOutputLot({ isDemoMode, breweryId: activeBreweryId ?? null });
 

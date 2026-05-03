@@ -82,6 +82,15 @@ function formatSpecificGravity(value: unknown): string {
   if (!Number.isFinite(gravity) || gravity <= 0) return "—";
   return gravity.toFixed(3);
 }
+function formatRelativeReadingTime(value: unknown, locale: string): string | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const today = new Date();
+  const sameDay = date.toDateString() === today.toDateString();
+  const time = new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(date);
+  return sameDay ? `today ${time}` : new Intl.DateTimeFormat(locale, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(date);
+}
 
 function Icon({ name, className }: { name: IconName; className?: string }) {
   switch (name) {
@@ -236,6 +245,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const [lotUnitsInput, setLotUnitsInput] = useState<string>("");
   const [taskError, setTaskError] = useState<string | null>(null);
   const [taskBusy, setTaskBusy] = useState(false);
+  const [gravityActionOpen, setGravityActionOpen] = useState(false);
   const touchStartY = useRef<number | null>(null);
   const touchStartX = useRef<number | null>(null);
   const touchDeltaY = useRef(0);
@@ -516,6 +526,13 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     });
     return sorted[0] ?? null;
   }, [selectedBatchFermentationChecks]);
+  const latestGravityReadingLabel = useMemo(() => {
+    if (!latestFermentationCheck) return copy.gravityNoReading;
+    const gravity = latestFermentationCheck.gravity != null ? formatSpecificGravity(latestFermentationCheck.gravity) : copy.gravityNoReading;
+    const ts = latestFermentationCheck.measured_at ?? latestFermentationCheck.created_at ?? null;
+    const when = formatRelativeReadingTime(ts, language);
+    return when ? `${gravity} (${when})` : gravity;
+  }, [copy.gravityNoReading, language, latestFermentationCheck]);
   const visibleTasks = taskScopeBatchId
     ? (() => {
       const scopedTasks = executableTasks.filter((t) => t.batchId === taskScopeBatchId);
@@ -1175,12 +1192,9 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                 <div className={`brewsheet-section ${(Boolean(gravityTask) || selectedBatchFermentationChecks.length > 0) ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 3 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={(Boolean(gravityTask) || selectedBatchFermentationChecks.length > 0) ? "button" : undefined} tabIndex={(Boolean(gravityTask) || selectedBatchFermentationChecks.length > 0) ? 0 : undefined} onClick={() => { if (gravityTask) openBatchTask(gravityTask); else if (selectedBatchFermentationChecks.length > 0) openBatchTaskList(String(selectedBatch.id ?? "")); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { if (!gravityTask && selectedBatchFermentationChecks.length === 0) return; event.preventDefault(); if (gravityTask) openBatchTask(gravityTask); else openBatchTaskList(String(selectedBatch.id ?? "")); } }}>
                   <p className="brewsheet-section-title">{copy.batchesFermentation}</p>
                   <div className="brewsheet-rows">
-                    {selectedBatchFermentationChecks.length === 0 ? <p className="brewsheet-empty-hint">{copy.batchesToComplete}</p> : (
-                      <>
-                        <div className="brewsheet-row"><span className="brewsheet-row-label">{copy.batchesLatestGravity}</span><span className="brewsheet-row-value">{latestFermentationCheck?.gravity != null ? formatSpecificGravity(latestFermentationCheck.gravity) : copy.batchesToComplete}</span></div>
-                        <div className="brewsheet-row"><span className="brewsheet-row-label">{copy.batchesReadings}</span><span className="brewsheet-row-value">{selectedBatchFermentationChecks.length}</span></div>
-                      </>
-                    )}
+                    <div className="brewsheet-row"><span className="brewsheet-row-label">{copy.gravityLatestPrefix}</span><span className="brewsheet-row-value">{latestGravityReadingLabel}</span></div>
+                    {selectedBatchFermentationChecks.length > 0 ? <div className="brewsheet-row"><span className="brewsheet-row-label">{copy.batchesReadings}</span><span className="brewsheet-row-value">{selectedBatchFermentationChecks.length}</span></div> : null}
+                    <button type="button" className="dark-btn task-toggle-btn" onClick={(event) => { event.stopPropagation(); setTaskError(null); setGravityActionOpen(true); }}>{copy.gravityActionLabel}</button>
                   </div>
                 </div>
                 <div className={`brewsheet-section ${(Boolean(outputLotTask) || selectedBatchLots.length > 0) ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 4 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={(Boolean(outputLotTask) || selectedBatchLots.length > 0) ? "button" : undefined} tabIndex={(Boolean(outputLotTask) || selectedBatchLots.length > 0) ? 0 : undefined} onClick={() => { if (outputLotTask) openBatchTask(outputLotTask); else if (selectedBatchLots.length > 0) openBatchTaskList(String(selectedBatch.id ?? "")); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { if (!outputLotTask && selectedBatchLots.length === 0) return; event.preventDefault(); if (outputLotTask) openBatchTask(outputLotTask); else openBatchTaskList(String(selectedBatch.id ?? "")); } }}>
@@ -1246,6 +1260,29 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                 )}
               </>
             )}
+          </div>
+        </section>
+      )}
+      {gravityActionOpen && selectedBatch && (
+        <section className="brew-entry-backdrop" onClick={() => setGravityActionOpen(false)} aria-label={copy.gravityActionTitle}>
+          <div className="glass-panel brew-entry-sheet" onClick={(event) => event.stopPropagation()}>
+            <p className="eyebrow">{copy.batchesFermentation}</p>
+            <p className="brew-confirm-title">{copy.gravityActionTitle}</p>
+            <input className="task-input" type="text" inputMode="decimal" value={gravityInput} onChange={(event) => setGravityInput(event.target.value)} placeholder={copy.gravityFieldLabel} />
+            <input className="task-input" type="number" inputMode="decimal" step="0.1" value={tempInput} onChange={(event) => setTempInput(event.target.value)} placeholder={copy.gravityTemperatureLabel} />
+            <div className="brew-confirm-actions">
+              <button type="button" className="dark-btn ghost" onClick={() => setGravityActionOpen(false)}>{copy.brewEntryClose}</button>
+              <button type="button" className="dark-btn brew-confirm-primary" disabled={taskBusy} onClick={async () => {
+                const gravity = parseGravityInput(gravityInput);
+                if (gravity === null || gravity < 0.98 || gravity > 1.2) { setTaskError(copy.gravityConfirmError); return; }
+                const tempC = tempInput.trim() ? Number(tempInput) : null;
+                if (tempC !== null && !Number.isFinite(tempC)) { setTaskError(copy.gravityTempError); return; }
+                try { setTaskBusy(true); await takeGravityReading({ batchId: String(selectedBatch.id ?? ""), gravity, temperatureC: tempC }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setGravityActionOpen(false); setGravityInput(""); setTempInput(""); setTaskError(null); }
+                catch (error) { setTaskError(error instanceof Error ? error.message : copy.gravitySaveError); }
+                finally { setTaskBusy(false); }
+              }}>{copy.brewEntryConfirm}</button>
+            </div>
+            {taskError ? <p className="error">{taskError}</p> : null}
           </div>
         </section>
       )}

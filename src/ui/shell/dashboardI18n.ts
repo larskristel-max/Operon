@@ -106,6 +106,15 @@ export type DashboardCopy = {
   batchesActionAddBrewLog: string;
   batchesActionAddGravity: string;
   batchesActionCreateOutputLot: string;
+  gravityActionLabel: string;
+  gravityActionTitle: string;
+  gravityFieldLabel: string;
+  gravityTemperatureLabel: string;
+  gravityConfirmError: string;
+  gravityTempError: string;
+  gravitySaveError: string;
+  gravityLatestPrefix: string;
+  gravityNoReading: string;
   // Tasks overlay
   tasksBatchTitle: string;
   tasksNeedsAction: string;
@@ -216,6 +225,15 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     batchesActionAddBrewLog: "Add brew log",
     batchesActionAddGravity: "Add gravity",
     batchesActionCreateOutputLot: "Create output lot",
+    gravityActionLabel: "Gravity",
+    gravityActionTitle: "Record gravity",
+    gravityFieldLabel: "Gravity (e.g. 1.050 or 1050)",
+    gravityTemperatureLabel: "Temp °C (optional)",
+    gravityConfirmError: "Enter a valid gravity value (e.g. 1.020 or 1020).",
+    gravityTempError: "Enter a valid temperature or leave blank.",
+    gravitySaveError: "Failed to record gravity reading",
+    gravityLatestPrefix: "Latest gravity",
+    gravityNoReading: "To complete",
     tasksBatchTitle: "BATCH TASKS",
     tasksNeedsAction: "NEEDS ACTION",
   },
@@ -323,6 +341,15 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     batchesActionAddBrewLog: "Ajouter un journal",
     batchesActionAddGravity: "Ajouter une densité",
     batchesActionCreateOutputLot: "Créer un lot de sortie",
+    gravityActionLabel: "Densité",
+    gravityActionTitle: "Enregistrer la densité",
+    gravityFieldLabel: "Densité (ex. 1.050 ou 1050)",
+    gravityTemperatureLabel: "Temp °C (optionnel)",
+    gravityConfirmError: "Entrez une densité valide (ex. 1.020 ou 1020).",
+    gravityTempError: "Entrez une température valide ou laissez vide.",
+    gravitySaveError: "Échec de l’enregistrement de la densité",
+    gravityLatestPrefix: "Dernière densité",
+    gravityNoReading: "À compléter",
     tasksBatchTitle: "TÂCHES DU BATCH",
     tasksNeedsAction: "ACTIONS REQUISES",
   },
@@ -430,6 +457,15 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     batchesActionAddBrewLog: "Braulog hinzufügen",
     batchesActionAddGravity: "Dichte hinzufügen",
     batchesActionCreateOutputLot: "Ausgabelot erstellen",
+    gravityActionLabel: "Dichte",
+    gravityActionTitle: "Dichte erfassen",
+    gravityFieldLabel: "Dichte (z. B. 1.050 oder 1050)",
+    gravityTemperatureLabel: "Temp °C (optional)",
+    gravityConfirmError: "Gib eine gültige Dichte ein (z. B. 1.020 oder 1020).",
+    gravityTempError: "Gib eine gültige Temperatur ein oder leer lassen.",
+    gravitySaveError: "Dichtemessung konnte nicht gespeichert werden",
+    gravityLatestPrefix: "Letzte Dichte",
+    gravityNoReading: "Ausfüllen",
     tasksBatchTitle: "CHARGEN-AUFGABEN",
     tasksNeedsAction: "AKTION ERFORDERLICH",
   },
@@ -537,6 +573,15 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     batchesActionAddBrewLog: "Brouwlog toevoegen",
     batchesActionAddGravity: "Dichtheid toevoegen",
     batchesActionCreateOutputLot: "Outputlot maken",
+    gravityActionLabel: "Dichtheid",
+    gravityActionTitle: "Dichtheid registreren",
+    gravityFieldLabel: "Dichtheid (bijv. 1.050 of 1050)",
+    gravityTemperatureLabel: "Temp °C (optioneel)",
+    gravityConfirmError: "Voer een geldige dichtheid in (bijv. 1.020 of 1020).",
+    gravityTempError: "Voer een geldige temperatuur in of laat leeg.",
+    gravitySaveError: "Dichtheidsmeting opslaan mislukt",
+    gravityLatestPrefix: "Laatste dichtheid",
+    gravityNoReading: "Aan te vullen",
     tasksBatchTitle: "BATCH TAKEN",
     tasksNeedsAction: "ACTIE VEREIST",
   },

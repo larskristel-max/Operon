@@ -96,6 +96,16 @@ export type DashboardCopy = {
   batchesStatus: string;
   batchesDayLabel: string;
   batchesOpenTasks: string;
+  batchesBrewLogs: string;
+  batchesFermentation: string;
+  batchesOutputsLots: string;
+  batchesLatestGravity: string;
+  batchesReadings: string;
+  batchesActionAssignTank: string;
+  batchesActionAddIngredients: string;
+  batchesActionAddBrewLog: string;
+  batchesActionAddGravity: string;
+  batchesActionCreateOutputLot: string;
   // Tasks overlay
   tasksBatchTitle: string;
   tasksNeedsAction: string;
@@ -196,6 +206,16 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     batchesStatus: "Status",
     batchesDayLabel: "Day",
     batchesOpenTasks: "Open tasks",
+    batchesBrewLogs: "Brew logs",
+    batchesFermentation: "Fermentation",
+    batchesOutputsLots: "Outputs / Lots",
+    batchesLatestGravity: "Latest gravity",
+    batchesReadings: "Readings",
+    batchesActionAssignTank: "Assign tank",
+    batchesActionAddIngredients: "Add ingredients",
+    batchesActionAddBrewLog: "Add brew log",
+    batchesActionAddGravity: "Add gravity",
+    batchesActionCreateOutputLot: "Create output lot",
     tasksBatchTitle: "BATCH TASKS",
     tasksNeedsAction: "NEEDS ACTION",
   },
@@ -287,12 +307,22 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     batchesNoneMatchSub: "Aucun batch dans ce filtre.",
     batchesEtat: "État",
     batchesCuve: "Cuve",
-    batchesIntrants: "Intrants",
+    batchesIntrants: "Ingrédients",
     batchesNotAssigned: "Non assigné",
     batchesToComplete: "À compléter",
     batchesStatus: "Statut",
     batchesDayLabel: "Jour",
     batchesOpenTasks: "Tâches ouvertes",
+    batchesBrewLogs: "Journaux de brassage",
+    batchesFermentation: "Fermentation",
+    batchesOutputsLots: "Sorties / Lots",
+    batchesLatestGravity: "Dernière densité",
+    batchesReadings: "Mesures",
+    batchesActionAssignTank: "Assigner une cuve",
+    batchesActionAddIngredients: "Ajouter des ingrédients",
+    batchesActionAddBrewLog: "Ajouter un journal",
+    batchesActionAddGravity: "Ajouter une densité",
+    batchesActionCreateOutputLot: "Créer un lot de sortie",
     tasksBatchTitle: "TÂCHES DU BATCH",
     tasksNeedsAction: "ACTIONS REQUISES",
   },
@@ -390,6 +420,16 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     batchesStatus: "Status",
     batchesDayLabel: "Tag",
     batchesOpenTasks: "Offene Aufgaben",
+    batchesBrewLogs: "Brauprotokolle",
+    batchesFermentation: "Gärung",
+    batchesOutputsLots: "Ausgaben / Lots",
+    batchesLatestGravity: "Letzte Dichte",
+    batchesReadings: "Messungen",
+    batchesActionAssignTank: "Tank zuweisen",
+    batchesActionAddIngredients: "Zutaten hinzufügen",
+    batchesActionAddBrewLog: "Braulog hinzufügen",
+    batchesActionAddGravity: "Dichte hinzufügen",
+    batchesActionCreateOutputLot: "Ausgabelot erstellen",
     tasksBatchTitle: "CHARGEN-AUFGABEN",
     tasksNeedsAction: "AKTION ERFORDERLICH",
   },
@@ -487,6 +527,16 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     batchesStatus: "Status",
     batchesDayLabel: "Dag",
     batchesOpenTasks: "Openstaande taken",
+    batchesBrewLogs: "Brouwlogs",
+    batchesFermentation: "Vergisting",
+    batchesOutputsLots: "Output / Lots",
+    batchesLatestGravity: "Laatste dichtheid",
+    batchesReadings: "Metingen",
+    batchesActionAssignTank: "Tank toewijzen",
+    batchesActionAddIngredients: "Ingrediënten toevoegen",
+    batchesActionAddBrewLog: "Brouwlog toevoegen",
+    batchesActionAddGravity: "Dichtheid toevoegen",
+    batchesActionCreateOutputLot: "Outputlot maken",
     tasksBatchTitle: "BATCH TAKEN",
     tasksNeedsAction: "ACTIE VEREIST",
   },

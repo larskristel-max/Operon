@@ -102,11 +102,14 @@ export function computeTasks(input: {
     const hasMashPh = batchLogs.some((log) => readNumber(log, ["actual_mash_ph"]) !== null);
     const hasPreBoilGravity = batchLogs.some((log) => readNumber(log, ["actual_pre_boil_gravity"]) !== null);
     const hasOriginalGravity = batchLogs.some((log) => readNumber(log, ["actual_original_gravity"]) !== null);
-    const hasHopAddition = (input.boilAdditions ?? []).some((row) => readString(row, ["batch_id"]) === batchId);
     const hasTransferVolume = readNumber(batch, ["actual_fermenter_volume_liters"]) !== null || batchLogs.some((log) => readNumber(log, ["actual_fermenter_volume_liters"]) !== null);
     const hasTransfer = batchLogs.some((log) => readString(log, ["transfer_finished_at"]) !== null);
     const hasYeastPitch = batchLogs.some((log) => readNumber(log, ["yeast_pitch_quantity"]) !== null && readString(log, ["yeast_pitch_time"]) !== null);
     const batchLogIds = new Set(batchLogs.map((log) => readString(log, ["id"])).filter((id): id is string => id !== null));
+    const hasHopAddition = (input.boilAdditions ?? []).some((row) => {
+      const brewLogId = readString(row, ["brew_log_id"]);
+      return brewLogId !== null && batchLogIds.has(brewLogId);
+    });
     const batchFermentationChecks = (input.fermentationChecks ?? []).filter((fc) => {
       const directBatchId = readString(fc, ["batch_id"]);
       if (directBatchId !== null) return directBatchId === batchId;

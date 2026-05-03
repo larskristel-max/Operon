@@ -99,8 +99,8 @@ function formatRelativeReadingTime(value: unknown, locale: string): string | nul
 type BrewLogRow = { label: string; value: string };
 type BrewLogSection = { key: string; title: string; rows: BrewLogRow[] };
 
-function buildBrewLogSections(params: { language: string; brewLogs: Array<Record<string, unknown>>; boilAdditions: Array<Record<string, unknown>>; fermentationChecks: Array<Record<string, unknown>>; batchInputs: Array<Record<string, unknown>>; }): BrewLogSection[] {
-  const { language, brewLogs, boilAdditions, fermentationChecks, batchInputs } = params;
+function buildBrewLogSections(params: { language: string; brewLogs: Array<Record<string, unknown>>; boilAdditions: Array<Record<string, unknown>>; fermentationChecks: Array<Record<string, unknown>>; }): BrewLogSection[] {
+  const { language, brewLogs, boilAdditions, fermentationChecks } = params;
   const isFr = language === "fr";
   const fmtNum = (v: unknown, digits = 1) => {
     const n = typeof v === 'number' ? v : Number(v);
@@ -139,10 +139,6 @@ function buildBrewLogSections(params: { language: string; brewLogs: Array<Record
     const unit = typeof latest.yeast_pitch_unit === 'string' ? latest.yeast_pitch_unit : '';
     if (qty) yeastRows.push({ label: isFr ? 'Ensemencement levure' : 'Yeast pitch', value: `${qty}${unit ? ` ${unit}` : ''}` });
     if (typeof latest.yeast_pitch_time === 'string') yeastRows.push({ label: isFr ? 'Heure' : 'Time', value: new Date(latest.yeast_pitch_time).toLocaleString(language) });
-    if (!qty) {
-      const yi = batchInputs.find((row)=>String(row.input_type ?? '').toLowerCase().includes('yeast') || String(row.ingredient_type ?? '').toLowerCase()==='yeast');
-      if (yi && yi.quantity != null) yeastRows.push({ label: isFr ? 'Ensemencement levure' : 'Yeast pitch', value: `${yi.ingredient_name ?? 'Yeast'} — ${yi.quantity}${yi.unit ? ` ${yi.unit}` : ''}` });
-    }
     if (yeastRows.length) rows.push({ key: 'yeast', title: isFr ? 'Levure' : 'Yeast pitch', rows: yeastRows });
   }
 
@@ -622,7 +618,6 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     brewLogs: selectedBatchBrewLogs,
     boilAdditions: selectedBatchBoilAdditions,
     fermentationChecks: selectedBatchFermentationChecks,
-    batchInputs: selectedBatchInputs,
   }), [language, selectedBatchBrewLogs, selectedBatchBoilAdditions, selectedBatchFermentationChecks, selectedBatchInputs]);
   const latestFermentationCheck = useMemo<Record<string, unknown> | null>(() => {
     if (selectedBatchFermentationChecks.length === 0) return null;

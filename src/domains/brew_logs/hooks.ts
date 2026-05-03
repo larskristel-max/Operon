@@ -30,14 +30,15 @@ export function useRecordMashVolume({ isDemoMode, breweryId }: { isDemoMode: boo
 }
 
 export function useRecordTransferVolume({ isDemoMode, breweryId }: { isDemoMode: boolean; breweryId: string | null }) {
-  return async (input: { batchId: string; actualFermenterVolumeLiters: number }) => {
+  return async (input: { batchId: string; actualFermenterVolumeLiters: number; brewLogs?: Array<Record<string, unknown>> }) => {
     if (isDemoMode) {
       if (!breweryId) throw new Error("Demo brewery not available");
-      const id = crypto.randomUUID();
+      const existingLog = (input.brewLogs ?? []).find((log) => String(log.batch_id ?? "") === input.batchId) ?? null;
+      const id = existingLog ? String(existingLog.id ?? "") : crypto.randomUUID();
       const timestamp = nowIso();
       await writeDemoOverlay({
         table_name: "brew_logs",
-        operation: "insert",
+        operation: existingLog ? "update" : "insert",
         record_id: id,
         payload: {
           id,
@@ -45,7 +46,7 @@ export function useRecordTransferVolume({ isDemoMode, breweryId }: { isDemoMode:
           batch_id: input.batchId,
           actual_fermenter_volume_liters: input.actualFermenterVolumeLiters,
           log_status: "in_progress",
-          created_at: timestamp,
+          ...(existingLog ? {} : { created_at: timestamp }),
           updated_at: timestamp,
         },
       });

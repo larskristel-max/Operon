@@ -437,14 +437,15 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const allBatches = (merged?.batches ?? []) as Array<Record<string, unknown>>;
   const suggestedBatchNumber = useMemo(() => {
     const yy = new Date().getUTCFullYear().toString().slice(-2);
-    const re = new RegExp(`^${yy}-(\\d{3})$`);
+    const re = new RegExp(`^${yy}-(\\d+)$`);
     let max = 0;
     for (const batch of allBatches) {
       const raw = typeof batch.batch_number === "string" ? batch.batch_number : "";
       const match = raw.match(re);
       if (match) max = Math.max(max, Number.parseInt(match[1], 10));
     }
-    return `${yy}-${String(max + 1).padStart(3, "0")}`;
+    const next = max + 1;
+    return `${yy}-${String(next).padStart(3, "0")}`;
   }, [allBatches]);
   const filteredBatches = allBatches.filter((batch) => {
     const s = getBatchStatusKey(batch);

@@ -1009,7 +1009,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
             ) : null}
             {visibleTasks.map((task) => (
               <div key={task.id} className="brew-confirm-summary task-item">
-                <div className="brew-confirm-row"><span className="brew-confirm-label">{task.batchLabel}</span><span className="brew-confirm-value">{task.label}</span></div>
+                <div className="brew-confirm-row"><span className="brew-confirm-label">{task.batchLabel}</span><span className="brew-confirm-value">{task.type === "record_boil" ? copy.taskRecordBoilLabel : task.label}</span></div>
                 <button type="button" className="dark-btn task-toggle-btn" onClick={() => { setActiveTaskId((prev) => (prev === task.id ? null : task.id)); setTaskError(null); }}>Start</button>
                 {activeTaskId === task.id && task.type === "assign_tank" && (
                   <div className="task-action-panel">
@@ -1103,7 +1103,19 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                     }}>Confirm</button>
                   </div>
                 )}
-                {activeTaskId === task.id && ["record_mash_water","record_strike_temp","record_sparge_water","record_mash_ph","record_pre_boil_gravity","record_boil","record_hop_addition","record_transfer","pitch_yeast"].includes(task.type) && (
+                {activeTaskId === task.id && task.type === "record_boil" && (
+                  <div className="task-action-panel">
+                    <input className="task-input" type="text" inputMode="decimal" value={gravityInput} onChange={(event) => setGravityInput(event.target.value)} placeholder="e.g. 1.050 or 1050" />
+                    <button type="button" className="dark-btn brew-confirm-primary task-confirm-btn" disabled={taskBusy} onClick={async () => {
+                      const gravity = parseGravityInput(gravityInput);
+                      if (gravity === null || gravity < 0.98 || gravity > 1.20) { setTaskError("Enter a valid original gravity (e.g. 1.050 or 1050)."); return; }
+                      try { setTaskBusy(true); await captureBrewTask({ taskType: task.type, batchId: task.batchId, value: gravity }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setGravityInput(""); }
+                      catch (error) { setTaskError(error instanceof Error ? error.message : "Failed to record original gravity"); }
+                      finally { setTaskBusy(false); }
+                    }}>Confirm</button>
+                  </div>
+                )}
+                {activeTaskId === task.id && ["record_mash_water","record_strike_temp","record_sparge_water","record_mash_ph","record_pre_boil_gravity","record_hop_addition","record_transfer","pitch_yeast"].includes(task.type) && (
                   <form className="task-inline-form" onSubmit={async (event) => {
                     event.preventDefault();
                     const value = Number(mashVolumeInput);

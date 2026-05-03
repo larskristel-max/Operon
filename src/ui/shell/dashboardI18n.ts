@@ -115,6 +115,7 @@ export type DashboardCopy = {
   gravitySaveError: string;
   gravityLatestPrefix: string;
   gravityNoReading: string;
+  taskRecordBoilLabel: string;
   // Tasks overlay
   tasksBatchTitle: string;
   tasksNeedsAction: string;
@@ -234,6 +235,7 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     gravitySaveError: "Failed to record gravity reading",
     gravityLatestPrefix: "Latest gravity",
     gravityNoReading: "To complete",
+    taskRecordBoilLabel: "Record original gravity",
     tasksBatchTitle: "BATCH TASKS",
     tasksNeedsAction: "NEEDS ACTION",
   },
@@ -350,6 +352,7 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     gravitySaveError: "Échec de l’enregistrement de la densité",
     gravityLatestPrefix: "Dernière densité",
     gravityNoReading: "À compléter",
+    taskRecordBoilLabel: "Enregistrer densité initiale",
     tasksBatchTitle: "TÂCHES DU BATCH",
     tasksNeedsAction: "ACTIONS REQUISES",
   },
@@ -466,6 +469,7 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     gravitySaveError: "Dichtemessung konnte nicht gespeichert werden",
     gravityLatestPrefix: "Letzte Dichte",
     gravityNoReading: "Ausfüllen",
+    taskRecordBoilLabel: "Stammwürze erfassen",
     tasksBatchTitle: "CHARGEN-AUFGABEN",
     tasksNeedsAction: "AKTION ERFORDERLICH",
   },
@@ -582,6 +586,7 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     gravitySaveError: "Dichtheidsmeting opslaan mislukt",
     gravityLatestPrefix: "Laatste dichtheid",
     gravityNoReading: "Aan te vullen",
+    taskRecordBoilLabel: "Begin SG registreren",
     tasksBatchTitle: "BATCH TAKEN",
     tasksNeedsAction: "ACTIE VEREIST",
   },

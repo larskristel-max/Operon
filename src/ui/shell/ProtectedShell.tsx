@@ -1118,7 +1118,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                     <button type="button" className="dark-btn brew-confirm-primary task-confirm-btn" disabled={taskBusy} onClick={async () => {
                       const liters = Number(mashVolumeInput);
                       if (!Number.isFinite(liters) || liters <= 0) { setTaskError("Enter a valid volume in liters."); return; }
-                      try { setTaskBusy(true); await recordMashVolume({ batchId: task.batchId, actualMashVolumeLiters: liters }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setMashVolumeInput(""); }
+                      try { setTaskBusy(true); await recordMashVolume({ batchId: task.batchId, actualMashVolumeLiters: liters, brewLogs: selectedBatchBrewLogs }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setMashVolumeInput(""); }
                       catch (error) { setTaskError(error instanceof Error ? error.message : "Failed to record mash volume"); }
                       finally { setTaskBusy(false); }
                     }}>Confirm</button>

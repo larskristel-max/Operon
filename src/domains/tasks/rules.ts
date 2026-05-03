@@ -89,6 +89,8 @@ export function computeTasks(input: {
     const hasTransferVolume = readNumber(batch, ["actual_fermenter_volume_liters"]) !== null || batchLogs.some((log) => readNumber(log, ["actual_fermenter_volume_liters"]) !== null);
     const batchLogIds = new Set(batchLogs.map((log) => readString(log, ["id"])).filter((id): id is string => id !== null));
     const batchFermentationChecks = (input.fermentationChecks ?? []).filter((fc) => {
+      const directBatchId = readString(fc, ["batch_id"]);
+      if (directBatchId !== null) return directBatchId === batchId;
       const brewLogId = readString(fc, ["brew_log_id"]);
       return brewLogId !== null && batchLogIds.has(brewLogId);
     });
@@ -109,12 +111,12 @@ export function computeTasks(input: {
     });
     const hasTank = input.tanks.some((tank) => readString(tank, ["current_batch_id"]) === batchId);
 
-    if (status === "planned" && batchInputs.length === 0) tasks.push({ id: taskId(batchId, "assign_inputs", "planned:no_batch_inputs"), type: "assign_inputs", batch_id: batchId, label: "Assign ingredient lots", actionable: true, batch_label: batchLabel });
+    if (batchInputs.length === 0) tasks.push({ id: taskId(batchId, "assign_inputs", `${status || "unknown"}:no_batch_inputs`), type: "assign_inputs", batch_id: batchId, label: "Assign ingredient lots", actionable: true, batch_label: batchLabel });
     if (status === "planned" && !hasTank) tasks.push({ id: taskId(batchId, "assign_tank", "planned:no_tank"), type: "assign_tank", batch_id: batchId, label: "Assign tank", actionable: true, batch_label: batchLabel });
     if (status === "brewing" && !hasMashVolume) tasks.push({ id: taskId(batchId, "record_mash_volume", "brewing:no_mash_volume"), type: "record_mash_volume", batch_id: batchId, label: "Record mash volume", actionable: true, batch_label: batchLabel });
     if (status === "brewing" && !hasTransferVolume) tasks.push({ id: taskId(batchId, "record_transfer_volume", "brewing:no_transfer_volume"), type: "record_transfer_volume", batch_id: batchId, label: "Record transfer volume", actionable: true, batch_label: batchLabel });
-    if (status === "fermenting" && !hasRecentFermentationCheck && input.brewLogs.length > 0) tasks.push({ id: taskId(batchId, "take_gravity_reading", "fermenting:no_recent_gravity"), type: "take_gravity_reading", batch_id: batchId, label: "Take gravity reading", actionable: true, batch_label: batchLabel });
-    if (status === "packaged" && batchLots.length === 0 && input.lots.length > 0) tasks.push({ id: taskId(batchId, "create_output_lot", "packaged:no_lots"), type: "create_output_lot", batch_id: batchId, label: "Create output lot", actionable: true, batch_label: batchLabel });
+    if (status === "fermenting" && !hasRecentFermentationCheck) tasks.push({ id: taskId(batchId, "take_gravity_reading", "fermenting:no_recent_gravity"), type: "take_gravity_reading", batch_id: batchId, label: "Take gravity reading", actionable: true, batch_label: batchLabel });
+    if (status === "packaged" && batchLots.length === 0) tasks.push({ id: taskId(batchId, "create_output_lot", "packaged:no_lots"), type: "create_output_lot", batch_id: batchId, label: "Create output lot", actionable: true, batch_label: batchLabel });
   }
 
   return Array.from(new Map(tasks.map((task) => [task.id, task])).values());

@@ -1,6 +1,6 @@
 import operonLogo from "../../../assets/Operonv1.png";
 import tankImage from "../../../assets/Tankimageasset.png";
-import { type TouchEvent, useMemo, useRef, useState } from "react";
+import { type ReactNode, type TouchEvent, useMemo, useRef, useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { type DashboardData } from "@/data/demoData";
@@ -469,6 +469,20 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     ["create_output_lot"],
   ] as const;
   const firstIncompleteSectionIndex = sectionTaskTypes.findIndex((types) => selectedBatchTasks.some((task) => types.includes(task.type as never)));
+  const latestFermentationCheck = useMemo<Record<string, unknown> | null>(() => {
+    if (selectedBatchFermentationChecks.length === 0) return null;
+    const sorted = [...selectedBatchFermentationChecks].sort((a, b) => {
+      const aCreated = typeof a.created_at === "string" ? Date.parse(a.created_at) : Number.NaN;
+      const bCreated = typeof b.created_at === "string" ? Date.parse(b.created_at) : Number.NaN;
+      const aValid = Number.isFinite(aCreated);
+      const bValid = Number.isFinite(bCreated);
+      if (aValid && bValid) return bCreated - aCreated;
+      if (bValid) return 1;
+      if (aValid) return -1;
+      return 0;
+    });
+    return sorted[0] ?? null;
+  }, [selectedBatchFermentationChecks]);
   const visibleTasks = taskScopeBatchId
     ? executableTasks.filter((t) => t.batchId === taskScopeBatchId)
     : executableTasks;
@@ -1094,12 +1108,37 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                 <div className="brewsheet-section">
                   <p className="brewsheet-section-title">Brew logs</p>
                   <div className="brewsheet-rows">
-                    {selectedBatchBrewLogs.length === 0 ? <p className="brewsheet-empty-hint">{copy.batchesToComplete}</p> : selectedBatchBrewLogs.slice(0, 3).map((log, idx) => (
-                      <div key={String(log.id ?? idx)} className="brewsheet-row">
-                        <span className="brewsheet-row-label">{String(log.log_type ?? "Log")}</span>
-                        <span className="brewsheet-row-value">{log.value != null ? String(log.value) : copy.batchesToComplete}</span>
-                      </div>
-                    ))}
+                    {selectedBatchBrewLogs.length === 0 ? <p className="brewsheet-empty-hint">{copy.batchesToComplete}</p> : selectedBatchBrewLogs.slice(0, 3).flatMap((log, idx) => {
+                      const rows: ReactNode[] = [];
+                      const keyBase = String(log.id ?? idx);
+                      const mashVolume = typeof log.actual_mash_volume_liters === "number" ? log.actual_mash_volume_liters : null;
+                      const fermenterVolume = typeof log.actual_fermenter_volume_liters === "number" ? log.actual_fermenter_volume_liters : null;
+                      if (mashVolume !== null) {
+                        rows.push(
+                          <div key={`${keyBase}-mash`} className="brewsheet-row">
+                            <span className="brewsheet-row-label">Mash volume</span>
+                            <span className="brewsheet-row-value">{mashVolume} L</span>
+                          </div>
+                        );
+                      }
+                      if (fermenterVolume !== null) {
+                        rows.push(
+                          <div key={`${keyBase}-transfer`} className="brewsheet-row">
+                            <span className="brewsheet-row-label">Transfer volume</span>
+                            <span className="brewsheet-row-value">{fermenterVolume} L</span>
+                          </div>
+                        );
+                      }
+                      if (rows.length === 0) {
+                        rows.push(
+                          <div key={`${keyBase}-fallback`} className="brewsheet-row">
+                            <span className="brewsheet-row-label">{String(log.log_type ?? "Log")}</span>
+                            <span className="brewsheet-row-value">{copy.batchesToComplete}</span>
+                          </div>
+                        );
+                      }
+                      return rows;
+                    })}
                   </div>
                   {(() => {
                     const task = selectedBatchTasks.find((t) => t.type === "record_mash_volume" || t.type === "record_transfer_volume");
@@ -1113,7 +1152,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                   <div className="brewsheet-rows">
                     {selectedBatchFermentationChecks.length === 0 ? <p className="brewsheet-empty-hint">{copy.batchesToComplete}</p> : (
                       <>
-                        <div className="brewsheet-row"><span className="brewsheet-row-label">Latest gravity</span><span className="brewsheet-row-value">{String(selectedBatchFermentationChecks[selectedBatchFermentationChecks.length - 1]?.gravity ?? copy.batchesToComplete)}</span></div>
+                        <div className="brewsheet-row"><span className="brewsheet-row-label">Latest gravity</span><span className="brewsheet-row-value">{String(latestFermentationCheck?.gravity ?? copy.batchesToComplete)}</span></div>
                         <div className="brewsheet-row"><span className="brewsheet-row-label">Readings</span><span className="brewsheet-row-value">{selectedBatchFermentationChecks.length}</span></div>
                       </>
                     )}

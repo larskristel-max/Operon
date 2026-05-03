@@ -1118,7 +1118,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                     <button type="button" className="dark-btn brew-confirm-primary task-confirm-btn" disabled={taskBusy} onClick={async () => {
                       const liters = Number(mashVolumeInput);
                       if (!Number.isFinite(liters) || liters <= 0) { setTaskError("Enter a valid volume in liters."); return; }
-                      try { setTaskBusy(true); await recordMashVolume({ batchId: task.batchId, actualMashVolumeLiters: liters, brewLogs: selectedBatchBrewLogs }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setMashVolumeInput(""); }
+                      try { setTaskBusy(true); const taskBatchBrewLogs = currentBrewLogs.filter((log) => String(log.batch_id ?? "") === task.batchId); await recordMashVolume({ batchId: task.batchId, actualMashVolumeLiters: liters, brewLogs: taskBatchBrewLogs }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setMashVolumeInput(""); }
                       catch (error) { setTaskError(error instanceof Error ? error.message : "Failed to record mash volume"); }
                       finally { setTaskBusy(false); }
                     }}>Confirm</button>
@@ -1182,7 +1182,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                     <button type="button" className="dark-btn brew-confirm-primary task-confirm-btn" disabled={taskBusy} onClick={async () => {
                       const liters = Number(transferVolumeInput);
                       if (!Number.isFinite(liters) || liters <= 0) { setTaskError("Enter a valid volume in liters."); return; }
-                      try { setTaskBusy(true); await recordTransferVolume({ batchId: task.batchId, actualFermenterVolumeLiters: liters, brewLogs: selectedBatchBrewLogs }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setTransferVolumeInput(""); }
+                      try { setTaskBusy(true); const taskBatchBrewLogs = currentBrewLogs.filter((log) => String(log.batch_id ?? "") === task.batchId); await recordTransferVolume({ batchId: task.batchId, actualFermenterVolumeLiters: liters, brewLogs: taskBatchBrewLogs }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setTransferVolumeInput(""); }
                       catch (error) { setTaskError(error instanceof Error ? error.message : "Failed to record transfer volume"); }
                       finally { setTaskBusy(false); }
                     }}>Confirm</button>

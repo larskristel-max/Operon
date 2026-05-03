@@ -32,7 +32,9 @@ export async function onRequestPost(context: { request: Request; env: BreweryEnv
     brewLogId = newLogRows[0].id;
   }
   const today = new Date().toISOString().split("T")[0];
-  const checkPayload: Record<string, unknown> = { brew_log_id: brewLogId, check_date: today, gravity, check_type: body.checkType ?? "gravity" };
+  const measuredAt = new Date().toISOString();
+  const resolvedReadingType = body.checkType ?? "gravity";
+  const checkPayload: Record<string, unknown> = { brew_log_id: brewLogId, batch_id: body.batchId, check_date: today, gravity, check_type: resolvedReadingType, measured_at: measuredAt, reading_type: resolvedReadingType, is_stable_fg_check: false };
   if (body.temperatureC != null && Number.isFinite(Number(body.temperatureC))) checkPayload.temperature_c = Number(body.temperatureC);
   const checkRes = await fetch(`${context.env.SUPABASE_URL}/rest/v1/fermentation_checks`, { method: "POST", headers: adminHeaders(context.env), body: JSON.stringify(checkPayload) });
   const inserted = await checkRes.json();

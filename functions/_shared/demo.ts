@@ -224,7 +224,7 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 
 async function fetchFermentationCheckChunk(env: DemoEnv, chunk: string[]): Promise<Array<Record<string, unknown>>> {
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/fermentation_checks?brew_log_id=in.(${chunk.join(",")})&select=*&order=created_at.asc`,
+    `${env.SUPABASE_URL}/rest/v1/fermentation_checks?brew_log_id=in.(${chunk.join(",")})&select=id,batch_id,brew_log_id,gravity,temperature_c,measured_at,reading_type,is_stable_fg_check,created_at,check_date,check_time,check_type&order=created_at.asc`,
     { headers: adminHeaders(env) }
   );
   return await parseSupabaseResponse<Array<Record<string, unknown>>>(res, "Failed to load fermentation_checks");

@@ -98,7 +98,7 @@ export function computeTasks(input: {
     const hasRecentGravityFromChecks = batchFermentationChecks.some((fc) => {
       const gravity = readNumber(fc, ["gravity"]);
       if (gravity === null) return false;
-      const ts = readDateTimestamp(fc, ["created_at", "check_date"]);
+      const ts = readDateTimestamp(fc, ["measured_at", "created_at", "check_date"]);
       return ts === null || ts >= oneDayAgo;
     });
     const hasRecentFermentationCheck = hasRecentGravityFromChecks || batchLogs.some((log) => {

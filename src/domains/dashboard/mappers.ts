@@ -19,6 +19,8 @@ export function mapRealDashboardToMerged(data: RealDashboardData): RealDashboard
     sales: data.sales,
     batch_inputs: data.batch_inputs,
     brew_logs: data.brew_logs,
+    mash_steps: data.mash_steps ?? [],
+    boil_additions: data.boil_additions ?? [],
     fermentation_checks: data.fermentation_checks ?? [],
     pending_movements: data.pending_movements,
     operational:

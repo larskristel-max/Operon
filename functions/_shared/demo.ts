@@ -38,6 +38,8 @@ export interface DemoDashboardData {
   sales: Array<Record<string, unknown>>;
   batch_inputs: Array<Record<string, unknown>>;
   brew_logs: Array<Record<string, unknown>>;
+  mash_steps: Array<Record<string, unknown>>;
+  boil_additions: Array<Record<string, unknown>>;
   fermentation_checks: Array<Record<string, unknown>>;
   pending_movements: Array<Record<string, unknown>>;
 }
@@ -249,6 +251,37 @@ async function fetchFermentationChecks(env: DemoEnv, brewLogIds: string[]): Prom
   }
 }
 
+async function fetchRowsByBrewLogIds(
+  env: DemoEnv,
+  tableName: "mash_steps" | "boil_additions",
+  brewLogIds: string[]
+): Promise<Array<Record<string, unknown>>> {
+  if (brewLogIds.length === 0) return [];
+  try {
+    const chunks = chunkArray(brewLogIds, 25);
+    const results = await Promise.all(
+      chunks.map(async (chunk) => {
+        const res = await fetch(
+          `${env.SUPABASE_URL}/rest/v1/${tableName}?brew_log_id=in.(${encodeURIComponent(chunk.join(","))})&select=*&order=${encodeURIComponent("created_at.desc")}`,
+          { headers: adminHeaders(env) }
+        );
+        return parseSupabaseResponse<Array<Record<string, unknown>>>(res, `Failed to load ${tableName}`);
+      })
+    );
+    return results.flat();
+  } catch (error) {
+    if (error instanceof DemoHttpError) {
+      const normalizedMessage = error.message.toLowerCase();
+      const isSafeSkip =
+        normalizedMessage.includes("could not find the") ||
+        normalizedMessage.includes("relation") ||
+        normalizedMessage.includes("does not exist");
+      if (isSafeSkip) return [];
+    }
+    return [];
+  }
+}
+
 export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string): Promise<DemoDashboardData> {
   const breweryRes = await fetch(
     `${env.SUPABASE_URL}/rest/v1/brewery_profiles?id=eq.${encodeURIComponent(
@@ -277,7 +310,11 @@ export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string
   ]);
 
   const brewLogIds = brewLogs.map((l) => l.id).filter((id): id is string => typeof id === "string" && id.length > 0);
-  const fermentationChecks = await fetchFermentationChecks(env, brewLogIds);
+  const [fermentationChecks, mashSteps, boilAdditions] = await Promise.all([
+    fetchFermentationChecks(env, brewLogIds),
+    fetchRowsByBrewLogIds(env, "mash_steps", brewLogIds),
+    fetchRowsByBrewLogIds(env, "boil_additions", brewLogIds),
+  ]);
 
   return {
     brewery_profile: breweryRows[0] ?? null,
@@ -292,6 +329,8 @@ export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string
     sales,
     batch_inputs: batchInputs,
     brew_logs: brewLogs,
+    mash_steps: mashSteps,
+    boil_additions: boilAdditions,
     fermentation_checks: fermentationChecks,
     pending_movements: pendingMovements,
   };
@@ -371,6 +410,8 @@ const DASHBOARD_OVERLAY_TABLES: ReadonlyArray<keyof DemoDashboardData> = [
   "sales",
   "batch_inputs",
   "brew_logs",
+  "mash_steps",
+  "boil_additions",
   "fermentation_checks",
   "pending_movements",
 ];
@@ -389,6 +430,8 @@ export function applyDashboardOverlay(baseline: DemoDashboardData, overlays: Ove
     sales: [...baseline.sales],
     batch_inputs: [...baseline.batch_inputs],
     brew_logs: [...baseline.brew_logs],
+    mash_steps: [...baseline.mash_steps],
+    boil_additions: [...baseline.boil_additions],
     fermentation_checks: [...baseline.fermentation_checks],
     pending_movements: [...baseline.pending_movements],
   };

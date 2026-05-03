@@ -440,6 +440,35 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
       (input) => String(input.batch_id ?? "") === batchId
     );
   }, [selectedBatch, merged?.batch_inputs]);
+
+  const selectedBatchBrewLogs = useMemo<Array<Record<string, unknown>>>(() => {
+    if (!selectedBatch) return [];
+    const batchId = String(selectedBatch.id ?? "");
+    return ((merged?.brew_logs ?? []) as Array<Record<string, unknown>>).filter((log) => String(log.batch_id ?? "") === batchId);
+  }, [selectedBatch, merged?.brew_logs]);
+  const selectedBatchFermentationChecks = useMemo<Array<Record<string, unknown>>>(() => {
+    if (!selectedBatch) return [];
+    const batchId = String(selectedBatch.id ?? "");
+    return ((merged?.fermentation_checks ?? []) as Array<Record<string, unknown>>).filter((check) => String(check.batch_id ?? "") === batchId);
+  }, [selectedBatch, merged?.fermentation_checks]);
+  const selectedBatchLots = useMemo<Array<Record<string, unknown>>>(() => {
+    if (!selectedBatch) return [];
+    const batchId = String(selectedBatch.id ?? "");
+    return ((merged?.lots ?? []) as Array<Record<string, unknown>>).filter((lot) => String(lot.batch_id ?? "") === batchId);
+  }, [selectedBatch, merged?.lots]);
+  const selectedBatchTasks = useMemo(() => {
+    if (!selectedBatch) return [];
+    const batchId = String(selectedBatch.id ?? "");
+    return executableTasks.filter((task) => task.batchId === batchId);
+  }, [selectedBatch, executableTasks]);
+  const sectionTaskTypes = [
+    ["assign_tank"],
+    ["assign_inputs"],
+    ["record_mash_volume", "record_transfer_volume"],
+    ["take_gravity_reading"],
+    ["create_output_lot"],
+  ] as const;
+  const firstIncompleteSectionIndex = sectionTaskTypes.findIndex((types) => selectedBatchTasks.some((task) => types.includes(task.type as never)));
   const visibleTasks = taskScopeBatchId
     ? executableTasks.filter((t) => t.batchId === taskScopeBatchId)
     : executableTasks;
@@ -1006,6 +1035,18 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                       </span>
                     </div>
                   </div>
+                  {(() => {
+                    const task = selectedBatchTasks.find((t) => t.type === "assign_tank");
+                    if (!task) return null;
+                    const isPrimary = firstIncompleteSectionIndex === 0;
+                    return (
+                      <div className="brewsheet-actions">
+                        <button type="button" className={`dark-btn ${isPrimary ? "brew-confirm-primary" : "ghost"}`} onClick={() => { setTasksOpen(true); setTaskScopeBatchId(task.batchId); setActiveTaskId(task.id); closeBatchesOverlay(); }}>
+                          Assign tank
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Section 3 — Intrants */}
@@ -1036,37 +1077,68 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                       })
                     )}
                   </div>
-                </div>
-
-                {/* Section 4 — Tâches */}
-                {(() => {
-                  const batchIdStr = String(selectedBatch.id ?? "");
-                  const batchTaskCount = executableTasks.filter((t) => t.batchId === batchIdStr).length;
-                  return (
-                    <div className="brewsheet-section brewsheet-section-tasks">
-                      <p className="brewsheet-section-title">{copy.navTasks}</p>
-                      <div className="brewsheet-rows">
-                        <div className="brewsheet-row">
-                          <span className="brewsheet-row-label">{copy.batchesOpenTasks}</span>
-                          <span className="brewsheet-row-value">{batchTaskCount}</span>
-                        </div>
-                      </div>
+                  {(() => {
+                    const task = selectedBatchTasks.find((t) => t.type === "assign_inputs");
+                    if (!task) return null;
+                    const isPrimary = firstIncompleteSectionIndex === 1;
+                    return (
                       <div className="brewsheet-actions">
-                        <button
-                          type="button"
-                          className="dark-btn brew-confirm-primary"
-                          onClick={() => {
-                            setTaskScopeBatchId(batchIdStr);
-                            setTasksOpen(true);
-                            closeBatchesOverlay();
-                          }}
-                        >
-                          {copy.batchesSeeTasks}
+                        <button type="button" className={`dark-btn ${isPrimary ? "brew-confirm-primary" : "ghost"}`} onClick={() => { setTasksOpen(true); setTaskScopeBatchId(task.batchId); setActiveTaskId(task.id); closeBatchesOverlay(); }}>
+                          Add ingredients
                         </button>
                       </div>
-                    </div>
-                  );
-                })()}
+                    );
+                  })()}
+                </div>
+
+                <div className="brewsheet-section">
+                  <p className="brewsheet-section-title">Brew logs</p>
+                  <div className="brewsheet-rows">
+                    {selectedBatchBrewLogs.length === 0 ? <p className="brewsheet-empty-hint">{copy.batchesToComplete}</p> : selectedBatchBrewLogs.slice(0, 3).map((log, idx) => (
+                      <div key={String(log.id ?? idx)} className="brewsheet-row">
+                        <span className="brewsheet-row-label">{String(log.log_type ?? "Log")}</span>
+                        <span className="brewsheet-row-value">{log.value != null ? String(log.value) : copy.batchesToComplete}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {(() => {
+                    const task = selectedBatchTasks.find((t) => t.type === "record_mash_volume" || t.type === "record_transfer_volume");
+                    if (!task) return null;
+                    const isPrimary = firstIncompleteSectionIndex === 2;
+                    return <div className="brewsheet-actions"><button type="button" className={`dark-btn ${isPrimary ? "brew-confirm-primary" : "ghost"}`} onClick={() => { setTasksOpen(true); setTaskScopeBatchId(task.batchId); setActiveTaskId(task.id); closeBatchesOverlay(); }}>Add brew log</button></div>;
+                  })()}
+                </div>
+                <div className="brewsheet-section">
+                  <p className="brewsheet-section-title">Fermentation</p>
+                  <div className="brewsheet-rows">
+                    {selectedBatchFermentationChecks.length === 0 ? <p className="brewsheet-empty-hint">{copy.batchesToComplete}</p> : (
+                      <>
+                        <div className="brewsheet-row"><span className="brewsheet-row-label">Latest gravity</span><span className="brewsheet-row-value">{String(selectedBatchFermentationChecks[selectedBatchFermentationChecks.length - 1]?.gravity ?? copy.batchesToComplete)}</span></div>
+                        <div className="brewsheet-row"><span className="brewsheet-row-label">Readings</span><span className="brewsheet-row-value">{selectedBatchFermentationChecks.length}</span></div>
+                      </>
+                    )}
+                  </div>
+                  {(() => {
+                    const task = selectedBatchTasks.find((t) => t.type === "take_gravity_reading");
+                    if (!task) return null;
+                    const isPrimary = firstIncompleteSectionIndex === 3;
+                    return <div className="brewsheet-actions"><button type="button" className={`dark-btn ${isPrimary ? "brew-confirm-primary" : "ghost"}`} onClick={() => { setTasksOpen(true); setTaskScopeBatchId(task.batchId); setActiveTaskId(task.id); closeBatchesOverlay(); }}>Add gravity</button></div>;
+                  })()}
+                </div>
+                <div className="brewsheet-section">
+                  <p className="brewsheet-section-title">Outputs / Lots</p>
+                  <div className="brewsheet-rows">
+                    {selectedBatchLots.length === 0 ? <p className="brewsheet-empty-hint">{copy.batchesToComplete}</p> : selectedBatchLots.slice(0, 3).map((lot, idx) => (
+                      <div key={String(lot.id ?? idx)} className="brewsheet-row"><span className="brewsheet-row-label">{String(lot.lot_number ?? "Lot")}</span><span className="brewsheet-row-value">{lot.volume_liters != null ? `${String(lot.volume_liters)} L` : copy.batchesToComplete}</span></div>
+                    ))}
+                  </div>
+                  {(() => {
+                    const task = selectedBatchTasks.find((t) => t.type === "create_output_lot");
+                    if (!task) return null;
+                    const isPrimary = firstIncompleteSectionIndex === 4;
+                    return <div className="brewsheet-actions"><button type="button" className={`dark-btn ${isPrimary ? "brew-confirm-primary" : "ghost"}`} onClick={() => { setTasksOpen(true); setTaskScopeBatchId(task.batchId); setActiveTaskId(task.id); closeBatchesOverlay(); }}>Create output lot</button></div>;
+                  })()}
+                </div>
               </div>
             ) : (
               <>

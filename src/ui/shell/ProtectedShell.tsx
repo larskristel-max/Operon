@@ -932,7 +932,10 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                     <button
                       type="button"
                       className="dark-btn brew-confirm-primary"
-                      onClick={() => void brewEntryFlow.confirmDraft(brewBatchNumber || suggestedBatchNumber)}
+                      onClick={() => {
+                        const manualBatchNumber = brewBatchNumber.trim();
+                        void brewEntryFlow.confirmDraft(manualBatchNumber ? manualBatchNumber : undefined);
+                      }}
                       disabled={brewEntryFlow.state.isConfirming}
                     >
                       {copy.brewEntryConfirmBrew}
@@ -1217,7 +1220,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                   </div>
                 </div>
 
-                <div className={`brewsheet-section ${(Boolean(brewLogsTask) || selectedBatchBrewLogs.length > 0) ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 2 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={(Boolean(brewLogsTask) || selectedBatchBrewLogs.length > 0) ? "button" : undefined} tabIndex={(Boolean(brewLogsTask) || selectedBatchBrewLogs.length > 0) ? 0 : undefined} onClick={() => { if (brewLogsTask) openBatchTask(brewLogsTask); else if (selectedBatchBrewLogs.length > 0) openBatchTaskList(String(selectedBatch.id ?? "")); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { if (!brewLogsTask && selectedBatchBrewLogs.length === 0) return; event.preventDefault(); if (brewLogsTask) openBatchTask(brewLogsTask); else openBatchTaskList(String(selectedBatch.id ?? "")); } }}>
+                <div className={`brewsheet-section ${(Boolean(brewLogsTask) || selectedBatchBrewLogs.length > 0) ? `brewsheet-section-actionable ${firstIncompleteSectionIndex === 2 ? "brewsheet-section-primary" : "brewsheet-section-secondary"}` : ""}`} role={(Boolean(brewLogsTask) || selectedBatchBrewLogs.length > 0) ? "button" : undefined} tabIndex={(Boolean(brewLogsTask) || selectedBatchBrewLogs.length > 0) ? 0 : undefined} onClick={() => { if (brewLogsTask) openBatchTaskList(String(selectedBatch.id ?? "")); else if (selectedBatchBrewLogs.length > 0) openBatchTaskList(String(selectedBatch.id ?? "")); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { if (!brewLogsTask && selectedBatchBrewLogs.length === 0) return; event.preventDefault(); if (brewLogsTask) openBatchTaskList(String(selectedBatch.id ?? "")); else openBatchTaskList(String(selectedBatch.id ?? "")); } }}>
                   <p className="brewsheet-section-title">{copy.batchesBrewLogs}</p>
                   <div className="brewsheet-rows">
                     {selectedBatchBrewLogs.length === 0 ? <p className="brewsheet-empty-hint">{copy.batchesToComplete}</p> : selectedBatchBrewLogs.slice(0, 3).flatMap((log, idx) => {

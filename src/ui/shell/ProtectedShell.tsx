@@ -498,7 +498,6 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
       task.type === "record_pre_boil_gravity" ||
       task.type === "record_boil" ||
       task.type === "record_hop_addition" ||
-      task.type === "record_transfer" ||
       task.type === "pitch_yeast" ||
       task.type === "take_gravity_reading" ||
       task.type === "create_output_lot"
@@ -595,13 +594,13 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const sectionTaskTypes = [
     ["assign_tank"],
     ["assign_inputs"],
-    ["start_brewing", "record_mash_volume", "record_mash_water", "record_strike_temp", "record_sparge_water", "record_mash_ph", "record_pre_boil_gravity", "record_boil", "record_hop_addition", "record_transfer", "record_transfer_volume", "pitch_yeast"],
+    ["start_brewing", "record_mash_volume", "record_mash_water", "record_strike_temp", "record_sparge_water", "record_mash_ph", "record_pre_boil_gravity", "record_boil", "record_hop_addition", "record_transfer_volume", "pitch_yeast"],
     ["take_gravity_reading"],
     ["create_output_lot"],
   ] as const;
   const firstIncompleteSectionIndex = sectionTaskTypes.findIndex((types) => selectedBatchTasks.some((task) => types.includes(task.type as never)));
   const assignInputsTask = selectedBatchTasks.find((t) => t.type === "assign_inputs");
-  const brewLogsTask = selectedBatchTasks.find((t) => ["start_brewing","record_mash_volume","record_mash_water","record_strike_temp","record_sparge_water","record_mash_ph","record_pre_boil_gravity","record_boil","record_hop_addition","record_transfer","record_transfer_volume","pitch_yeast"].includes(t.type));
+  const brewLogsTask = selectedBatchTasks.find((t) => ["start_brewing","record_mash_volume","record_mash_water","record_strike_temp","record_sparge_water","record_mash_ph","record_pre_boil_gravity","record_boil","record_hop_addition","record_transfer_volume","pitch_yeast"].includes(t.type));
   const gravityTask = selectedBatchTasks.find((t) => t.type === "take_gravity_reading");
   const outputLotTask = selectedBatchTasks.find((t) => t.type === "create_output_lot");
   const openBatchTask = (task: { id: string; batchId: string }) => {
@@ -1201,7 +1200,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                     }}>Confirm</button>
                   </div>
                 )}
-                {activeTaskId === task.id && ["record_mash_water","record_strike_temp","record_sparge_water","record_mash_ph","record_pre_boil_gravity","record_hop_addition","record_transfer","pitch_yeast"].includes(task.type) && (
+                {activeTaskId === task.id && ["record_mash_water","record_strike_temp","record_sparge_water","record_mash_ph","record_pre_boil_gravity","record_hop_addition","pitch_yeast"].includes(task.type) && (
                   <form className="task-inline-form" onSubmit={async (event) => {
                     event.preventDefault();
                     const value = Number(taskScalarInput);

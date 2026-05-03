@@ -84,7 +84,7 @@ async function fetchFermentationChecksByBrewLogs(env: Env, brewLogs: JsonRecord[
     const results = await Promise.all(
       chunks.map(async (chunk) => {
         const res = await fetch(
-          `${env.SUPABASE_URL}/rest/v1/fermentation_checks?brew_log_id=in.(${encodeURIComponent(chunk.join(","))})&select=*&order=created_at.desc`,
+          `${env.SUPABASE_URL}/rest/v1/fermentation_checks?brew_log_id=in.(${encodeURIComponent(chunk.join(","))})&select=id,batch_id,brew_log_id,gravity,temperature_c,measured_at,reading_type,is_stable_fg_check,created_at,check_date,check_time,check_type&order=created_at.desc`,
           { headers: adminHeaders(env) }
         );
         return parseSupabaseResponse<JsonRecord[]>(res, "Failed to load fermentation_checks");

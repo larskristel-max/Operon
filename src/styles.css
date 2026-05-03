@@ -582,9 +582,9 @@ button, input { font: inherit; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.brew-side { min-width: clamp(84px, 21vw, 108px); text-align: right; color: var(--text-secondary); border-left: none; padding-left: 0; align-items: flex-end; display: grid; justify-items: end; }
+.brew-side { min-width: clamp(84px, 21vw, 108px); text-align: right; color: var(--text-secondary); border-left: none; padding-left: 0; align-items: start; align-self: start; display: grid; justify-items: end; gap: 6px; }
 .brew-side strong { color: var(--accent); font-size: clamp(0.9rem, 3.6vw, 0.98rem); line-height: 1.1; display: block; font-weight: 600; }
-.brew-side .batch-status { display: block; font-size: clamp(0.78rem, 2.5vw, 0.94rem); margin-top: 6px; color: var(--text-secondary); min-height: 1em; opacity: 0.65; }
+.brew-view-all { color: var(--gold); font-size: clamp(0.56rem, 1.7vw, 0.66rem); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 .fermentation-row { display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); }
 .fermentation-row p { margin: 0; font-size: clamp(0.65rem, 2vw, 0.74rem); letter-spacing: 0.03em; }
 .fermentation-row span { color: var(--gold); font-size: clamp(0.9rem, 3.8vw, 1.15rem); font-weight: 600; }
@@ -1109,12 +1109,24 @@ button, input { font: inherit; }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px;
-  border: 1px solid var(--border);
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  background: rgba(22, 28, 34, 0.55);
+  background: linear-gradient(135deg, rgba(28, 36, 46, 0.72), rgba(16, 22, 30, 0.68));
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
   cursor: pointer;
   gap: 8px;
+  transition: box-shadow 120ms ease, border-color 120ms ease;
+}
+
+.batch-list-item:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(226, 179, 84, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .batch-list-item:active { transform: scale(0.99); }
@@ -1146,6 +1158,106 @@ button, input { font: inherit; }
   place-items: center;
   padding: 0 6px;
 }
+
+/* ── Brewsheet ────────────────────────────────────── */
+
+.brewsheet-sheet {
+  max-height: calc(92dvh - 84px - env(safe-area-inset-bottom));
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.brewsheet-sheet::-webkit-scrollbar { display: none; }
+
+.brewsheet {
+  display: grid;
+  gap: 10px;
+}
+
+.brewsheet-header {
+  display: grid;
+  gap: 4px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.brewsheet-batch-name {
+  margin: 4px 0 2px;
+  font-size: clamp(1.35rem, 5.2vw, 1.7rem);
+  font-weight: 640;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+  color: var(--text-primary);
+}
+
+.brewsheet-lot {
+  font-size: 0.76rem;
+  color: var(--text-tertiary);
+}
+
+.brewsheet-section {
+  background: linear-gradient(135deg, rgba(28, 36, 48, 0.7), rgba(16, 22, 32, 0.65));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 8px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.brewsheet-section-title {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--text-tertiary);
+}
+
+.brewsheet-section-tasks .brewsheet-section-title {
+  color: rgba(150, 186, 255, 0.7);
+}
+
+.brewsheet-rows {
+  display: grid;
+  gap: 0;
+}
+
+.brewsheet-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 5px 0;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: default;
+}
+.brewsheet-row:last-child { border-bottom: none; }
+
+.brewsheet-row-label {
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.brewsheet-row-value {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.brewsheet-empty-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+.brewsheet-actions {
+  padding-top: 4px;
+}
+
+/* ── End Brewsheet ────────────────────────────────── */
 
 .more-menu {
   position: fixed;

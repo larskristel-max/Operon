@@ -74,6 +74,31 @@ export type DashboardCopy = {
   lowStock: string;
   batchIdPrefix: string;
   inFermentation: string;
+  // Batch overlay
+  batches: string;
+  batchesClose: string;
+  batchesFilterActive: string;
+  batchesFilterPlanned: string;
+  batchesFilterArchived: string;
+  batchesAllBatches: string;
+  batchesSeeTasks: string;
+  batchesBackToList: string;
+  batchesNoneActive: string;
+  batchesNonePlanned: string;
+  batchesNoneArchived: string;
+  batchesNoneMatchSub: string;
+  // Brewsheet sections
+  batchesEtat: string;
+  batchesCuve: string;
+  batchesIntrants: string;
+  batchesNotAssigned: string;
+  batchesToComplete: string;
+  batchesStatus: string;
+  batchesDayLabel: string;
+  batchesOpenTasks: string;
+  // Tasks overlay
+  tasksBatchTitle: string;
+  tasksNeedsAction: string;
 };
 
 const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
@@ -151,6 +176,28 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     lowStock: "Low Stock",
     batchIdPrefix: "Batch #",
     inFermentation: "In Fermentation",
+    batches: "BATCHES",
+    batchesClose: "Close",
+    batchesFilterActive: "Active",
+    batchesFilterPlanned: "Planned",
+    batchesFilterArchived: "Archived",
+    batchesAllBatches: "All batches",
+    batchesSeeTasks: "See tasks",
+    batchesBackToList: "Back to list",
+    batchesNoneActive: "No active batches",
+    batchesNonePlanned: "No planned batches",
+    batchesNoneArchived: "No archived batches",
+    batchesNoneMatchSub: "No batches match this filter.",
+    batchesEtat: "Status",
+    batchesCuve: "Tank",
+    batchesIntrants: "Ingredients",
+    batchesNotAssigned: "Not assigned",
+    batchesToComplete: "To complete",
+    batchesStatus: "Status",
+    batchesDayLabel: "Day",
+    batchesOpenTasks: "Open tasks",
+    tasksBatchTitle: "BATCH TASKS",
+    tasksNeedsAction: "NEEDS ACTION",
   },
   fr: {
     greetingHello: "Bonjour",
@@ -226,6 +273,28 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     lowStock: "Stock bas",
     batchIdPrefix: "Lot #",
     inFermentation: "En fermentation",
+    batches: "BATCHS",
+    batchesClose: "Fermer",
+    batchesFilterActive: "Actifs",
+    batchesFilterPlanned: "Planifiés",
+    batchesFilterArchived: "Archivés",
+    batchesAllBatches: "Tous les batchs",
+    batchesSeeTasks: "Voir les tâches",
+    batchesBackToList: "Retour à la liste",
+    batchesNoneActive: "Aucun batch actif",
+    batchesNonePlanned: "Aucun batch planifié",
+    batchesNoneArchived: "Aucun batch archivé",
+    batchesNoneMatchSub: "Aucun batch dans ce filtre.",
+    batchesEtat: "État",
+    batchesCuve: "Cuve",
+    batchesIntrants: "Intrants",
+    batchesNotAssigned: "Non assigné",
+    batchesToComplete: "À compléter",
+    batchesStatus: "Statut",
+    batchesDayLabel: "Jour",
+    batchesOpenTasks: "Tâches ouvertes",
+    tasksBatchTitle: "TÂCHES DU BATCH",
+    tasksNeedsAction: "ACTIONS REQUISES",
   },
   de: {
     greetingHello: "Hallo",
@@ -301,6 +370,28 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     lowStock: "Niedriger Bestand",
     batchIdPrefix: "Charge #",
     inFermentation: "In Gärung",
+    batches: "BATCHES",
+    batchesClose: "Schließen",
+    batchesFilterActive: "Aktiv",
+    batchesFilterPlanned: "Geplant",
+    batchesFilterArchived: "Archiviert",
+    batchesAllBatches: "Alle Batches",
+    batchesSeeTasks: "Aufgaben ansehen",
+    batchesBackToList: "Zurück zur Liste",
+    batchesNoneActive: "Keine aktiven Batches",
+    batchesNonePlanned: "Keine geplanten Batches",
+    batchesNoneArchived: "Keine archivierten Batches",
+    batchesNoneMatchSub: "Keine Batches gefunden.",
+    batchesEtat: "Status",
+    batchesCuve: "Tank",
+    batchesIntrants: "Zutaten",
+    batchesNotAssigned: "Nicht zugewiesen",
+    batchesToComplete: "Ausfüllen",
+    batchesStatus: "Status",
+    batchesDayLabel: "Tag",
+    batchesOpenTasks: "Offene Aufgaben",
+    tasksBatchTitle: "CHARGEN-AUFGABEN",
+    tasksNeedsAction: "AKTION ERFORDERLICH",
   },
   nl: {
     greetingHello: "Hallo",
@@ -376,6 +467,28 @@ const dashboardCopy: Record<"en" | "fr" | "de" | "nl", DashboardCopy> = {
     lowStock: "Lage voorraad",
     batchIdPrefix: "Batch #",
     inFermentation: "In vergisting",
+    batches: "BATCHES",
+    batchesClose: "Sluiten",
+    batchesFilterActive: "Actief",
+    batchesFilterPlanned: "Gepland",
+    batchesFilterArchived: "Gearchiveerd",
+    batchesAllBatches: "Alle batches",
+    batchesSeeTasks: "Taken bekijken",
+    batchesBackToList: "Terug naar lijst",
+    batchesNoneActive: "Geen actieve batches",
+    batchesNonePlanned: "Geen geplande batches",
+    batchesNoneArchived: "Geen gearchiveerde batches",
+    batchesNoneMatchSub: "Geen batches gevonden.",
+    batchesEtat: "Status",
+    batchesCuve: "Tank",
+    batchesIntrants: "Ingrediënten",
+    batchesNotAssigned: "Niet toegewezen",
+    batchesToComplete: "Aan te vullen",
+    batchesStatus: "Status",
+    batchesDayLabel: "Dag",
+    batchesOpenTasks: "Openstaande taken",
+    tasksBatchTitle: "BATCH TAKEN",
+    tasksNeedsAction: "ACTIE VEREIST",
   },
 };
 

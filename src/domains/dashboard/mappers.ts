@@ -32,6 +32,7 @@ export function mapRealDashboardToMerged(data: RealDashboardData): RealDashboard
         lots: data.lots,
         batchInputs: data.batch_inputs,
         brewLogs: data.brew_logs,
+        boilAdditions: data.boil_additions ?? [],
         fermentationChecks: data.fermentation_checks ?? [],
       }),
   };

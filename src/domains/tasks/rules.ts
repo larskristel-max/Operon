@@ -2,6 +2,15 @@ export type TaskType =
   | "assign_tank"
   | "assign_inputs"
   | "record_mash_volume"
+  | "record_mash_water"
+  | "record_strike_temp"
+  | "record_sparge_water"
+  | "record_mash_ph"
+  | "record_pre_boil_gravity"
+  | "record_boil"
+  | "record_hop_addition"
+  | "record_transfer"
+  | "pitch_yeast"
   | "record_transfer_volume"
   | "take_gravity_reading"
   | "create_output_lot";
@@ -68,6 +77,7 @@ export function computeTasks(input: {
   lots: Array<Record<string, unknown>>;
   batchInputs: Array<Record<string, unknown>>;
   brewLogs: Array<Record<string, unknown>>;
+  boilAdditions?: Array<Record<string, unknown>>;
   fermentationChecks?: Array<Record<string, unknown>>;
 }): Task[] {
   const tasks: Task[] = [];
@@ -86,7 +96,16 @@ export function computeTasks(input: {
     const batchLogs = input.brewLogs.filter((row) => readString(row, ["batch_id"]) === batchId);
     const batchLots = input.lots.filter((row) => readString(row, ["batch_id", "source_batch_id", "origin_batch_id"]) === batchId);
     const hasMashVolume = readNumber(batch, ["actual_mash_volume_liters"]) !== null || batchLogs.some((log) => readNumber(log, ["actual_mash_volume_liters"]) !== null);
+    const hasMashWater = batchLogs.some((log) => readNumber(log, ["actual_mash_water_liters"]) !== null);
+    const hasStrikeTemp = batchLogs.some((log) => readNumber(log, ["actual_strike_water_temp_c"]) !== null);
+    const hasSpargeWater = batchLogs.some((log) => readNumber(log, ["actual_sparge_water_liters"]) !== null);
+    const hasMashPh = batchLogs.some((log) => readNumber(log, ["actual_mash_ph"]) !== null);
+    const hasPreBoilGravity = batchLogs.some((log) => readNumber(log, ["actual_pre_boil_gravity"]) !== null);
+    const hasOriginalGravity = batchLogs.some((log) => readNumber(log, ["actual_original_gravity"]) !== null);
+    const hasHopAddition = (input.boilAdditions ?? []).some((row) => readString(row, ["batch_id"]) === batchId);
     const hasTransferVolume = readNumber(batch, ["actual_fermenter_volume_liters"]) !== null || batchLogs.some((log) => readNumber(log, ["actual_fermenter_volume_liters"]) !== null);
+    const hasTransfer = batchLogs.some((log) => readString(log, ["transfer_finished_at"]) !== null);
+    const hasYeastPitch = batchLogs.some((log) => readNumber(log, ["yeast_pitch_quantity"]) !== null && readString(log, ["yeast_pitch_time"]) !== null);
     const batchLogIds = new Set(batchLogs.map((log) => readString(log, ["id"])).filter((id): id is string => id !== null));
     const batchFermentationChecks = (input.fermentationChecks ?? []).filter((fc) => {
       const directBatchId = readString(fc, ["batch_id"]);
@@ -114,6 +133,15 @@ export function computeTasks(input: {
     if (batchInputs.length === 0) tasks.push({ id: taskId(batchId, "assign_inputs", `${status || "unknown"}:no_batch_inputs`), type: "assign_inputs", batch_id: batchId, label: "Assign ingredient lots", actionable: true, batch_label: batchLabel });
     if (status === "planned" && !hasTank) tasks.push({ id: taskId(batchId, "assign_tank", "planned:no_tank"), type: "assign_tank", batch_id: batchId, label: "Assign tank", actionable: true, batch_label: batchLabel });
     if (status === "brewing" && !hasMashVolume) tasks.push({ id: taskId(batchId, "record_mash_volume", "brewing:no_mash_volume"), type: "record_mash_volume", batch_id: batchId, label: "Record mash volume", actionable: true, batch_label: batchLabel });
+    if (status === "brewing" && !hasMashWater) tasks.push({ id: taskId(batchId, "record_mash_water", "brewing:no_mash_water"), type: "record_mash_water", batch_id: batchId, label: "Record mash water", actionable: true, batch_label: batchLabel });
+    if (status === "brewing" && !hasStrikeTemp) tasks.push({ id: taskId(batchId, "record_strike_temp", "brewing:no_strike_temp"), type: "record_strike_temp", batch_id: batchId, label: "Record strike temp", actionable: true, batch_label: batchLabel });
+    if (status === "brewing" && !hasSpargeWater) tasks.push({ id: taskId(batchId, "record_sparge_water", "brewing:no_sparge_water"), type: "record_sparge_water", batch_id: batchId, label: "Record sparge water", actionable: true, batch_label: batchLabel });
+    if (status === "brewing" && !hasMashPh) tasks.push({ id: taskId(batchId, "record_mash_ph", "brewing:no_mash_ph"), type: "record_mash_ph", batch_id: batchId, label: "Record mash pH", actionable: true, batch_label: batchLabel });
+    if (status === "brewing" && !hasPreBoilGravity) tasks.push({ id: taskId(batchId, "record_pre_boil_gravity", "brewing:no_pre_boil_gravity"), type: "record_pre_boil_gravity", batch_id: batchId, label: "Record pre-boil gravity", actionable: true, batch_label: batchLabel });
+    if (status === "brewing" && !hasOriginalGravity) tasks.push({ id: taskId(batchId, "record_boil", "brewing:no_original_gravity"), type: "record_boil", batch_id: batchId, label: "Record boil", actionable: true, batch_label: batchLabel });
+    if (status === "brewing" && !hasHopAddition) tasks.push({ id: taskId(batchId, "record_hop_addition", "brewing:no_hop_addition"), type: "record_hop_addition", batch_id: batchId, label: "Record hop addition", actionable: true, batch_label: batchLabel });
+    if (status === "brewing" && !hasTransfer) tasks.push({ id: taskId(batchId, "record_transfer", "brewing:no_transfer"), type: "record_transfer", batch_id: batchId, label: "Record transfer", actionable: true, batch_label: batchLabel });
+    if (status === "brewing" && !hasYeastPitch) tasks.push({ id: taskId(batchId, "pitch_yeast", "brewing:no_yeast_pitch"), type: "pitch_yeast", batch_id: batchId, label: "Pitch yeast", actionable: true, batch_label: batchLabel });
     if (status === "brewing" && !hasTransferVolume) tasks.push({ id: taskId(batchId, "record_transfer_volume", "brewing:no_transfer_volume"), type: "record_transfer_volume", batch_id: batchId, label: "Record transfer volume", actionable: true, batch_label: batchLabel });
     if (status === "fermenting" && !hasRecentFermentationCheck) tasks.push({ id: taskId(batchId, "take_gravity_reading", "fermenting:no_recent_gravity"), type: "take_gravity_reading", batch_id: batchId, label: "Take gravity reading", actionable: true, batch_label: batchLabel });
     if (status === "packaged" && batchLots.length === 0) tasks.push({ id: taskId(batchId, "create_output_lot", "packaged:no_lots"), type: "create_output_lot", batch_id: batchId, label: "Create output lot", actionable: true, batch_label: batchLabel });

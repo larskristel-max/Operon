@@ -14,7 +14,7 @@ import { useBottomNavHeight } from "@/ui/shell/useBottomNavHeight";
 import { useBrewEntryFlow } from "@/domains/batches/hooks";
 import { computeOperationalSummary } from "@/domains/dashboard/operational";
 import { useAssignTank } from "@/domains/tanks/hooks";
-import { useRecordMashVolume, useRecordTransferVolume } from "@/domains/brew_logs/hooks";
+import { useCaptureBrewTask, useRecordMashVolume, useRecordTransferVolume } from "@/domains/brew_logs/hooks";
 import { useAssignIngredientLots } from "@/domains/batch_inputs/hooks";
 import { useTakeGravityReading } from "@/domains/fermentation_checks/hooks";
 import { useCreateOutputLot } from "@/domains/lots/hooks";
@@ -301,6 +301,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   }, [demoMergedData, isDemoMode, realMergedData]);
   const recordMashVolume = useRecordMashVolume({ isDemoMode, breweryId: activeBreweryId ?? null });
   const recordTransferVolume = useRecordTransferVolume({ isDemoMode, breweryId: activeBreweryId ?? null });
+  const captureBrewTask = useCaptureBrewTask({ isDemoMode, breweryId: activeBreweryId ?? null });
   const assignIngredientLots = useAssignIngredientLots({ isDemoMode, breweryId: activeBreweryId ?? null });
   const currentBrewLogs = useMemo(
     () => ((isDemoMode ? demoMergedData : realMergedData)?.brew_logs ?? []) as Array<Record<string, unknown>>,
@@ -413,6 +414,15 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
       task.type === "record_mash_volume" ||
       task.type === "assign_inputs" ||
       task.type === "record_transfer_volume" ||
+      task.type === "record_mash_water" ||
+      task.type === "record_strike_temp" ||
+      task.type === "record_sparge_water" ||
+      task.type === "record_mash_ph" ||
+      task.type === "record_pre_boil_gravity" ||
+      task.type === "record_boil" ||
+      task.type === "record_hop_addition" ||
+      task.type === "record_transfer" ||
+      task.type === "pitch_yeast" ||
       task.type === "take_gravity_reading" ||
       task.type === "create_output_lot"
   );
@@ -1028,6 +1038,19 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                       finally { setTaskBusy(false); }
                     }}>Confirm</button>
                   </div>
+                )}
+                {activeTaskId === task.id && ["record_mash_water","record_strike_temp","record_sparge_water","record_mash_ph","record_pre_boil_gravity","record_boil","record_hop_addition","record_transfer","pitch_yeast"].includes(task.type) && (
+                  <form className="task-inline-form" onSubmit={async (event) => {
+                    event.preventDefault();
+                    const value = Number(mashVolumeInput);
+                    if (task.type !== "record_hop_addition" && (!Number.isFinite(value) || value <= 0)) { setTaskError("Enter a valid value."); return; }
+                    try { setTaskBusy(true); await captureBrewTask({ taskType: task.type, batchId: task.batchId, value: Number.isFinite(value) ? value : 60 }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setMashVolumeInput(""); }
+                    catch (error) { setTaskError(error instanceof Error ? error.message : "Failed to record brew data"); }
+                    finally { setTaskBusy(false); }
+                  }}>
+                    <input className="task-input" type="number" step="any" min={task.type === "record_mash_ph" ? "0" : "0.01"} placeholder={task.type === "record_hop_addition" ? "Duration (min)" : "Value"} value={mashVolumeInput} onChange={(event) => setMashVolumeInput(event.target.value)} />
+                    <button type="submit" className="dark-btn solid" disabled={taskBusy}>{taskBusy ? "Saving…" : "Confirm"}</button>
+                  </form>
                 )}
                 {activeTaskId === task.id && task.type === "take_gravity_reading" && (
                   <div className="task-action-panel">

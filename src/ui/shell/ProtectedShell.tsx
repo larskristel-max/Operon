@@ -584,6 +584,19 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
       return [...scopedTasks, ...supplementalTasks];
     })()
     : executableTasks;
+  const taskScopeBatch = taskScopeBatchId
+    ? allBatches.find((b) => String(b.id ?? "") === taskScopeBatchId) ?? null
+    : null;
+  const taskScopeBatchDisplayName = taskScopeBatch ? getBatchDisplayName(taskScopeBatch) : null;
+  const taskScopeBatchLot = (() => {
+    if (!taskScopeBatch) return null;
+    for (const key of ["batch_number", "lot_number", "lot", "code"]) {
+      const v = taskScopeBatch[key];
+      if (typeof v === "string" && v.trim()) return v.trim();
+      if (typeof v === "number") return String(v);
+    }
+    return null;
+  })();
   const closeBatchesOverlay = () => {
     setBatchesOpen(false);
     setSelectedBatchId(null);
@@ -705,8 +718,8 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                   ? firstTaskLabel
                   : `Active batches: ${operational.activeBatchCount}`;
               return (
-                <article key="needs-action" className="glance-card blue" role="button" tabIndex={0} onClick={() => setTasksOpen(true)} onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") setTasksOpen(true);
+                <article key="needs-action" className="glance-card blue" role="button" tabIndex={0} onClick={() => { setTaskScopeBatchId(null); setTasksOpen(true); }} onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") { setTaskScopeBatchId(null); setTasksOpen(true); }
                 }}>
                   <div className="glance-icon">
                     <Icon name="tasks" className="line-icon icon-md" />
@@ -978,6 +991,12 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
         <section className="brew-entry-backdrop" onClick={closeTasksOverlay} aria-label="Tasks">
           <div className="glass-panel brew-entry-sheet" onClick={(event) => event.stopPropagation()}>
             <p className="eyebrow">{taskScopeBatchId ? copy.tasksBatchTitle : copy.tasksNeedsAction}</p>
+            {taskScopeBatchDisplayName && (
+              <h3 className="tasks-batch-name">{taskScopeBatchDisplayName}</h3>
+            )}
+            {taskScopeBatchLot && (
+              <p className="subtle tasks-batch-lot">{copy.batchIdPrefix}{taskScopeBatchLot}</p>
+            )}
             <button type="button" className="dark-btn ghost tasks-back-btn" onClick={closeTasksOverlay}>{copy.brewEntryBack}</button>
             {visibleTasks.length === 0 ? (
               <article className="task-empty-state" aria-live="polite">
@@ -1333,6 +1352,14 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                       const name = getBatchDisplayName(batch);
                       const status = getBatchStatusKey(batch);
                       const taskCount = executableTasks.filter((t) => t.batchId === id).length;
+                      const batchNumber = (() => {
+                        for (const key of ["batch_number", "lot_number", "lot", "code"]) {
+                          const v = batch[key];
+                          if (typeof v === "string" && v.trim()) return v.trim();
+                          if (typeof v === "number") return String(v);
+                        }
+                        return null;
+                      })();
                       return (
                         <div
                           key={id}
@@ -1346,7 +1373,9 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                         >
                           <div>
                             <strong className="batch-list-name">{name}</strong>
-                            <span className="batch-list-status subtle">{formatBatchStatus(status)}</span>
+                            <span className="batch-list-status subtle">
+                              {batchNumber ? `${copy.batchIdPrefix}${batchNumber} · ${formatBatchStatus(status)}` : formatBatchStatus(status)}
+                            </span>
                           </div>
                           {taskCount > 0 && <span className="batch-list-badge">{taskCount}</span>}
                         </div>

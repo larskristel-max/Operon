@@ -1,12 +1,17 @@
-import { supabase } from "@/lib/supabase";
 import { ApiError } from "@/lib/errors";
 
 type UnauthorizedHandler = () => Promise<void> | void;
+type AccessTokenProvider = () => string | null;
 
 let onUnauthorized: UnauthorizedHandler | null = null;
+let getAccessToken: AccessTokenProvider | null = null;
 
 export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): void {
   onUnauthorized = handler;
+}
+
+export function setAccessTokenProvider(provider: AccessTokenProvider | null): void {
+  getAccessToken = provider;
 }
 
 interface ApiFetchOptions {
@@ -14,8 +19,7 @@ interface ApiFetchOptions {
 }
 
 export async function apiFetch<T>(path: string, init?: RequestInit, options?: ApiFetchOptions): Promise<T> {
-  const { data } = await supabase.auth.getSession();
-  const token = options?.accessToken ?? data.session?.access_token;
+  const token = options?.accessToken ?? getAccessToken?.() ?? undefined;
 
   const headers = new Headers(init?.headers ?? {});
   if (!headers.has("Content-Type") && init?.body) {

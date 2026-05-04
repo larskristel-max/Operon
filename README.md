@@ -3,20 +3,14 @@ This repository is now the clean Operon foundation for a new UI build.
 
 ## Architecture
 
-### Direct Supabase access (frontend)
-The app uses Supabase directly for normal operational data:
-- auth + session
-- brewery profiles/context
-- batches
-- recipes
-- inventory
-- operational records
+### Cloudflare Functions (operational data boundary)
+Cloudflare Functions are the only operational data path for non-auth app flows:
+- frontend calls `functions/api/*` endpoints
+- functions perform operational reads/writes with Supabase
+- auth/session remains in the frontend auth layer
 
-### Cloudflare Functions (special backend tasks only)
-Cloudflare Functions are kept only for:
-- brewery provisioning
-- Notion semantic endpoints
-- future special backend tasks
+### Notion semantic endpoints
+Cloudflare Functions also provide Notion semantic endpoints for context/readiness data.
 
 ### Notion semantic layer
 Notion is used for:
@@ -28,7 +22,6 @@ Notion is used for:
 ## Frontend structure (React + TypeScript + Vite)
 
 - `src/lib/supabase.ts` — single Supabase client instance
-- `src/api/db.ts` — typed Supabase data access layer
 - `src/api/notion.ts` — typed frontend Notion semantic API client
 - `src/context/AppContext.tsx` — auth/session + brewery context + demo-mode entrypoint
 - `src/contexts/LanguageContext.tsx` — language foundation

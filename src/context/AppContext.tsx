@@ -16,7 +16,7 @@ import {
   setStoredDemoSessionId,
 } from "@/api/demo";
 import { getMe, type MeResponse } from "@/api/me";
-import { ApiError, setUnauthorizedHandler } from "@/api/client";
+import { ApiError, setAccessTokenProvider, setUnauthorizedHandler } from "@/api/client";
 import {
   getSession,
   onAuthStateChange,
@@ -140,6 +140,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setUnauthorizedHandler(handleUnauthorized);
     return () => setUnauthorizedHandler(null);
   }, [handleUnauthorized]);
+
+  useEffect(() => {
+    setAccessTokenProvider(() => authState.session?.access_token ?? null);
+    return () => setAccessTokenProvider(null);
+  }, [authState.session]);
 
   const hydrateSession = useCallback(async (session: AuthSession | null) => {
     if (isDemoMode) {

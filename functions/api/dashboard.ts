@@ -16,7 +16,6 @@ interface DashboardResponse {
   sales: JsonRecord[];
   lots: JsonRecord[];
   batch_inputs: JsonRecord[];
-  ingredient_receipts: JsonRecord[];
   recipe_ingredients: JsonRecord[];
   brew_logs: JsonRecord[];
   mash_steps: JsonRecord[];
@@ -35,7 +34,6 @@ const EMPTY_DASHBOARD: DashboardResponse = {
   sales: [],
   lots: [],
   batch_inputs: [],
-  ingredient_receipts: [],
   recipe_ingredients: [],
   brew_logs: [],
   mash_steps: [],

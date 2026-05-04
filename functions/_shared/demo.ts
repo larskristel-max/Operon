@@ -38,7 +38,6 @@ export interface DemoDashboardData {
   inventory_movements: Array<Record<string, unknown>>;
   sales: Array<Record<string, unknown>>;
   batch_inputs: Array<Record<string, unknown>>;
-  ingredient_receipts: Array<Record<string, unknown>>;
   recipe_ingredients: Array<Record<string, unknown>>;
   brew_logs: Array<Record<string, unknown>>;
   mash_steps: Array<Record<string, unknown>>;
@@ -417,7 +416,6 @@ const DASHBOARD_OVERLAY_TABLES: ReadonlyArray<keyof DemoDashboardData> = [
   "packaging_formats",
   "sales",
   "batch_inputs",
-  "ingredient_receipts",
   "brew_logs",
   "mash_steps",
   "boil_additions",
@@ -439,7 +437,6 @@ export function applyDashboardOverlay(baseline: DemoDashboardData, overlays: Ove
     inventory_movements: [...baseline.inventory_movements],
     sales: [...baseline.sales],
     batch_inputs: [...baseline.batch_inputs],
-    ingredient_receipts: [...baseline.ingredient_receipts],
     recipe_ingredients: [...baseline.recipe_ingredients],
     brew_logs: [...baseline.brew_logs],
     mash_steps: [...baseline.mash_steps],

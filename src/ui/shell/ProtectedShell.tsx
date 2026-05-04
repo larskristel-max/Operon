@@ -1050,7 +1050,10 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                       className="dark-btn brew-confirm-primary"
                       onClick={() => {
                         const manualBatchNumber = brewBatchNumber.trim();
-                        void brewEntryFlow.confirmDraft(manualBatchNumber || suggestedBatchNumber);
+                        // Real mode: pass undefined when blank so the server generates authoritatively.
+                        // Demo mode receives suggestedBatchNumber as a fallback (second arg) since
+                        // there is no server-side sequence for demo batches.
+                        void brewEntryFlow.confirmDraft(manualBatchNumber || undefined, suggestedBatchNumber);
                       }}
                       disabled={brewEntryFlow.state.isConfirming}
                     >

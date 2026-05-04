@@ -340,7 +340,7 @@ export function useBrewEntryFlow({
     [prepareDraft],
   );
 
-  const confirmDraft = useCallback(async (batchNumber?: string) => {
+  const confirmDraft = useCallback(async (batchNumber?: string, demoFallbackNumber?: string) => {
     const current = state;
     if (!current.draftPreview || !current.selectedSource || current.selectedSource === "new-recipe") {
       setState((prev) => ({ ...prev, error: "Prepare a draft first" }));
@@ -350,14 +350,16 @@ export function useBrewEntryFlow({
     const selectedRecipeName = existingRecipeOptions.find((recipe) => recipe.id === current.selectedRecipeId)?.name ?? null;
     const fallbackName = current.selectedSource === "upload-recipe" ? "Uploaded Recipe Batch" : "New Batch";
     const batchName = selectedRecipeName ?? fallbackName;
-    const resolvedBatchNumber = batchNumber?.trim() || null;
+    const manualNumber = batchNumber?.trim() || null;
 
     setState((prev) => ({ ...prev, isConfirming: true, step: "confirming", error: null }));
 
     try {
-      let finalBatchNumber: string | null = resolvedBatchNumber;
+      let finalBatchNumber: string | null = manualNumber;
 
       if (isDemoMode) {
+        // Demo has no server-side generation — use manual entry or the client-computed suggestion
+        const resolvedNumber = manualNumber || demoFallbackNumber?.trim() || null;
         const recordId = crypto.randomUUID();
         const payload: Record<string, unknown> = {
           id: recordId,
@@ -367,24 +369,26 @@ export function useBrewEntryFlow({
           status: "planned",
           created_at: new Date().toISOString(),
         };
-        if (resolvedBatchNumber) payload.batch_number = resolvedBatchNumber;
+        if (resolvedNumber) payload.batch_number = resolvedNumber;
         await writeDemoOverlay({
           table_name: "batches",
           record_id: recordId,
           operation: "insert",
           payload,
         });
+        finalBatchNumber = resolvedNumber;
       } else {
+        // Real mode: pass undefined when blank so the server generates authoritatively
         const result = await createBatchAfterConfirmation({
           source: current.selectedSource,
           recipeId: current.selectedRecipeId,
           uploadIntakeId: current.uploadIntake?.intakeId ?? current.draftPreview.recipeDraft.uploadIntakeId,
           draftId: current.draftPreview.draftId,
-          batchNumber: resolvedBatchNumber ?? undefined,
+          batchNumber: manualNumber ?? undefined,
         });
         const batchRow = result?.batch as Record<string, unknown> | undefined;
         const returned = typeof batchRow?.batch_number === "string" ? batchRow.batch_number.trim() : null;
-        finalBatchNumber = returned || resolvedBatchNumber;
+        finalBatchNumber = returned || manualNumber;
       }
 
       await onConfirmed();

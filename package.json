@@ -12,7 +12,7 @@
     "preview": "vite preview --port 5000",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "gen:types": "supabase gen types typescript --project-id curjxdjlrlenqlitdspd > src/types/supabase.ts"
+    "gen:types": "supabase gen types typescript --project-id curjxdjlrlenqlitdspd > src/types/supabase.ts.tmp && mv src/types/supabase.ts.tmp src/types/supabase.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.104.0",

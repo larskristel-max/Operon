@@ -21,6 +21,8 @@ export function computeOperationalSummary(input: {
   tasks: Array<Record<string, unknown>>;
   lots: Array<Record<string, unknown>>;
   batchInputs: Array<Record<string, unknown>>;
+  recipeIngredients?: Array<Record<string, unknown>>;
+  ingredients?: Array<Record<string, unknown>>;
   brewLogs: Array<Record<string, unknown>>;
   boilAdditions?: Array<Record<string, unknown>>;
   fermentationChecks?: Array<Record<string, unknown>>;

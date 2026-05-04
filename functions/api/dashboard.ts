@@ -16,6 +16,8 @@ interface DashboardResponse {
   sales: JsonRecord[];
   lots: JsonRecord[];
   batch_inputs: JsonRecord[];
+  ingredient_receipts: JsonRecord[];
+  recipe_ingredients: JsonRecord[];
   brew_logs: JsonRecord[];
   mash_steps: JsonRecord[];
   boil_additions: JsonRecord[];
@@ -33,6 +35,8 @@ const EMPTY_DASHBOARD: DashboardResponse = {
   sales: [],
   lots: [],
   batch_inputs: [],
+  ingredient_receipts: [],
+  recipe_ingredients: [],
   brew_logs: [],
   mash_steps: [],
   boil_additions: [],
@@ -215,7 +219,7 @@ export async function onRequestGet(context: { request: Request; env: Env }): Pro
       return jsonResponse(EMPTY_DASHBOARD);
     }
 
-    const [tanks, batches, tasks, ingredientRows, ingredientReceipts, inventoryMovements, sales, lots, batchInputs, brewLogs, pendingMovements] = await Promise.all([
+    const [tanks, batches, tasks, ingredientRows, ingredientReceipts, inventoryMovements, sales, lots, batchInputs, recipeIngredients, brewLogs, pendingMovements] = await Promise.all([
       fetchOptionalRows(env, "tanks", breweryId, "name.asc"),
       fetchRows(env, "batches", breweryId, "created_at.desc"),
       fetchRows(env, "tasks", breweryId, "created_at.desc"),
@@ -225,6 +229,7 @@ export async function onRequestGet(context: { request: Request; env: Env }): Pro
       fetchOptionalRows(env, "sales", breweryId, "created_at.desc"),
       fetchOptionalRows(env, "lots", breweryId, "created_at.desc"),
       fetchOptionalRows(env, "batch_inputs", breweryId, "created_at.desc"),
+      fetchOptionalRows(env, "recipe_ingredients", breweryId, "created_at.desc"),
       fetchOptionalRows(env, "brew_logs", breweryId, "created_at.desc"),
       fetchOptionalRows(env, "pending_movements", breweryId, "created_at.desc"),
     ]);
@@ -245,6 +250,7 @@ export async function onRequestGet(context: { request: Request; env: Env }): Pro
       sales,
       lots,
       batch_inputs: batchInputs,
+      recipe_ingredients: recipeIngredients,
       brew_logs: brewLogs,
       mash_steps: mashSteps,
       boil_additions: boilAdditions,

@@ -77,6 +77,8 @@ export function computeTasks(input: {
   tanks: Array<Record<string, unknown>>;
   lots: Array<Record<string, unknown>>;
   batchInputs: Array<Record<string, unknown>>;
+  recipeIngredients?: Array<Record<string, unknown>>;
+  ingredients?: Array<Record<string, unknown>>;
   brewLogs: Array<Record<string, unknown>>;
   boilAdditions?: Array<Record<string, unknown>>;
   fermentationChecks?: Array<Record<string, unknown>>;
@@ -134,7 +136,21 @@ export function computeTasks(input: {
     });
     const hasTank = input.tanks.some((tank) => readString(tank, ["current_batch_id"]) === batchId);
 
-    if (batchInputs.length === 0) tasks.push({ id: taskId(batchId, "assign_inputs", `${status || "unknown"}:no_batch_inputs`), type: "assign_inputs", batch_id: batchId, label: "Assign ingredient lots", actionable: true, batch_label: batchLabel });
+    const recipeId = readString(batch, ["recipe_id"]);
+    const requiredRecipeIngredients = (input.recipeIngredients ?? []).filter((row) => readString(row, ["recipe_id"]) === recipeId).filter((row) => {
+      const ingredientType = readString(row, ["ingredient_type", "role", "type"])?.toLowerCase();
+      const ingredientId = readString(row, ["ingredient_id"]);
+      const ingredient = (input.ingredients ?? []).find((ing) => readString(ing, ["id"]) === ingredientId);
+      const resolvedType = ingredientType ?? readString(ingredient, ["ingredient_type", "type", "category"])?.toLowerCase();
+      return !resolvedType || !["packaging", "cleaning"].includes(resolvedType);
+    });
+    const hasRequiredRecipeIngredients = requiredRecipeIngredients.length > 0;
+    const hasAllRequiredInputLots = hasRequiredRecipeIngredients && requiredRecipeIngredients.every((row) => {
+      const ingredientId = readString(row, ["ingredient_id"]);
+      if (!ingredientId) return false;
+      return batchInputs.some((inputRow) => readString(inputRow, ["ingredient_id"]) === ingredientId && readString(inputRow, ["ingredient_receipt_id"]) !== null);
+    });
+    if (!hasAllRequiredInputLots) tasks.push({ id: taskId(batchId, "assign_inputs", `${status || "unknown"}:missing_required_lot_links`), type: "assign_inputs", batch_id: batchId, label: hasRequiredRecipeIngredients ? "Assign ingredient lots" : "No recipe ingredients configured", actionable: true, batch_label: batchLabel });
     if (status === "planned" && !hasTank) tasks.push({ id: taskId(batchId, "assign_tank", "planned:no_tank"), type: "assign_tank", batch_id: batchId, label: "Assign tank", actionable: true, batch_label: batchLabel });
     if (status === "planned" && hasTank && batchInputs.length > 0) tasks.push({ id: taskId(batchId, "start_brewing", "planned:ready_to_start"), type: "start_brewing", batch_id: batchId, label: "Start brewing", actionable: true, batch_label: batchLabel });
     if (status === "brewing" && !hasMashVolume) tasks.push({ id: taskId(batchId, "record_mash_volume", "brewing:no_mash_volume"), type: "record_mash_volume", batch_id: batchId, label: "Record mash volume", actionable: true, batch_label: batchLabel });

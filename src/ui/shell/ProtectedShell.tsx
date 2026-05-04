@@ -1,6 +1,6 @@
 import operonLogo from "../../../assets/Operonv1.png";
 import tankImage from "../../../assets/Tankimageasset.png";
-import { type ReactNode, type TouchEvent, useMemo, useRef, useState } from "react";
+import { type ReactNode, type TouchEvent, useCallback, useMemo, useRef, useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { type DashboardData } from "@/data/demoData";
@@ -317,9 +317,7 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
   const [taskScalarInput, setTaskScalarInput] = useState<string>("");
   const [hopNameInput, setHopNameInput] = useState<string>("");
   const [hopUnitInput, setHopUnitInput] = useState<string>("g");
-  const [ingredientIdInput, setIngredientIdInput] = useState<string>("");
-  const [ingredientQuantityInput, setIngredientQuantityInput] = useState<string>("");
-  const [ingredientUnitInput, setIngredientUnitInput] = useState<string>("");
+  const [ingredientLotSelections, setIngredientLotSelections] = useState<Record<string, string>>({});
   const [gravityInput, setGravityInput] = useState<string>("");
   const [tempInput, setTempInput] = useState<string>("");
   const [lotNumberInput, setLotNumberInput] = useState<string>("");
@@ -471,6 +469,8 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
       tasks: merged.tasks,
       lots: merged.lots,
       batchInputs: merged.batch_inputs ?? [],
+      recipeIngredients: merged.recipe_ingredients ?? [],
+      ingredients: merged.ingredients ?? [],
       brewLogs: merged.brew_logs ?? [],
       fermentationChecks: merged.fermentation_checks ?? [],
     });
@@ -514,7 +514,8 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
     const id = typeof ing.id === "string" ? ing.id : null;
     return id !== null && isBrewInputIngredient(ing);
   });
-  const allIngredientReceipts = ((merged?.ingredient_receipts ?? []) as Array<Record<string, unknown>>);
+  const recipeIngredients = (merged?.recipe_ingredients ?? []) as Array<Record<string, unknown>>;
+  const allIngredientReceipts = (merged?.ingredient_receipts ?? []) as Array<Record<string, unknown>>;
   const availableIngredientReceipts = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
     return allIngredientReceipts.filter((r) => {
@@ -584,6 +585,15 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
       (input) => String(input.batch_id ?? "") === batchId
     );
   }, [selectedBatch, merged?.batch_inputs]);
+  const getRequiredIngredientsForBatch = useCallback((batchId: string) => {
+    const taskBatch = allBatches.find((batch) => String(batch.id ?? "") === batchId);
+    if (!taskBatch) return [];
+    const recipeId = String(taskBatch.recipe_id ?? "");
+    return recipeIngredients.filter((ri) => String(ri.recipe_id ?? "") === recipeId).filter((ri) => {
+      const ing = availableIngredients.find((a) => String(a.id ?? "") === String(ri.ingredient_id ?? ""));
+      return Boolean(ing);
+    });
+  }, [allBatches, recipeIngredients, availableIngredients]);
 
   const selectedBatchBrewLogs = useMemo<Array<Record<string, unknown>>>(() => {
     if (!selectedBatch) return [];
@@ -1151,47 +1161,24 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                 )}
                 {activeTaskId === task.id && task.type === "assign_inputs" && (
                   <div className="task-action-panel">
-                    <div className="task-field-group"><label className="task-select-wrap"><span className="task-field-label">Ingredient</span><select className="task-select" value={ingredientIdInput} onChange={(event) => {
-                      const id = event.target.value;
-                      setIngredientIdInput(id);
-                      setSelectedReceiptId("");
-                      const ing = availableIngredients.find((i) => String(i.id ?? "") === id);
-                      const defaultUnit = ing && typeof ing.default_unit === "string" ? ing.default_unit : "";
-                      if (defaultUnit) setIngredientUnitInput(defaultUnit);
-                    }}>
-                      <option value="">Select ingredient</option>
-                      {availableIngredients.map((ing) => <option key={String(ing.id ?? "")} value={String(ing.id ?? "")}>{String(ing.name ?? ing.id ?? "Ingredient")}</option>)}
-                    </select><span className="task-select-chevron" aria-hidden="true">⌄</span></label></div>
-                    {availableIngredients.length === 0 ? <p className="subtle">No ingredients available.</p> : null}
-                    {ingredientIdInput && (() => {
-                      const receiptsForIngredient = availableIngredientReceipts.filter((r) => String(r.ingredient_id ?? "") === ingredientIdInput);
-                      if (receiptsForIngredient.length === 0) return <p className="subtle">No inventory lots found for this ingredient.</p>;
-                      return (
-                        <div className="task-field-group"><label className="task-select-wrap"><span className="task-field-label">Inventory lot</span><select className="task-select" value={selectedReceiptId} onChange={(event) => {
-                          const rid = event.target.value;
-                          setSelectedReceiptId(rid);
-                          const receipt = receiptsForIngredient.find((r) => String(r.id ?? "") === rid);
-                          if (receipt && !ingredientUnitInput && typeof receipt.unit === "string") setIngredientUnitInput(receipt.unit);
-                        }}>
-                          <option value="">Select lot</option>
-                          {receiptsForIngredient.map((r) => {
-                            const lotLabel = String(r.internal_lot_code ?? r.supplier_lot_number ?? r.id ?? "");
-                            const qtyLabel = r.quantity_received != null ? ` — ${String(r.quantity_received)} ${String(r.unit ?? "")}`.trim() : "";
-                            const supplierLabel = r.supplier_name ? ` (${String(r.supplier_name)})` : "";
-                            return <option key={String(r.id ?? "")} value={String(r.id ?? "")}>{`${lotLabel}${qtyLabel}${supplierLabel}`}</option>;
-                          })}
-                        </select><span className="task-select-chevron" aria-hidden="true">⌄</span></label></div>
-                      );
+                    {(() => {
+                      const taskRequiredIngredients = getRequiredIngredientsForBatch(task.batchId);
+                      return taskRequiredIngredients.length === 0 ? <p className="subtle">No recipe ingredients configured.</p> : taskRequiredIngredients.map((ri) => {
+                      const ingredientId = String(ri.ingredient_id ?? "");
+                      const ingredient = availableIngredients.find((ing) => String(ing.id ?? "") === ingredientId);
+                      const name = String((ingredient?.name ?? ri.ingredient_name ?? ingredientId) || "Ingredient");
+                      const unit = String(ri.unit ?? ingredient?.default_unit ?? "kg");
+                      const quantity = Number(ri.quantity ?? 0);
+                      const selectedLotId = ingredientLotSelections[ingredientId] ?? "";
+                      const receiptOptions = availableIngredientReceipts.filter((row) => String(row.ingredient_id ?? "") === ingredientId);
+                      return <div key={String(ri.id ?? ingredientId)} className="task-field-group"><label className="task-select-wrap"><span className="task-field-label">{name} • {Number.isFinite(quantity) && quantity > 0 ? `${quantity} ${unit}` : unit}</span><select className="task-select" value={selectedLotId} onChange={(event) => setIngredientLotSelections((prev) => ({ ...prev, [ingredientId]: event.target.value }))}><option value="">Select inventory lot</option>{receiptOptions.map((row) => <option key={String(row.id ?? "")} value={String(row.id ?? "")}>{String(row.lot_number ?? row.reference ?? row.id ?? "lot")} {row.quantity_remaining != null ? `(${String(row.quantity_remaining)} ${String(row.unit ?? unit)})` : ""}</option>)}</select><span className="task-select-chevron" aria-hidden="true">⌄</span></label></div>;
+                      });
                     })()}
-                    <div className="task-inline-row"><input className="task-input" type="number" inputMode="decimal" min="0" step="0.01" value={ingredientQuantityInput} onChange={(event) => setIngredientQuantityInput(event.target.value)} placeholder="10" />
-                    <input className="task-input task-input-unit" type="text" value={ingredientUnitInput} onChange={(event) => setIngredientUnitInput(event.target.value)} placeholder="kg" /></div>
-                    <button type="button" className="dark-btn brew-confirm-primary task-confirm-btn" disabled={taskBusy || !ingredientIdInput || !selectedReceiptId} onClick={async () => {
-                      const qty = Number(ingredientQuantityInput);
-                      if (!ingredientIdInput) { setTaskError("Select an ingredient."); return; }
-                      if (!selectedReceiptId) { setTaskError("Select an inventory lot."); return; }
-                      if (!Number.isFinite(qty) || qty <= 0) { setTaskError("Enter a valid quantity."); return; }
-                      if (!ingredientUnitInput.trim()) { setTaskError("Enter a unit."); return; }
-                      try { setTaskBusy(true); await assignIngredientLots({ batchId: task.batchId, ingredientId: ingredientIdInput, inventoryLotId: selectedReceiptId, quantity: qty, unit: ingredientUnitInput.trim() }); await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setIngredientIdInput(""); setIngredientQuantityInput(""); setIngredientUnitInput(""); setSelectedReceiptId(""); }
+                    <button type="button" className="dark-btn brew-confirm-primary task-confirm-btn" disabled={taskBusy || getRequiredIngredientsForBatch(task.batchId).length === 0} onClick={async () => {
+                      const taskRequiredIngredients = getRequiredIngredientsForBatch(task.batchId);
+                      const missing = taskRequiredIngredients.find((ri) => !ingredientLotSelections[String(ri.ingredient_id ?? "")]);
+                      if (missing) { setTaskError("Assign a lot for every required recipe ingredient."); return; }
+                      try { setTaskBusy(true); for (const ri of taskRequiredIngredients) { const ingredientId = String(ri.ingredient_id ?? ""); await assignIngredientLots({ batchId: task.batchId, ingredientId, ingredientReceiptId: ingredientLotSelections[ingredientId], quantity: Number(ri.quantity ?? 0), unit: String(ri.unit ?? "kg") }); } await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setIngredientLotSelections({}); }
                       catch (error) { setTaskError(error instanceof Error ? error.message : "Failed to assign ingredient lots"); }
                       finally { setTaskBusy(false); }
                     }}>Confirm</button>

@@ -8,6 +8,16 @@ export function useAssignIngredientLots({ isDemoMode, breweryId }: { isDemoMode:
       if (!breweryId) throw new Error("Demo brewery not available");
       const id = crypto.randomUUID();
       const timestamp = nowIso();
+      const payload: Record<string, unknown> = {
+        id,
+        brewery_id: breweryId,
+        batch_id: input.batchId,
+        ingredient_id: input.ingredientId,
+        quantity: input.quantity,
+        unit: input.unit,
+        stage: input.stage ?? null,
+        created_at: timestamp,
+      };
       await writeDemoOverlay({
         table_name: "batch_inputs",
         operation: "insert",

@@ -8,6 +8,7 @@ export interface DemoDashboardMerged {
   batches: Array<Record<string, unknown>>;
   tasks: Array<Record<string, unknown>>;
   ingredients: Array<Record<string, unknown>>;
+  ingredient_receipts: Array<Record<string, unknown>>;
   recipes: Array<Record<string, unknown>>;
   packaging_formats: Array<Record<string, unknown>>;
   lots: Array<Record<string, unknown>>;

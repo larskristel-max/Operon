@@ -31,6 +31,7 @@ export interface DemoDashboardData {
   batches: Array<Record<string, unknown>>;
   tasks: Array<Record<string, unknown>>;
   ingredients: Array<Record<string, unknown>>;
+  ingredient_receipts: Array<Record<string, unknown>>;
   recipes: Array<Record<string, unknown>>;
   packaging_formats: Array<Record<string, unknown>>;
   lots: Array<Record<string, unknown>>;
@@ -296,11 +297,12 @@ export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string
     "Failed to load demo brewery profile"
   );
 
-  const [tanks, batches, tasks, ingredients, recipes, recipeIngredients, packagingFormats, lots, inventoryMovements, sales, batchInputs, ingredientReceipts, brewLogs, pendingMovements] = await Promise.all([
+  const [tanks, batches, tasks, ingredients, ingredientReceipts, recipes, recipeIngredients, packagingFormats, lots, inventoryMovements, sales, batchInputs, brewLogs, pendingMovements] = await Promise.all([
     fetchTableRows(env, "tanks", demoBreweryId, "*", "name.asc"),
     fetchTableRows(env, "batches", demoBreweryId, "*", "created_at.desc"),
     fetchTableRows(env, "tasks", demoBreweryId, "*", "created_at.desc"),
     fetchTableRows(env, "ingredients", demoBreweryId, "*", "name.asc"),
+    fetchTableRows(env, "ingredient_receipts", demoBreweryId, "*", "received_date.desc"),
     fetchTableRows(env, "recipes", demoBreweryId, "*", "name.asc"),
     fetchTableRows(env, "recipe_ingredients", demoBreweryId, "*", "created_at.desc"),
     fetchTableRows(env, "packaging_formats", demoBreweryId, "*", "name.asc"),
@@ -308,7 +310,6 @@ export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string
     fetchTableRows(env, "inventory_movements", demoBreweryId, "*", "created_at.desc"),
     fetchTableRows(env, "sales", demoBreweryId, "*", "created_at.desc"),
     fetchTableRows(env, "batch_inputs", demoBreweryId, "*", "created_at.desc"),
-    fetchTableRows(env, "ingredient_receipts", demoBreweryId, "*", "created_at.desc"),
     fetchTableRows(env, "brew_logs", demoBreweryId, "*", "created_at.desc"),
     fetchTableRows(env, "pending_movements", demoBreweryId, "*", "created_at.desc"),
   ]);
@@ -326,6 +327,7 @@ export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string
     batches,
     tasks,
     ingredients,
+    ingredient_receipts: ingredientReceipts,
     recipes,
     recipe_ingredients: recipeIngredients,
     packaging_formats: packagingFormats,
@@ -333,7 +335,6 @@ export async function fetchDashboardBaseline(env: DemoEnv, demoBreweryId: string
     inventory_movements: inventoryMovements,
     sales,
     batch_inputs: batchInputs,
-    ingredient_receipts: ingredientReceipts,
     brew_logs: brewLogs,
     mash_steps: mashSteps,
     boil_additions: boilAdditions,
@@ -410,6 +411,7 @@ const DASHBOARD_OVERLAY_TABLES: ReadonlyArray<keyof DemoDashboardData> = [
   "tasks",
   "lots",
   "ingredients",
+  "ingredient_receipts",
   "inventory_movements",
   "recipes",
   "packaging_formats",
@@ -430,6 +432,7 @@ export function applyDashboardOverlay(baseline: DemoDashboardData, overlays: Ove
     batches: [...baseline.batches],
     tasks: [...baseline.tasks],
     ingredients: [...baseline.ingredients],
+    ingredient_receipts: [...baseline.ingredient_receipts],
     recipes: [...baseline.recipes],
     packaging_formats: [...baseline.packaging_formats],
     lots: [...baseline.lots],

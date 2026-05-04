@@ -62,6 +62,7 @@ export interface BrewEntryState {
   isConfirming: boolean;
   error: string | null;
   confirmedBatchName: string | null;
+  confirmedBatchNumber: string | null;
 }
 
 export interface CreateBrewDraftInput {

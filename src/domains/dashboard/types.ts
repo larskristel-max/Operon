@@ -7,6 +7,7 @@ export interface RealDashboardData {
   batches: Array<Record<string, unknown>>;
   tasks: Array<Record<string, unknown>>;
   inventory: Record<string, unknown>;
+  ingredient_receipts: Array<Record<string, unknown>>;
   inventory_movements: Array<Record<string, unknown>>;
   sales: Array<Record<string, unknown>>;
   lots: Array<Record<string, unknown>>;

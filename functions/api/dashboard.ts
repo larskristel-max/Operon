@@ -11,6 +11,7 @@ interface DashboardResponse {
   batches: JsonRecord[];
   tasks: JsonRecord[];
   inventory: JsonRecord;
+  ingredient_receipts: JsonRecord[];
   inventory_movements: JsonRecord[];
   sales: JsonRecord[];
   lots: JsonRecord[];
@@ -27,6 +28,7 @@ const EMPTY_DASHBOARD: DashboardResponse = {
   batches: [],
   tasks: [],
   inventory: {},
+  ingredient_receipts: [],
   inventory_movements: [],
   sales: [],
   lots: [],
@@ -213,11 +215,12 @@ export async function onRequestGet(context: { request: Request; env: Env }): Pro
       return jsonResponse(EMPTY_DASHBOARD);
     }
 
-    const [tanks, batches, tasks, ingredientRows, inventoryMovements, sales, lots, batchInputs, brewLogs, pendingMovements] = await Promise.all([
+    const [tanks, batches, tasks, ingredientRows, ingredientReceipts, inventoryMovements, sales, lots, batchInputs, brewLogs, pendingMovements] = await Promise.all([
       fetchOptionalRows(env, "tanks", breweryId, "name.asc"),
       fetchRows(env, "batches", breweryId, "created_at.desc"),
       fetchRows(env, "tasks", breweryId, "created_at.desc"),
       fetchOptionalRows(env, "ingredients", breweryId, "created_at.desc"),
+      fetchOptionalRows(env, "ingredient_receipts", breweryId, "received_date.desc"),
       fetchOptionalRows(env, "inventory_movements", breweryId, "created_at.desc"),
       fetchOptionalRows(env, "sales", breweryId, "created_at.desc"),
       fetchOptionalRows(env, "lots", breweryId, "created_at.desc"),
@@ -237,6 +240,7 @@ export async function onRequestGet(context: { request: Request; env: Env }): Pro
       batches,
       tasks,
       inventory: summarizeInventory(ingredientRows),
+      ingredient_receipts: ingredientReceipts,
       inventory_movements: inventoryMovements,
       sales,
       lots,

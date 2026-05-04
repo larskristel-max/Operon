@@ -76,6 +76,7 @@ Notion is used for:
 - `npm run build`
 
 Run `npm run gen:types` after any Supabase schema change to refresh `src/types/supabase.ts`.
+Types are auto-regenerated in CI, so committed `src/types/supabase.ts` may be stale until you run `npm run gen:types` locally.
 
 ## Supabase Auth hook + tenant RLS setup
 

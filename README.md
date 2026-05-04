@@ -1,5 +1,4 @@
 # Operon (Clean Migration Foundation)
-trigger deploy
 This repository is now the clean Operon foundation for a new UI build.
 
 ## Architecture
@@ -46,6 +45,12 @@ Notion is used for:
 - `functions/api/notion/links.ts`
 - `functions/api/notion/graph.ts`
 - `functions/api/notion/readiness.ts`
+
+
+## Deployment
+
+- Production deployment is managed through the current Operon Cloudflare setup.
+- Do not use legacy BrewOS Pages deployments for this repository.
 
 ## Environment variables
 

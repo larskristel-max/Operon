@@ -71,8 +71,11 @@ Notion is used for:
 
 ## Commands
 - `npm run dev`
+- `npm run gen:types`
 - `npm run typecheck`
 - `npm run build`
+
+Run `npm run gen:types` after any Supabase schema change to refresh `src/types/supabase.ts`.
 
 ## Supabase Auth hook + tenant RLS setup
 

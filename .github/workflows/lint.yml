@@ -19,5 +19,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Skip generation for fork/missing-secret PRs; in that case we use committed supabase types.
+      - name: Generate Supabase types
+        if: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' }}
+        run: npm run gen:types
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      # Note: types are regenerated fresh on CI runs where credentials are available.
+      #       Local developers should run `npm run gen:types` after any schema change.
+
+      - name: Run typecheck
+        run: npm run typecheck
+
       - name: Run lint
         run: npm run lint

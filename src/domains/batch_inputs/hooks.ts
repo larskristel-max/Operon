@@ -3,7 +3,7 @@ import { writeDemoOverlay } from "@/domains/demo/api";
 import { nowIso } from "@/lib/time";
 
 export function useAssignIngredientLots({ isDemoMode, breweryId }: { isDemoMode: boolean; breweryId: string | null }) {
-  return async (input: { batchId: string; ingredientId: string; inventoryLotId?: string | null; quantity: number; unit: string; stage?: string | null }) => {
+  return async (input: { batchId: string; ingredientId: string; ingredientReceiptId: string; quantity: number; unit: string; stage?: string | null }) => {
     if (isDemoMode) {
       if (!breweryId) throw new Error("Demo brewery not available");
       const id = crypto.randomUUID();
@@ -18,12 +18,21 @@ export function useAssignIngredientLots({ isDemoMode, breweryId }: { isDemoMode:
         stage: input.stage ?? null,
         created_at: timestamp,
       };
-      if (input.inventoryLotId) payload.ingredient_receipt_id = input.inventoryLotId;
       await writeDemoOverlay({
         table_name: "batch_inputs",
         operation: "insert",
         record_id: id,
-        payload,
+        payload: {
+          id,
+          brewery_id: breweryId,
+          batch_id: input.batchId,
+          ingredient_id: input.ingredientId,
+          ingredient_receipt_id: input.ingredientReceiptId,
+          quantity: input.quantity,
+          unit: input.unit,
+          stage: input.stage ?? null,
+          created_at: timestamp,
+        },
       });
       return;
     }

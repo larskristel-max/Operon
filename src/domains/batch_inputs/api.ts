@@ -3,7 +3,7 @@ import { apiFetch } from "@/api/client";
 export async function assignIngredientLots(payload: {
   batchId: string;
   ingredientId: string;
-  inventoryLotId?: string | null;
+  ingredientReceiptId: string;
   quantity: number;
   unit: string;
   stage?: string | null;

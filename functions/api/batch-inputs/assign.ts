@@ -1,7 +1,7 @@
 import { jsonResponse, unauthorizedResponse, verifySupabaseJwt } from "../../_shared/auth";
 import { resolveBreweryId, type BreweryEnv } from "../../_shared/brewery";
 
-interface Body { batchId?: string; ingredientId?: string; inventoryLotId?: string | null; quantity?: number; unit?: string; stage?: string | null }
+interface Body { batchId?: string; ingredientId?: string; ingredientReceiptId?: string; quantity?: number; unit?: string; stage?: string | null }
 
 function adminHeaders(env: BreweryEnv): Record<string, string> {
   return { Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`, apikey: env.SUPABASE_SERVICE_ROLE_KEY, "Content-Type": "application/json", Prefer: "return=representation" };
@@ -15,8 +15,8 @@ export async function onRequestPost(context: { request: Request; env: BreweryEnv
   let body: Body;
   try { body = await context.request.json() as Body; } catch { return jsonResponse({ error: "Invalid JSON body" }, 400); }
   const quantity = Number(body.quantity);
-  if (!body.batchId || !body.ingredientId || !body.unit || !Number.isFinite(quantity) || quantity <= 0) {
-    return jsonResponse({ error: "batchId, ingredientId, unit, and quantity > 0 are required" }, 400);
+  if (!body.batchId || !body.ingredientId || !body.ingredientReceiptId || !body.unit || !Number.isFinite(quantity) || quantity <= 0) {
+    return jsonResponse({ error: "batchId, ingredientId, ingredientReceiptId, unit, and quantity > 0 are required" }, 400);
   }
   const batchRes = await fetch(`${context.env.SUPABASE_URL}/rest/v1/batches?id=eq.${encodeURIComponent(body.batchId)}&brewery_id=eq.${encodeURIComponent(breweryId)}&select=id&limit=1`, { headers: adminHeaders(context.env) });
   const batchRows = await batchRes.json() as Array<{id: string}>;
@@ -24,9 +24,11 @@ export async function onRequestPost(context: { request: Request; env: BreweryEnv
   const ingredientRes = await fetch(`${context.env.SUPABASE_URL}/rest/v1/ingredients?id=eq.${encodeURIComponent(body.ingredientId)}&brewery_id=eq.${encodeURIComponent(breweryId)}&select=id&limit=1`, { headers: adminHeaders(context.env) });
   const ingredientRows = await ingredientRes.json() as Array<{id: string}>;
   if (!ingredientRes.ok || !Array.isArray(ingredientRows) || ingredientRows.length === 0) return jsonResponse({ error: "Ingredient not found for brewery" }, 404);
-  const payload: Record<string, unknown> = { brewery_id: breweryId, batch_id: body.batchId, ingredient_id: body.ingredientId, quantity, unit: body.unit };
+  const receiptRes = await fetch(`${context.env.SUPABASE_URL}/rest/v1/ingredient_receipts?id=eq.${encodeURIComponent(body.ingredientReceiptId)}&brewery_id=eq.${encodeURIComponent(breweryId)}&ingredient_id=eq.${encodeURIComponent(body.ingredientId)}&select=id&limit=1`, { headers: adminHeaders(context.env) });
+  const receiptRows = await receiptRes.json() as Array<{id: string}>;
+  if (!receiptRes.ok || !Array.isArray(receiptRows) || receiptRows.length === 0) return jsonResponse({ error: "Ingredient receipt not found for brewery ingredient" }, 404);
+  const payload: Record<string, unknown> = { brewery_id: breweryId, batch_id: body.batchId, ingredient_id: body.ingredientId, ingredient_receipt_id: body.ingredientReceiptId, quantity, unit: body.unit };
   if (body.stage) payload.stage = body.stage;
-  if (body.inventoryLotId) payload.ingredient_receipt_id = body.inventoryLotId;
   const insertRes = await fetch(`${context.env.SUPABASE_URL}/rest/v1/batch_inputs`, { method: "POST", headers: adminHeaders(context.env), body: JSON.stringify(payload) });
   const inserted = await insertRes.json();
   if (!insertRes.ok) return jsonResponse({ error: "Failed to assign ingredient lots", detail: inserted }, 400);

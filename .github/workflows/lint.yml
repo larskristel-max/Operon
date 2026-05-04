@@ -1,15 +1,28 @@
 name: Lint
 
 on:
+  workflow_dispatch: {}
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches-ignore:
       - main
 
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   lint:
+    # belt-and-suspenders: also guard at job level so main-branch push runs
+    # (triggered when the workflow file itself is modified) are silently skipped.
+    if: github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,18 +36,33 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Skip generation for fork/missing-secret PRs; in that case we use committed supabase types.
+      # Runs only when SUPABASE_ACCESS_TOKEN is set as a repo secret.
+      # A missing/invalid token is surfaced here so schema PRs can't silently
+      # merge with stale types — but typecheck + lint still run via `if: always()`.
       - name: Generate Supabase types
-        if: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' }}
+        if: secrets.SUPABASE_ACCESS_TOKEN != ''
         run: npm run gen:types
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-      # Note: types are regenerated fresh on CI runs where credentials are available.
-      #       Local developers should run `npm run gen:types` after any schema change.
+      # Catches schema changes that weren't followed by `npm run gen:types`.
+      - name: Verify generated types are committed
+        if: secrets.SUPABASE_ACCESS_TOKEN != ''
+        run: |
+          if ! git diff --quiet src/types/supabase.ts; then
+            echo "::error::src/types/supabase.ts is out of date."
+            echo "Run 'npm run gen:types' locally and commit the updated file."
+            git diff src/types/supabase.ts
+            exit 1
+          fi
+          echo "src/types/supabase.ts is up to date with live schema."
 
+      # always() ensures typecheck + lint run even if gen:types fails,
+      # so you always see the full picture in one CI pass.
       - name: Run typecheck
+        if: always()
         run: npm run typecheck
 
       - name: Run lint
+        if: always()
         run: npm run lint

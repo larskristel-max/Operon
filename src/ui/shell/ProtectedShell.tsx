@@ -1,6 +1,6 @@
 import operonLogo from "../../../assets/Operonv1.png";
 import tankImage from "../../../assets/Tankimageasset.png";
-import { type ReactNode, type TouchEvent, useMemo, useRef, useState } from "react";
+import { type ReactNode, type TouchEvent, useCallback, useMemo, useRef, useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { type DashboardData } from "@/data/demoData";
@@ -567,14 +567,15 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
       (input) => String(input.batch_id ?? "") === batchId
     );
   }, [selectedBatch, merged?.batch_inputs]);
-  const selectedBatchRequiredIngredients = useMemo(() => {
-    if (!selectedBatch) return [];
-    const recipeId = String(selectedBatch.recipe_id ?? "");
+  const getRequiredIngredientsForBatch = useCallback((batchId: string) => {
+    const taskBatch = allBatches.find((batch) => String(batch.id ?? "") === batchId);
+    if (!taskBatch) return [];
+    const recipeId = String(taskBatch.recipe_id ?? "");
     return recipeIngredients.filter((ri) => String(ri.recipe_id ?? "") === recipeId).filter((ri) => {
       const ing = availableIngredients.find((a) => String(a.id ?? "") === String(ri.ingredient_id ?? ""));
       return Boolean(ing);
     });
-  }, [selectedBatch, recipeIngredients, availableIngredients]);
+  }, [allBatches, recipeIngredients, availableIngredients]);
 
   const selectedBatchBrewLogs = useMemo<Array<Record<string, unknown>>>(() => {
     if (!selectedBatch) return [];
@@ -1136,7 +1137,9 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                 )}
                 {activeTaskId === task.id && task.type === "assign_inputs" && (
                   <div className="task-action-panel">
-                    {selectedBatchRequiredIngredients.length === 0 ? <p className="subtle">No recipe ingredients configured.</p> : selectedBatchRequiredIngredients.map((ri) => {
+                    {(() => {
+                      const taskRequiredIngredients = getRequiredIngredientsForBatch(task.batchId);
+                      return taskRequiredIngredients.length === 0 ? <p className="subtle">No recipe ingredients configured.</p> : taskRequiredIngredients.map((ri) => {
                       const ingredientId = String(ri.ingredient_id ?? "");
                       const ingredient = availableIngredients.find((ing) => String(ing.id ?? "") === ingredientId);
                       const name = String((ingredient?.name ?? ri.ingredient_name ?? ingredientId) || "Ingredient");
@@ -1145,11 +1148,13 @@ export function ProtectedShell({ onChangeLanguage }: { onChangeLanguage: () => v
                       const selectedReceiptId = ingredientLotSelections[ingredientId] ?? "";
                       const receiptOptions = ingredientReceipts.filter((row) => String(row.ingredient_id ?? "") === ingredientId);
                       return <div key={String(ri.id ?? ingredientId)} className="task-field-group"><label className="task-select-wrap"><span className="task-field-label">{name} • {Number.isFinite(quantity) && quantity > 0 ? `${quantity} ${unit}` : unit}</span><select className="task-select" value={selectedReceiptId} onChange={(event) => setIngredientLotSelections((prev) => ({ ...prev, [ingredientId]: event.target.value }))}><option value="">Select inventory lot</option>{receiptOptions.map((row) => <option key={String(row.id ?? "")} value={String(row.id ?? "")}>{String(row.lot_number ?? row.reference ?? row.id ?? "lot")} {row.quantity_remaining != null ? `(${String(row.quantity_remaining)} ${String(row.unit ?? unit)})` : ""}</option>)}</select><span className="task-select-chevron" aria-hidden="true">⌄</span></label></div>;
-                    })}
-                    <button type="button" className="dark-btn brew-confirm-primary task-confirm-btn" disabled={taskBusy || selectedBatchRequiredIngredients.length === 0} onClick={async () => {
-                      const missing = selectedBatchRequiredIngredients.find((ri) => !ingredientLotSelections[String(ri.ingredient_id ?? "")]);
+                      });
+                    })()}
+                    <button type="button" className="dark-btn brew-confirm-primary task-confirm-btn" disabled={taskBusy || getRequiredIngredientsForBatch(task.batchId).length === 0} onClick={async () => {
+                      const taskRequiredIngredients = getRequiredIngredientsForBatch(task.batchId);
+                      const missing = taskRequiredIngredients.find((ri) => !ingredientLotSelections[String(ri.ingredient_id ?? "")]);
                       if (missing) { setTaskError("Assign a lot for every required recipe ingredient."); return; }
-                      try { setTaskBusy(true); for (const ri of selectedBatchRequiredIngredients) { const ingredientId = String(ri.ingredient_id ?? ""); await assignIngredientLots({ batchId: task.batchId, ingredientId, ingredientReceiptId: ingredientLotSelections[ingredientId], quantity: Number(ri.quantity ?? 0), unit: String(ri.unit ?? "kg") }); } await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setIngredientLotSelections({}); }
+                      try { setTaskBusy(true); for (const ri of taskRequiredIngredients) { const ingredientId = String(ri.ingredient_id ?? ""); await assignIngredientLots({ batchId: task.batchId, ingredientId, ingredientReceiptId: ingredientLotSelections[ingredientId], quantity: Number(ri.quantity ?? 0), unit: String(ri.unit ?? "kg") }); } await (isDemoMode ? refetchDemoDashboard() : refetchRealDashboard()); setActiveTaskId(null); setIngredientLotSelections({}); }
                       catch (error) { setTaskError(error instanceof Error ? error.message : "Failed to assign ingredient lots"); }
                       finally { setTaskBusy(false); }
                     }}>Confirm</button>

@@ -24,6 +24,9 @@ export async function onRequestPost(context: { request: Request; env: BreweryEnv
   const ingredientRes = await fetch(`${context.env.SUPABASE_URL}/rest/v1/ingredients?id=eq.${encodeURIComponent(body.ingredientId)}&brewery_id=eq.${encodeURIComponent(breweryId)}&select=id&limit=1`, { headers: adminHeaders(context.env) });
   const ingredientRows = await ingredientRes.json() as Array<{id: string}>;
   if (!ingredientRes.ok || !Array.isArray(ingredientRows) || ingredientRows.length === 0) return jsonResponse({ error: "Ingredient not found for brewery" }, 404);
+  const receiptRes = await fetch(`${context.env.SUPABASE_URL}/rest/v1/ingredient_receipts?id=eq.${encodeURIComponent(body.ingredientReceiptId)}&brewery_id=eq.${encodeURIComponent(breweryId)}&ingredient_id=eq.${encodeURIComponent(body.ingredientId)}&select=id&limit=1`, { headers: adminHeaders(context.env) });
+  const receiptRows = await receiptRes.json() as Array<{id: string}>;
+  if (!receiptRes.ok || !Array.isArray(receiptRows) || receiptRows.length === 0) return jsonResponse({ error: "Ingredient receipt not found for brewery ingredient" }, 404);
   const payload: Record<string, unknown> = { brewery_id: breweryId, batch_id: body.batchId, ingredient_id: body.ingredientId, ingredient_receipt_id: body.ingredientReceiptId, quantity, unit: body.unit };
   if (body.stage) payload.stage = body.stage;
   const insertRes = await fetch(`${context.env.SUPABASE_URL}/rest/v1/batch_inputs`, { method: "POST", headers: adminHeaders(context.env), body: JSON.stringify(payload) });

@@ -1,2 +1,2 @@
 export { ApiError } from "@/lib/errors";
-export { apiFetch, setUnauthorizedHandler } from "@/lib/api";
+export { apiFetch, setAccessTokenProvider, setUnauthorizedHandler } from "@/lib/api";

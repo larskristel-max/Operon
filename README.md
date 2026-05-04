@@ -68,3 +68,13 @@ Notion is used for:
 - `npm run dev`
 - `npm run typecheck`
 - `npm run build`
+
+## Supabase Auth hook + tenant RLS setup
+
+After applying migrations, enable the custom access token hook so `brewery_id` is present in JWT claims:
+
+1. Open Supabase Dashboard → **Authentication** → **Hooks**.
+2. Under **Custom Access Token**, select `public.custom_access_token_hook`.
+3. Save changes.
+
+Without this setting, tenant RLS policies that read `(auth.jwt() ->> 'brewery_id')::uuid` will return no rows for authenticated users.

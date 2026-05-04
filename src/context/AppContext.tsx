@@ -147,6 +147,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [authState.session]);
 
   const hydrateSession = useCallback(async (session: AuthSession | null) => {
+    setAccessTokenProvider(() => session?.access_token ?? null);
     if (isDemoMode) {
       setAuthState((prev) => ({
         ...prev,

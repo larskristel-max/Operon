@@ -112,4 +112,72 @@ begin
           and bl.brewery_id = (auth.jwt() ->> 'brewery_id')::uuid
       )
     );
+
+  -- Recipe child tables: tenant scope via parent recipe
+  drop policy if exists tenant_isolation_recipe_boil_additions on public.recipe_boil_additions;
+  create policy tenant_isolation_recipe_boil_additions
+    on public.recipe_boil_additions
+    for all
+    to authenticated
+    using (
+      exists (
+        select 1
+        from public.recipes r
+        where r.id = recipe_boil_additions.recipe_id
+          and r.brewery_id = (auth.jwt() ->> 'brewery_id')::uuid
+      )
+    )
+    with check (
+      exists (
+        select 1
+        from public.recipes r
+        where r.id = recipe_boil_additions.recipe_id
+          and r.brewery_id = (auth.jwt() ->> 'brewery_id')::uuid
+      )
+    );
+
+  drop policy if exists tenant_isolation_recipe_ingredients on public.recipe_ingredients;
+  create policy tenant_isolation_recipe_ingredients
+    on public.recipe_ingredients
+    for all
+    to authenticated
+    using (
+      exists (
+        select 1
+        from public.recipes r
+        where r.id = recipe_ingredients.recipe_id
+          and r.brewery_id = (auth.jwt() ->> 'brewery_id')::uuid
+      )
+    )
+    with check (
+      exists (
+        select 1
+        from public.recipes r
+        where r.id = recipe_ingredients.recipe_id
+          and r.brewery_id = (auth.jwt() ->> 'brewery_id')::uuid
+      )
+    );
+
+  drop policy if exists tenant_isolation_recipe_mash_steps on public.recipe_mash_steps;
+  create policy tenant_isolation_recipe_mash_steps
+    on public.recipe_mash_steps
+    for all
+    to authenticated
+    using (
+      exists (
+        select 1
+        from public.recipes r
+        where r.id = recipe_mash_steps.recipe_id
+          and r.brewery_id = (auth.jwt() ->> 'brewery_id')::uuid
+      )
+    )
+    with check (
+      exists (
+        select 1
+        from public.recipes r
+        where r.id = recipe_mash_steps.recipe_id
+          and r.brewery_id = (auth.jwt() ->> 'brewery_id')::uuid
+      )
+    );
+
 end $$;

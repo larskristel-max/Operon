@@ -119,6 +119,14 @@ create policy tenant_isolation_brewery_overhead_items
   with check (brewery_id = (auth.jwt() ->> 'brewery_id')::uuid);
 
 -- Keep updated_at behavior aligned with existing schema pattern.
+create or replace function public.set_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
 do $$
 declare
   t text;

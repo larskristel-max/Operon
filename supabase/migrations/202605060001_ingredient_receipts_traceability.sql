@@ -1,7 +1,9 @@
 -- Phase 1.B / B.4 - Ingredient receipts traceability backbone
 -- Extends raw-material receipt records for AFSCA-style backward traceability.
+-- Keeps compliance quality separate from day-to-day inventory state.
 
 alter table public.ingredient_receipts
+  add column if not exists ordered_on date,
   add column if not exists receipt_reference text,
   add column if not exists supplier_reference text,
   add column if not exists supplier_invoice_reference text,
@@ -10,6 +12,8 @@ alter table public.ingredient_receipts
   add column if not exists manufactured_on date,
   add column if not exists use_by_date date,
   add column if not exists received_at timestamptz,
+  add column if not exists inventory_state text,
+  add column if not exists valuation_active boolean not null default true,
   add column if not exists quality_checked_at timestamptz,
   add column if not exists quality_checked_by_user_id uuid references public.users(id) on delete set null,
   add column if not exists quality_decision_notes text,
@@ -25,6 +29,9 @@ create index if not exists ingredient_receipts_supplier_lot_idx
 
 create index if not exists ingredient_receipts_internal_lot_idx
   on public.ingredient_receipts(brewery_id, internal_lot_code);
+
+create index if not exists ingredient_receipts_inventory_state_idx
+  on public.ingredient_receipts(brewery_id, inventory_state);
 
 create index if not exists ingredient_receipts_quality_checked_by_idx
   on public.ingredient_receipts(quality_checked_by_user_id);

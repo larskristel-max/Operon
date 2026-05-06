@@ -4,17 +4,28 @@ This change prepares `ingredient_receipts` to act as the backward-traceability a
 
 ## What it adds
 
-- internal receipt reference
+- order date and internal receipt reference
 - supplier delivery and invoice references
 - supplier VAT reference
 - origin country
 - manufacturing and use-by dates
 - receipt timestamp
+- separate inventory state for opened / sealed / expired style stock handling
+- valuation-active flag for accounting visibility
 - quality review timestamp and reviewer link
 - quality decision notes
 - storage zone
 - explicit `[INSTANCE]` tagging
 - lookup indexes for ingredient lot selection and receipt tracing
+
+## Why the split matters
+
+Your current brewery inventory sheet mixes two different ideas:
+
+- compliance quality: approved, quarantined, rejected, expired
+- stock handling state: opened, closed, expired, valuation active, storage zone
+
+This migration keeps those concerns separate so we do not overload one field with two meanings.
 
 ## Recommended rollout
 

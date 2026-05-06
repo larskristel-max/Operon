@@ -1417,58 +1417,79 @@ export type Database = {
       }
       lots: {
         Row: {
+          archived_at: string | null
           batch_id: string | null
+          best_before_date: string | null
           brewery_id: string
           created_at: string
+          depleted_at: string | null
           excise_state: Database["public"]["Enums"]["excise_state"]
           id: string
           internal_lot_ref: string | null
+          is_traceability_required: boolean
           lot_date: string | null
           lot_number: string
           lot_type: Database["public"]["Enums"]["lot_type"]
           notes: string | null
+          packaged_at: string | null
           packaging_format_id: string | null
           packaging_state: Database["public"]["Enums"]["packaging_state"]
           parent_lot_id: string | null
+          produced_at: string | null
           status: Database["public"]["Enums"]["lot_status"]
+          tag: string
           units_count: number | null
           updated_at: string
           volume_liters: number | null
         }
         Insert: {
+          archived_at?: string | null
           batch_id?: string | null
+          best_before_date?: string | null
           brewery_id: string
           created_at?: string
+          depleted_at?: string | null
           excise_state?: Database["public"]["Enums"]["excise_state"]
           id?: string
           internal_lot_ref?: string | null
+          is_traceability_required?: boolean
           lot_date?: string | null
           lot_number: string
           lot_type?: Database["public"]["Enums"]["lot_type"]
           notes?: string | null
+          packaged_at?: string | null
           packaging_format_id?: string | null
           packaging_state?: Database["public"]["Enums"]["packaging_state"]
           parent_lot_id?: string | null
+          produced_at?: string | null
           status?: Database["public"]["Enums"]["lot_status"]
+          tag?: string
           units_count?: number | null
           updated_at?: string
           volume_liters?: number | null
         }
         Update: {
+          archived_at?: string | null
           batch_id?: string | null
+          best_before_date?: string | null
           brewery_id?: string
           created_at?: string
+          depleted_at?: string | null
           excise_state?: Database["public"]["Enums"]["excise_state"]
           id?: string
           internal_lot_ref?: string | null
+          is_traceability_required?: boolean
           lot_date?: string | null
           lot_number?: string
           lot_type?: Database["public"]["Enums"]["lot_type"]
           notes?: string | null
+          packaged_at?: string | null
           packaging_format_id?: string | null
           packaging_state?: Database["public"]["Enums"]["packaging_state"]
           parent_lot_id?: string | null
+          produced_at?: string | null
           status?: Database["public"]["Enums"]["lot_status"]
+          tag?: string
           units_count?: number | null
           updated_at?: string
           volume_liters?: number | null

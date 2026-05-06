@@ -109,84 +109,84 @@ export type Database = {
         Row: {
           actual_volume_liters: number | null
           afsca_register_ref: string | null
-          brew_started_at: string | null
-          brew_completed_at: string | null
-          fermentation_started_at: string | null
-          fermentation_completed_at: string | null
-          packaging_started_at: string | null
-          packaging_completed_at: string | null
-          compliance_status: string
-          brewsheet_status: string
-          brewsheet_generated_at: string | null
-          brewsheet_version: number
-          is_compliance_required: boolean
-          registered_at: string | null
-          tag: string
           batch_number: string | null
+          brew_completed_at: string | null
           brew_date: string | null
+          brew_started_at: string | null
           brewery_id: string
+          brewsheet_generated_at: string | null
+          brewsheet_status: string
+          brewsheet_version: number
+          compliance_status: string
           created_at: string
           declaration_number: string | null
+          fermentation_completed_at: string | null
+          fermentation_started_at: string | null
           id: string
+          is_compliance_required: boolean
           notes: string | null
+          packaging_completed_at: string | null
+          packaging_started_at: string | null
           recipe_id: string | null
+          registered_at: string | null
           status: Database["public"]["Enums"]["batch_status"]
+          tag: string
           target_volume_liters: number | null
           updated_at: string
         }
         Insert: {
           actual_volume_liters?: number | null
           afsca_register_ref?: string | null
-          brew_started_at?: string | null
-          brew_completed_at?: string | null
-          fermentation_started_at?: string | null
-          fermentation_completed_at?: string | null
-          packaging_started_at?: string | null
-          packaging_completed_at?: string | null
-          compliance_status?: string
-          brewsheet_status?: string
-          brewsheet_generated_at?: string | null
-          brewsheet_version?: number
-          is_compliance_required?: boolean
-          registered_at?: string | null
-          tag?: string
           batch_number?: string | null
+          brew_completed_at?: string | null
           brew_date?: string | null
+          brew_started_at?: string | null
           brewery_id: string
+          brewsheet_generated_at?: string | null
+          brewsheet_status?: string
+          brewsheet_version?: number
+          compliance_status?: string
           created_at?: string
           declaration_number?: string | null
+          fermentation_completed_at?: string | null
+          fermentation_started_at?: string | null
           id?: string
+          is_compliance_required?: boolean
           notes?: string | null
+          packaging_completed_at?: string | null
+          packaging_started_at?: string | null
           recipe_id?: string | null
+          registered_at?: string | null
           status?: Database["public"]["Enums"]["batch_status"]
+          tag?: string
           target_volume_liters?: number | null
           updated_at?: string
         }
         Update: {
           actual_volume_liters?: number | null
           afsca_register_ref?: string | null
-          brew_started_at?: string | null
-          brew_completed_at?: string | null
-          fermentation_started_at?: string | null
-          fermentation_completed_at?: string | null
-          packaging_started_at?: string | null
-          packaging_completed_at?: string | null
-          compliance_status?: string
-          brewsheet_status?: string
-          brewsheet_generated_at?: string | null
-          brewsheet_version?: number
-          is_compliance_required?: boolean
-          registered_at?: string | null
-          tag?: string
           batch_number?: string | null
+          brew_completed_at?: string | null
           brew_date?: string | null
+          brew_started_at?: string | null
           brewery_id?: string
+          brewsheet_generated_at?: string | null
+          brewsheet_status?: string
+          brewsheet_version?: number
+          compliance_status?: string
           created_at?: string
           declaration_number?: string | null
+          fermentation_completed_at?: string | null
+          fermentation_started_at?: string | null
           id?: string
+          is_compliance_required?: boolean
           notes?: string | null
+          packaging_completed_at?: string | null
+          packaging_started_at?: string | null
           recipe_id?: string | null
+          registered_at?: string | null
           status?: Database["public"]["Enums"]["batch_status"]
+          tag?: string
           target_volume_liters?: number | null
           updated_at?: string
         }

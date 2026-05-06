@@ -998,15 +998,32 @@ export type Database = {
           id: string
           ingredient_id: string
           internal_lot_code: string | null
+          inventory_state: string | null
+          is_traceability_required: boolean
+          manufactured_on: string | null
           notes: string | null
+          ordered_on: string | null
+          origin_country_code: string | null
+          quality_checked_at: string | null
+          quality_checked_by_user_id: string | null
+          quality_decision_notes: string | null
           quality_status: string
           quantity_received: number
+          receipt_reference: string | null
+          received_at: string | null
           received_date: string | null
           storage_location: string | null
+          storage_zone: string | null
+          supplier_invoice_reference: string | null
           supplier_lot_number: string | null
           supplier_name: string | null
+          supplier_reference: string | null
+          supplier_vat_number: string | null
+          tag: string
           unit: string
           updated_at: string
+          use_by_date: string | null
+          valuation_active: boolean
         }
         Insert: {
           best_before_date?: string | null
@@ -1015,15 +1032,32 @@ export type Database = {
           id?: string
           ingredient_id: string
           internal_lot_code?: string | null
+          inventory_state?: string | null
+          is_traceability_required?: boolean
+          manufactured_on?: string | null
           notes?: string | null
+          ordered_on?: string | null
+          origin_country_code?: string | null
+          quality_checked_at?: string | null
+          quality_checked_by_user_id?: string | null
+          quality_decision_notes?: string | null
           quality_status?: string
           quantity_received: number
+          receipt_reference?: string | null
+          received_at?: string | null
           received_date?: string | null
           storage_location?: string | null
+          storage_zone?: string | null
+          supplier_invoice_reference?: string | null
           supplier_lot_number?: string | null
           supplier_name?: string | null
+          supplier_reference?: string | null
+          supplier_vat_number?: string | null
+          tag?: string
           unit: string
           updated_at?: string
+          use_by_date?: string | null
+          valuation_active?: boolean
         }
         Update: {
           best_before_date?: string | null
@@ -1032,15 +1066,32 @@ export type Database = {
           id?: string
           ingredient_id?: string
           internal_lot_code?: string | null
+          inventory_state?: string | null
+          is_traceability_required?: boolean
+          manufactured_on?: string | null
           notes?: string | null
+          ordered_on?: string | null
+          origin_country_code?: string | null
+          quality_checked_at?: string | null
+          quality_checked_by_user_id?: string | null
+          quality_decision_notes?: string | null
           quality_status?: string
           quantity_received?: number
+          receipt_reference?: string | null
+          received_at?: string | null
           received_date?: string | null
           storage_location?: string | null
+          storage_zone?: string | null
+          supplier_invoice_reference?: string | null
           supplier_lot_number?: string | null
           supplier_name?: string | null
+          supplier_reference?: string | null
+          supplier_vat_number?: string | null
+          tag?: string
           unit?: string
           updated_at?: string
+          use_by_date?: string | null
+          valuation_active?: boolean
         }
         Relationships: [
           {
@@ -1062,6 +1113,20 @@ export type Database = {
             columns: ["ingredient_id"]
             isOneToOne: false
             referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingredient_receipts_quality_checked_by_user_id_fkey"
+            columns: ["quality_checked_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "brewery_users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ingredient_receipts_quality_checked_by_user_id_fkey"
+            columns: ["quality_checked_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]

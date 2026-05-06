@@ -1,0 +1,41 @@
+# B.4 Ingredient Receipts Rollout
+
+This change prepares `ingredient_receipts` to act as the backward-traceability anchor for raw materials.
+
+## What it adds
+
+- order date and internal receipt reference
+- supplier delivery and invoice references
+- supplier VAT reference
+- origin country
+- manufacturing and use-by dates
+- receipt timestamp
+- separate inventory state for opened / sealed / expired style stock handling
+- valuation-active flag for accounting visibility
+- quality review timestamp and reviewer link
+- quality decision notes
+- storage zone
+- explicit `[INSTANCE]` tagging
+- lookup indexes for ingredient lot selection and receipt tracing
+
+## Why the split matters
+
+Your current brewery inventory sheet mixes two different ideas:
+
+- compliance quality: approved, quarantined, rejected, expired
+- stock handling state: opened, closed, expired, valuation active, storage zone
+
+This migration keeps those concerns separate so we do not overload one field with two meanings.
+
+## Recommended rollout
+
+1. Apply the new Supabase migration.
+2. Regenerate `src/types/supabase.ts` with `npm run gen:types`.
+3. Commit the generated types file.
+4. Open the PR and let CI verify there is no schema/type drift.
+
+## Why types are not updated in this branch yet
+
+The repo's generated Supabase types come from live database introspection. Because this branch prepares the schema change without applying it to the live database first, `src/types/supabase.ts` would still regenerate to the old shape right now.
+
+Once the migration is applied in the target database, run `npm run gen:types` and commit the refreshed file.

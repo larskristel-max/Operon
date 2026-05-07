@@ -1457,6 +1457,306 @@ export type Database = {
           },
         ]
       }
+      knowledge_chunks: {
+        Row: {
+          chunk_index: number
+          chunk_summary: string | null
+          chunk_text: string
+          confidence_score: number | null
+          created_at: string
+          document_version_id: string
+          heading_path: string | null
+          id: string
+          metadata: Json
+          page_end: number | null
+          page_start: number | null
+          safety_tag: string | null
+          section_ref: string | null
+          workflow_stage_tag: string | null
+        }
+        Insert: {
+          chunk_index: number
+          chunk_summary?: string | null
+          chunk_text: string
+          confidence_score?: number | null
+          created_at?: string
+          document_version_id: string
+          heading_path?: string | null
+          id?: string
+          metadata?: Json
+          page_end?: number | null
+          page_start?: number | null
+          safety_tag?: string | null
+          section_ref?: string | null
+          workflow_stage_tag?: string | null
+        }
+        Update: {
+          chunk_index?: number
+          chunk_summary?: string | null
+          chunk_text?: string
+          confidence_score?: number | null
+          created_at?: string
+          document_version_id?: string
+          heading_path?: string | null
+          id?: string
+          metadata?: Json
+          page_end?: number | null
+          page_start?: number | null
+          safety_tag?: string | null
+          section_ref?: string | null
+          workflow_stage_tag?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_chunks_document_version_id_fkey"
+            columns: ["document_version_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_document_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_document_links: {
+        Row: {
+          created_at: string
+          from_document_id: string
+          id: string
+          link_type: string
+          metadata: Json
+          notes: string | null
+          to_document_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_document_id: string
+          id?: string
+          link_type: string
+          metadata?: Json
+          notes?: string | null
+          to_document_id: string
+        }
+        Update: {
+          created_at?: string
+          from_document_id?: string
+          id?: string
+          link_type?: string
+          metadata?: Json
+          notes?: string | null
+          to_document_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_document_links_from_document_id_fkey"
+            columns: ["from_document_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_document_links_to_document_id_fkey"
+            columns: ["to_document_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_document_versions: {
+        Row: {
+          captured_at: string
+          checksum: string | null
+          citation_base: string | null
+          created_at: string
+          document_id: string
+          extracted_text: string | null
+          id: string
+          is_current: boolean
+          metadata: Json
+          mime_type: string | null
+          published_at: string | null
+          raw_text: string | null
+          source_uri: string | null
+          storage_path: string | null
+          version_label: string | null
+          version_number: number | null
+        }
+        Insert: {
+          captured_at?: string
+          checksum?: string | null
+          citation_base?: string | null
+          created_at?: string
+          document_id: string
+          extracted_text?: string | null
+          id?: string
+          is_current?: boolean
+          metadata?: Json
+          mime_type?: string | null
+          published_at?: string | null
+          raw_text?: string | null
+          source_uri?: string | null
+          storage_path?: string | null
+          version_label?: string | null
+          version_number?: number | null
+        }
+        Update: {
+          captured_at?: string
+          checksum?: string | null
+          citation_base?: string | null
+          created_at?: string
+          document_id?: string
+          extracted_text?: string | null
+          id?: string
+          is_current?: boolean
+          metadata?: Json
+          mime_type?: string | null
+          published_at?: string | null
+          raw_text?: string | null
+          source_uri?: string | null
+          storage_path?: string | null
+          version_label?: string | null
+          version_number?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_document_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_documents: {
+        Row: {
+          created_at: string
+          document_key: string
+          document_type: string
+          effective_from: string | null
+          effective_to: string | null
+          id: string
+          is_chunkable: boolean
+          jurisdiction: string | null
+          language: string | null
+          metadata: Json
+          scope_tag: string
+          source_id: string
+          status: string
+          superseded_at: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          document_key: string
+          document_type: string
+          effective_from?: string | null
+          effective_to?: string | null
+          id?: string
+          is_chunkable?: boolean
+          jurisdiction?: string | null
+          language?: string | null
+          metadata?: Json
+          scope_tag: string
+          source_id: string
+          status?: string
+          superseded_at?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          document_key?: string
+          document_type?: string
+          effective_from?: string | null
+          effective_to?: string | null
+          id?: string
+          is_chunkable?: boolean
+          jurisdiction?: string | null
+          language?: string | null
+          metadata?: Json
+          scope_tag?: string
+          source_id?: string
+          status?: string
+          superseded_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_documents_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_sources: {
+        Row: {
+          brewery_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          jurisdiction: string | null
+          language: string | null
+          metadata: Json
+          name: string
+          scope_tag: string
+          source_key: string
+          source_quality: string | null
+          source_type: string
+          updated_at: string
+        }
+        Insert: {
+          brewery_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          jurisdiction?: string | null
+          language?: string | null
+          metadata?: Json
+          name: string
+          scope_tag: string
+          source_key: string
+          source_quality?: string | null
+          source_type: string
+          updated_at?: string
+        }
+        Update: {
+          brewery_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          jurisdiction?: string | null
+          language?: string | null
+          metadata?: Json
+          name?: string
+          scope_tag?: string
+          source_key?: string
+          source_quality?: string | null
+          source_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_sources_brewery_id_fkey"
+            columns: ["brewery_id"]
+            isOneToOne: false
+            referencedRelation: "breweries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_sources_brewery_id_fkey"
+            columns: ["brewery_id"]
+            isOneToOne: false
+            referencedRelation: "brewery_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lots: {
         Row: {
           archived_at: string | null
